@@ -1,0 +1,27 @@
+namespace Web.Idempotency;
+
+/// <summary>
+/// Configuration options for HTTP request idempotency.
+/// </summary>
+public sealed class IdempotencyOptions
+{
+    /// <summary>
+    /// The header name to read the idempotency key from. Default: "Idempotency-Key".
+    /// </summary>
+    public string HeaderName { get; set; } = "Idempotency-Key";
+ 
+    /// <summary>
+    /// Default time-to-live for cached idempotent responses. Default: 24 hours.
+    /// </summary>
+    public TimeSpan DefaultTtl { get; set; } = TimeSpan.FromHours(24);
+ 
+    /// <summary>
+    /// Maximum allowed length for the idempotency key. Default: 128 characters.
+    /// </summary>
+    public int MaxKeyLength { get; set; } = 128;
+ 
+    /// <summary>
+    /// How long to wait for the distributed lock before returning 409. Default: 5 seconds.
+    /// </summary>
+    public TimeSpan LockTimeout { get; set; } = TimeSpan.FromSeconds(5);
+}

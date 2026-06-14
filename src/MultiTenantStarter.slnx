@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="BuildingBlocks/Caching/Caching.csproj" />
+    <Project Path="BuildingBlocks/Core/Core.csproj" />
+    <Project Path="BuildingBlocks/Jobs/Jobs.csproj" />
+    <Project Path="BuildingBlocks/Mailling/Mailling.csproj" />
+    <Project Path="BuildingBlocks/MessageBus/MessageBus.csproj" />
+    <Project Path="BuildingBlocks/Persistence/Persistence.csproj" />
+    <Project Path="BuildingBlocks/Quota/Quota.csproj" />
+    <Project Path="BuildingBlocks/Shared/Shared.csproj" />
+    <Project Path="BuildingBlocks/Storage/Storage.csproj" />
+    <Project Path="BuildingBlocks/Web/Web.csproj" />
+  </Folder>
+  <Folder Name="/Host/" />
+  <Folder Name="/Modules/" />
+  <Folder Name="/SolutionItems/">
+    <File Path="../.gitignore" />
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/Tests/" />
+</Solution>
