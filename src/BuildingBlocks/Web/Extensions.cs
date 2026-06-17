@@ -37,7 +37,7 @@ namespace Web;
 
 public static class Extensions
 {
-    public static IHostApplicationBuilder AddHeroPlatform(this IHostApplicationBuilder builder,
+    public static IHostApplicationBuilder AddPlatform(this IHostApplicationBuilder builder,
         Action<PlatformOptions>? configure = null)
     {
          ArgumentNullException.ThrowIfNull(builder);
@@ -143,7 +143,7 @@ public static class Extensions
     }
     
     
-     public static WebApplication UseHeroPlatform(this WebApplication app, Action<PipelineOptions>? configure = null)
+     public static WebApplication UsePlatform(this WebApplication app, Action<PipelineOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(app);
 
@@ -187,7 +187,7 @@ public static class Extensions
             app.UseAppOpenApi();
         }
 
-        app.UseAuthentication();
+        //app.UseAuthentication();
 
         // Let each module register its own middleware (e.g. Auditing registers AuditHttpMiddleware)
         app.UseModuleMiddlewares();
@@ -199,7 +199,7 @@ public static class Extensions
         //     app.UseHeroQuotas();
         // }
 
-        app.UseAuthorization();
+        // app.UseAuthorization();
 
         if (options.MapModules)
         {
@@ -211,7 +211,7 @@ public static class Extensions
 
         if (options.MapSseEndpoints)
         {
-            app.MapHeroSseEndpoints();
+            app.MapSseEndpoints();
         }
 
         if (options.MapRealtime)

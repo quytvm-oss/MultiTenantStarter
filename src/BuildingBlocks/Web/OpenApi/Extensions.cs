@@ -24,8 +24,8 @@ public static class Extensions
         services
             .AddOptions<OpenApiOptions>()
             .Bind(configuration.GetSection(nameof(OpenApiOptions)))
-            .Validate(o => !string.IsNullOrWhiteSpace(o.Title), "OpenApi:Title is required.")
-            .Validate(o => !string.IsNullOrWhiteSpace(o.Description), "OpenApi:Description is required.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Title), "OpenApiOptions:Title is required.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Description), "OpenApiOptions:Description is required.")
             .ValidateOnStart();
 
         var fshOptions = configuration.GetSection(nameof(OpenApiOptions)).Get<OpenApiOptions>();
@@ -37,7 +37,7 @@ public static class Extensions
         {
             services.AddOpenApi(version, options =>
             {
-                options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+                //options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
                 options.AddDocumentTransformer((document, context, _) =>
                 {
                     var provider = context.ApplicationServices;
@@ -80,7 +80,7 @@ public static class Extensions
         {
             var configuration = app.Configuration;
             options
-                .WithTitle(configuration["OpenApi:Title"] ?? "FSH API")
+                .WithTitle(configuration["OpenApiOptions:Title"] ?? "FSH API")
                 .WithTheme(Scalar.AspNetCore.ScalarTheme.Alternate)
                 .EnableDarkMode()
                 .HideModels()

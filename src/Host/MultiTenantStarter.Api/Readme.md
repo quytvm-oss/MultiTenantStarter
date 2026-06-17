@@ -1,0 +1,1 @@
+dotnet ef migrations add Add-Multitenant --project ../MultiTenantStarter.Migrations.PostgreSQL --startup-project . --context TenantDbContext -o Multitenancy

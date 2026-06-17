@@ -16,10 +16,10 @@ public static class Extensions
 {
     public static IServiceCollection AddHeroStorage(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<StorageOptions>().BindConfiguration("Storage")
+        services.AddOptions<StorageOptions>().BindConfiguration(nameof(StorageOptions))
             .ValidateDataAnnotations().ValidateOnStart();
         
-        var storageOptions = configuration.GetSection("Storage").Get<StorageOptions>() ?? new StorageOptions();
+        var storageOptions = configuration.GetSection(nameof(StorageOptions)).Get<StorageOptions>() ?? new StorageOptions();
 
         switch (storageOptions.Provider?.Trim().ToLowerInvariant())
         {

@@ -28,7 +28,7 @@ public static class PersistenceExtensions
         return services;
     }
 
-    public static IServiceCollection AddDbContext<TContext>(this ServiceCollection services)
+    public static IServiceCollection AddCustomDbContext<TContext>(this IServiceCollection services)
         where TContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -36,7 +36,7 @@ public static class PersistenceExtensions
         {
             var env = sp.GetRequiredService<IHostEnvironment>();
             var dbConfig = sp.GetRequiredService<IOptions<DatabaseOptions>>().Value;
-            options.ConfigureCustomDatabase(dbConfig.Provider, dbConfig.ConnectionString, dbConfig.MigrationAssembly, env.IsDevelopment());
+            options.ConfigureCustomDatabase(dbConfig.Provider, dbConfig.ConnectionString, dbConfig.MigrationsAssembly, env.IsDevelopment());
             options.AddInterceptors(sp.GetRequiredService<ISaveChangesInterceptor>());
         });
         return services;

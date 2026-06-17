@@ -6,5 +6,5 @@ public class DatabaseOptions
     
     public string Provider { get; set; } = DbProviders.PostgreSQL;
     
-    public string MigrationAssembly { get; set; } = string.Empty;
+    public string MigrationsAssembly { get; set; } = string.Empty;
 }

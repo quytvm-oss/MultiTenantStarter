@@ -11,7 +11,7 @@ public static class SseEndpoints
 {
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(15);
 
-    public static IEndpointRouteBuilder MapHeroSseEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapSseEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 

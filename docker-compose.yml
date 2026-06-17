@@ -1,0 +1,11 @@
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: mt-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+volumes:
+  redis_data:

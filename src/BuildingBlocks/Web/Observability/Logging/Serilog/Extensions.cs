@@ -20,79 +20,31 @@ public static class Extensions
     public static IHostApplicationBuilder AddAppLogging(this IHostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-
         builder.Services.AddSingleton<HttpRequestContextEnricher>();
 
-        var otlp = ResolveOtlpExport(builder);
-        var assemblyName = Assembly.GetEntryAssembly()?.GetName().Name;
-        
-        builder.Services.AddSerilog((services, logger) =>
+        var otlp = ResolveOtlpLogExport(builder);
+
+        builder.Services.AddSerilog((context, logger) =>
         {
-            var httpEnricher = services.GetRequiredService<HttpRequestContextEnricher>();
-            var options = builder.Configuration.GetSection(LoggingOptions.SectionName).Get<LoggingOptions>();
-
-            // Log levels — từ config hoặc defaults
-            if (options?.LogLevel is { Count: > 0 })
-            {
-                foreach (var (key, value) in options.LogLevel)
-                {
-                    var level = ToSerilogLevel(value);
-                    if (key == "Default")
-                        logger.MinimumLevel.Is(level);
-                    else
-                        logger.MinimumLevel.Override(key, level);
-                }
-            }
-            else
-            {
-                logger
-                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
-                    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Error)
-                    .MinimumLevel.Override("Hangfire", LogEventLevel.Warning)
-                    .MinimumLevel.Override("Finbuckle.MultiTenant", LogEventLevel.Warning);
-            }
-
+            var httpEnricher = context.GetRequiredService<HttpRequestContextEnricher>();
+        
+            // Single source of truth for levels/overrides/sinks — appsettings wins.
+            // Programmatic overrides intentionally avoided here; configure via
+            // Serilog:MinimumLevel:Override in appsettings instead.
+            logger.ReadFrom.Configuration(builder.Configuration);
             logger
-                .ReadFrom.Configuration(builder.Configuration)
-                .Enrich.FromLogContext()
-                .Enrich.WithMachineName()
-                .Enrich.WithEnvironmentUserName()
-                .Enrich.WithCorrelationId()
-                .Enrich.WithProperty("ProcessId", Environment.ProcessId)
-                .Enrich.WithProperty("Assembly", assemblyName)
-                .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
-                .Enrich.WithProperty("EnvironmentName", builder.Environment.EnvironmentName)
                 .Enrich.With(httpEnricher)
+                // Suppress double-logging: the global exception handler already captures
+                // unhandled exceptions; ExceptionHandlerMiddleware re-logs the same event.
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Error)
+                .MinimumLevel.Override("Hangfire", LogEventLevel.Warning)
+                .MinimumLevel.Override("Finbuckle.MultiTenant", LogEventLevel.Warning)
                 .Filter.ByExcluding(
-                    Matching.FromSource("Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware"))
-                .WriteTo.Console();
+                    Matching.FromSource(
+                        "Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware"));
 
-            // File sink
-            if (options?.File?.Enabled == true)
-            {
-                logger.WriteTo.File(
-                    path: options.File.Path,
-                    rollingInterval: options.File.RollingInterval,
-                    fileSizeLimitBytes: options.File.FileSizeLimitBytes,
-                    rollOnFileSizeLimit: options.File.RollOnFileSizeLimit,
-                    retainedFileCountLimit: options.File.RetainedFileCountLimit,
-                    restrictedToMinimumLevel: options.File.MinimumLevel,
-                    formatProvider: CultureInfo.InvariantCulture,
-                    shared: true,
-                    flushToDiskInterval: TimeSpan.FromSeconds(1),
-                    outputTemplate:
-                    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] " +
-                    "[TraceId: {TraceId}] [MachineName: {MachineName}] [ProcessId: {ProcessId}] " +
-                    "[Tenant: {Tenant}] [UserId: {UserId}] " +
-                    "{Message:lj}{NewLine}{Exception}");
-            }
-
-            // Seq sink
-            if (options?.Seq?.Enabled == true)
-                logger.WriteTo.Seq(options.Seq.ServerUrl);
-
-            // OTLP sink — Aspire injected endpoint takes precedence over config
             if (otlp is not null)
             {
                 logger.WriteTo.OpenTelemetry(sink =>
@@ -110,8 +62,6 @@ public static class Extensions
             }
         });
 
-        return builder;
-        
         return builder;
     }
 
@@ -159,27 +109,33 @@ public static class Extensions
     // OTLP resolution — Aspire injected env vars win over appsettings config
     // -------------------------------------------------------------------------
 
-    private sealed record OtlpExport(string Endpoint, OtlpProtocol Protocol, IDictionary<string, string> Headers);
+    private sealed record OtlpLogExport(string Endpoint, OtlpProtocol Protocol, IDictionary<string, string> Headers);
 
-    private static OtlpExport? ResolveOtlpExport(IHostApplicationBuilder builder)
+    private static OtlpLogExport? ResolveOtlpLogExport(IHostApplicationBuilder builder)
     {
-        if (!builder.Configuration.GetValue("OpenTelemetryOptions:Enabled", true))
+        var options = builder.Configuration
+            .GetSection(OpenTelemetryOptions.SectionName)
+            .Get<OpenTelemetryOptions>();
+        // Honor the global OpenTelemetry switch, matching the traces/metrics gate.
+        if (options is null || !options.Enabled)
+        {
             return null;
+        }
 
         var envEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
 
         string? endpoint;
         string? protocolRaw;
-
         if (!string.IsNullOrWhiteSpace(envEndpoint))
         {
+            // An injected endpoint (Aspire / collector) takes precedence and exports even if config has Otlp disabled.
             endpoint = envEndpoint;
             protocolRaw = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL");
         }
-        else if (builder.Configuration.GetValue("OpenTelemetryOptions:Exporter:Otlp:Enabled", false))
+        else if (options.Exporter.Otlp.Enabled)
         {
-            endpoint = builder.Configuration["OpenTelemetryOptions:Exporter:Otlp:Endpoint"];
-            protocolRaw = builder.Configuration["OpenTelemetryOptions:Exporter:Otlp:Protocol"];
+            endpoint =  options.Exporter.Otlp.Endpoint;
+            protocolRaw = options.Exporter.Otlp.Protocol;
         }
         else
         {
@@ -187,7 +143,9 @@ public static class Extensions
         }
 
         if (string.IsNullOrWhiteSpace(endpoint))
+        {
             return null;
+        }
 
         var protocol = protocolRaw?.Trim().ToLowerInvariant() switch
         {
@@ -195,6 +153,7 @@ public static class Extensions
             _ => OtlpProtocol.Grpc
         };
 
+        // gRPC uses the base endpoint as-is; for HTTP the Serilog sink expects the full signal path.
         if (protocol == OtlpProtocol.HttpProtobuf &&
             !endpoint.Contains("/v1/logs", StringComparison.OrdinalIgnoreCase))
         {
@@ -202,37 +161,32 @@ public static class Extensions
         }
 
         var headers = ParseOtlpHeaders(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS"));
-        return new OtlpExport(endpoint, protocol, headers);
+        return new OtlpLogExport(endpoint, protocol, headers);
     }
 
     private static Dictionary<string, string> ParseOtlpHeaders(string? raw)
     {
         var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (string.IsNullOrWhiteSpace(raw))
+        {
             return headers;
+        }
 
         foreach (var pair in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var idx = pair.IndexOf('=', StringComparison.Ordinal);
-            if (idx <= 0) continue;
+            if (idx <= 0)
+            {
+                continue;
+            }
 
             var key = pair[..idx].Trim();
             if (key.Length > 0)
+            {
                 headers[key] = pair[(idx + 1)..].Trim();
+            }
         }
 
         return headers;
     }
-
-    private static LogEventLevel ToSerilogLevel(LogLevel logLevel) =>
-        logLevel switch
-        {
-            LogLevel.Trace => LogEventLevel.Verbose,
-            LogLevel.Debug => LogEventLevel.Debug,
-            LogLevel.Information => LogEventLevel.Information,
-            LogLevel.Warning => LogEventLevel.Warning,
-            LogLevel.Error => LogEventLevel.Error,
-            LogLevel.Critical => LogEventLevel.Fatal,
-            _ => LogEventLevel.Fatal
-        };
 }

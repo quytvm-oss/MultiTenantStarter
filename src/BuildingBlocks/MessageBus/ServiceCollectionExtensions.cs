@@ -1,4 +1,6 @@
-﻿using MessageBus.Constants;
+﻿using System.Reflection;
+
+using MessageBus.Constants;
 using MessageBus.Contracts;
 using MessageBus.Processors;
 using MessageBus.Subscribes;
@@ -65,6 +67,37 @@ public static class ServiceCollectionExtensions
         where T : class, IConsumerRegistration, new()
     {
         options.ConsumerRegistrations.Add(static () => new T());
+
+        return options;
+    }
+    
+    public static MessageBusOptions AddConsumerRegistrationsFromAssemblies(
+        this MessageBusOptions options,
+        IEnumerable<Assembly> assemblies)
+    {
+        var registrationTypes = assemblies
+            .Where(a => !a.IsDynamic)
+            .SelectMany(a =>
+            {
+                try
+                {
+                    return a.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    return ex.Types.Where(t => t is not null)!;
+                }
+            })
+            .Where(t => t is { IsClass: true, IsAbstract: false }
+                        && typeof(IConsumerRegistration).IsAssignableFrom(t)
+                        && t.GetConstructor(Type.EmptyTypes) is not null)
+            .Distinct();
+
+        foreach (var type in registrationTypes)
+        {
+            options.ConsumerRegistrations.Add(() =>
+                (IConsumerRegistration)Activator.CreateInstance(type)!);
+        }
 
         return options;
     }

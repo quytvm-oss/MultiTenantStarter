@@ -21,7 +21,7 @@ public static class Extensions
         if (!string.IsNullOrWhiteSpace(redis))
         {
             signalr.AddStackExchangeRedis(redis, options => options.Configuration.ChannelPrefix =
-                RedisChannel.Literal("fsh-signalr"));
+                RedisChannel.Literal("signalr"));
         }
 
         services.AddSingleton<IPresenceTracker, RedisPresenceTracker>();

@@ -58,7 +58,7 @@ public class EfBaseDbContext : MultiTenantDbContext
             optionsBuilder.ConfigureCustomDatabase(
                 _settings.Provider,
                 _multiTenantContextAccessor.MultiTenantContext.TenantInfo.ConnectionString,
-                _settings.MigrationAssembly,
+                _settings.MigrationsAssembly,
                 _environment.IsDevelopment());
         }
         

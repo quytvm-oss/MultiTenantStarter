@@ -11,11 +11,39 @@
     <Project Path="BuildingBlocks/Storage/Storage.csproj" />
     <Project Path="BuildingBlocks/Web/Web.csproj" />
   </Folder>
-  <Folder Name="/Host/" />
+  <Folder Name="/Host/">
+    <Project Path="Host/MultiTenantStarter.Api/MultiTenantStarter.Api.csproj" />
+    <Project Path="Host/MultiTenantStarter.DbMigrator/MultiTenantStarter.DbMigrator.csproj" />
+  </Folder>
+  <Folder Name="/Host/AppHost/" />
+  <Folder Name="/Host/Migrations/">
+    <Project Path="Host/MultiTenantStarter.Migrations.PostgreSQL/MultiTenantStarter.Migrations.PostgreSQL.csproj" />
+  </Folder>
   <Folder Name="/Modules/" />
+  <Folder Name="/Modules/Auditing/">
+    <Project Path="Modules/Auditing/Modules.Auditing.Contracts/Modules.Auditing.Contracts.csproj" />
+    <Project Path="Modules/Auditing/Modules.Auditing/Modules.Auditing.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Identity/">
+    <Project Path="Modules/Identity/Modules.Identity.Contracts/Modules.Identity.Contracts.csproj" />
+    <Project Path="Modules/Identity/Modules.Identity/Modules.Identity.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Multitenancy/">
+    <Project Path="Modules/Multitenancy/Modules.Multitenancy.Contracts/Modules.Multitenancy.Contracts.csproj" />
+    <Project Path="Modules/Multitenancy/Modules.Multitenancy/Modules.Multitenancy.csproj" />
+  </Folder>
   <Folder Name="/SolutionItems/">
     <File Path="../.gitignore" />
     <File Path=".editorconfig" />
+    <File Path="BuildingBlocks/Caching/Caching.csproj" />
+    <File Path="BuildingBlocks/Core/Core.csproj" />
+    <File Path="BuildingBlocks/Jobs/Jobs.csproj" />
+    <File Path="BuildingBlocks/Mailling/Mailling.csproj" />
+    <File Path="BuildingBlocks/MessageBus/MessageBus.csproj" />
+    <File Path="BuildingBlocks/Persistence/Persistence.csproj" />
+    <File Path="BuildingBlocks/Shared/Shared.csproj" />
+    <File Path="BuildingBlocks/Storage/Storage.csproj" />
+    <File Path="BuildingBlocks/Web/Web.csproj" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>

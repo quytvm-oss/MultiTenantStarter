@@ -24,6 +24,7 @@
       <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
       <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
       <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis" />
+      <PackageReference Include="RabbitMQ.Client" />
       <PackageReference Include="Scalar.AspNetCore" />
       <PackageReference Include="Serilog" />
       <PackageReference Include="Serilog.AspNetCore" />
