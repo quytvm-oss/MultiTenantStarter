@@ -22,6 +22,29 @@ public class TenantProvisioningStep
     public TenantProvisioning? Provisioning { get; private set; }
     
     private TenantProvisioningStep() {}
-    
-    
+
+    public TenantProvisioningStep(Guid provisioningId, TenantProvisioningStepName step)
+    {
+        ProvisioningId = provisioningId;
+        Step = step;
+    }
+
+    public void MarkRunning()
+    {
+        Status = TenantProvisioningStatus.Running;
+        StartedUtc ??= TimeProvider.System.GetUtcNow().UtcDateTime;
+    }
+
+    public void MarkCompleted()
+    {
+        Status = TenantProvisioningStatus.Completed;
+        CompletedUtc ??= TimeProvider.System.GetUtcNow().UtcDateTime;
+    }
+
+    public void MarkFailed(string error)
+    {
+        Status = TenantProvisioningStatus.Failed;
+        CompletedUtc ??= TimeProvider.System.GetUtcNow().UtcDateTime;
+        Error = error;
+    }
 }

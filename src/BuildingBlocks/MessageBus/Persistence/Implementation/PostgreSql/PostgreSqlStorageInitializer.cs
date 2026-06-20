@@ -54,7 +54,6 @@ CREATE SCHEMA IF NOT EXISTS ""{schema}"";
 
 CREATE TABLE IF NOT EXISTS {GetReceivedTableName()}(
 	""Id"" BIGINT PRIMARY KEY NOT NULL,
-    ""Version"" VARCHAR(20) NOT NULL,
 	""Name"" VARCHAR(200) NOT NULL,
 	""Group"" VARCHAR(200) NULL,
 	""Content"" TEXT NULL,
@@ -65,11 +64,10 @@ CREATE TABLE IF NOT EXISTS {GetReceivedTableName()}(
 );
 
 CREATE INDEX IF NOT EXISTS ""idx_received_ExpiresAt_StatusName"" ON {GetReceivedTableName()} (""ExpiresAt"",""StatusName"");
-CREATE INDEX IF NOT EXISTS ""idx_received_Version_ExpiresAt_StatusName"" ON {GetReceivedTableName()} (""Version"",""ExpiresAt"",""StatusName"");
+CREATE INDEX IF NOT EXISTS ""idx_received_Version_ExpiresAt_StatusName"" ON {GetReceivedTableName()} (""ExpiresAt"",""StatusName"");
 
 CREATE TABLE IF NOT EXISTS {GetPublishedTableName()}(
 	""Id"" BIGINT PRIMARY KEY NOT NULL,
-    ""Version"" VARCHAR(20) NOT NULL,
 	""Name"" VARCHAR(200) NOT NULL,
 	""Content"" TEXT NULL,
 	""Retries"" INT NOT NULL,
@@ -79,7 +77,7 @@ CREATE TABLE IF NOT EXISTS {GetPublishedTableName()}(
 );
 
 CREATE INDEX IF NOT EXISTS ""idx_published_ExpiresAt_StatusName"" ON {GetPublishedTableName()}(""ExpiresAt"",""StatusName"");
-CREATE INDEX IF NOT EXISTS ""idx_published_Version_ExpiresAt_StatusName"" ON {GetPublishedTableName()} (""Version"",""ExpiresAt"",""StatusName"");";
+CREATE INDEX IF NOT EXISTS ""idx_published_Version_ExpiresAt_StatusName"" ON {GetPublishedTableName()} (""ExpiresAt"",""StatusName"");";
             batchSql += $@"
 CREATE TABLE IF NOT EXISTS {GetLockTableName()}(
 	""Key"" VARCHAR(128) PRIMARY KEY NOT NULL,

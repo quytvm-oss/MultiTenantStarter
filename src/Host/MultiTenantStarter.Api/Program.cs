@@ -4,7 +4,9 @@ using System.Text.Json.Serialization;
 using Modules.Auditing;
 using Modules.Identity;
 using Modules.Multitenancy;
+using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
+using Modules.Multitenancy.Features.v1.CreateTenant;
 
 using Web;
 using Web.MessageBus;
@@ -50,7 +52,8 @@ builder.Services.AddMediator(o =>
     o.ServiceLifetime = ServiceLifetime.Scoped;
     o.Assemblies =
     [
-        typeof(GetTenantStatusQuery),
+        typeof(CreateTenantCommand),
+        typeof(CreateTenantCommandHandler),
     ];
 });
 

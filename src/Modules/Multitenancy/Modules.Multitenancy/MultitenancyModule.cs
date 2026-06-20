@@ -1,5 +1,7 @@
 using System.Security.Claims;
 
+using Asp.Versioning;
+
 using Core.Exceptions;
 
 using Finbuckle.MultiTenant.Abstractions;
@@ -15,7 +17,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
+using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Data;
+using Modules.Multitenancy.Features.v1.CreateTenant;
+using Modules.Multitenancy.Provisioning;
+using Modules.Multitenancy.Services;
 
 using Shared.Identity;
 using Shared.Multitenancy;
@@ -29,6 +35,17 @@ public class MultitenancyModule : IModule
     public void ConfigureServices(IHostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.AddScoped<ITenantService, TenantService>();
+        builder.Services.AddScoped<ITenantProvisioningStarter, TenantProvisioningService>();
+        builder.Services.AddScoped<ITenantProvisioningReader, TenantProvisioningService>();
+        builder.Services.AddScoped<ITenantProvisioningStateWriter, TenantProvisioningService>();
+        builder.Services.AddTransient<IConnectionStringValidator, ConnectionStringValidator>();
+        builder.Services.AddTransient<TenantProvisioningJob>();
+        
+        // Singleton — the buffer survives the request scope that calls Store(...)
+        // so the background Hangfire-scheduled seed scope can still TryConsume(...).
+        builder.Services.AddSingleton<ITenantInitialPasswordBuffer, TenantInitialPasswordBuffer>();
+        
         builder.Services.AddCustomDbContext<TenantDbContext>();
         
         builder.Services
@@ -165,6 +182,17 @@ public class MultitenancyModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
-       
+        ArgumentNullException.ThrowIfNull(endpoints);
+
+        var versionSet = endpoints.NewApiVersionSet()
+            .HasApiVersion(new ApiVersion(1))
+            .ReportApiVersions()
+            .Build();
+
+        var group = endpoints.MapGroup("api/v{version:apiVersion}/tenants")
+            .WithTags("Tenants")
+            .WithApiVersionSet(versionSet);
+        
+        group.Map();
     }
 }

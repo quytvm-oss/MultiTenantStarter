@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Shared.Storage;
+
 using Storage.Abstractions;
 using Storage.Constant;
 using Storage.Dtos;

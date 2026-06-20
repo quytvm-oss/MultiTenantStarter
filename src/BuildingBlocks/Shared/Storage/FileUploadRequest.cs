@@ -1,4 +1,4 @@
-namespace Storage.Dtos;
+namespace Shared.Storage;
 
 /// <summary>
 /// Upload request carrying a raw stream — lifetime tied to the HTTP request.

@@ -31,8 +31,8 @@ public static class Extensions
                 {
                     rabbit.HostName = "localhost";
                     rabbit.UserName = "guest";
-                    rabbit.Password = "";
-                    rabbit.ExchangeName = "messagebus";
+                    rabbit.Password = "guest";
+                    rabbit.ExchangeName = "multitenant";
                 })
                 .AddConsumerRegistrationsFromAssemblies(assemblies);
         });
