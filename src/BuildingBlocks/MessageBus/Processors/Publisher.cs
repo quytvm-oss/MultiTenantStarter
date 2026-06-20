@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace MessageBus.Processors;
 
-internal sealed class Publisher : IPublisher
+internal sealed class Publisher : IBusPublisher
 {
     private readonly IDispatcher _dispatcher;
     private readonly IDataStorage _storage;

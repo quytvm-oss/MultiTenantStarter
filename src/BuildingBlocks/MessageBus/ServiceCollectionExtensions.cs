@@ -35,7 +35,7 @@ public static class ServiceCollectionExtensions
 
         Snowflake.Configure(1);
         services.TryAddSingleton<SubscriptionMatcherCache>();
-        services.TryAddSingleton<IPublisher, Publisher>();
+        services.TryAddSingleton<IBusPublisher, Publisher>();
         services.TryAddSingleton<IDispatcher, Dispatcher>();
         services.TryAddSingleton<IMessageSender, MessageSender>();
         services.TryAddSingleton<ISubscribeExecutor, SubscribeExecutor>();

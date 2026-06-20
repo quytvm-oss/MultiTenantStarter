@@ -51,9 +51,37 @@ public class TenantService : ITenantService
     public async Task<bool> ExistsWithNameAsync(string name, CancellationToken cancellationToken)
     => (await _tenantStore.GetAllAsync().ConfigureAwait(false)).Any(t => t.Name == name);
 
-    public Task<TenantStatusDto> GetStatusAsync(string id, CancellationToken cancellationToken)
+    public async Task<TenantStatusDto> GetStatusAsync(string id, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var tenant = await GetTenantInfoAsync(id, cancellationToken).ConfigureAwait(false);
+        var graceEnds = tenant.ValidUpTo.AddDays(10);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        string expiryState;
+        if (now <= tenant.ValidUpTo)
+        {
+            expiryState = "Active";
+        }
+        else if (now <= graceEnds)
+        {
+            expiryState = "InGrace";
+        }
+        else
+        {
+            expiryState = "Expired";
+        }
+        return new TenantStatusDto
+        {
+            Id = tenant.Id!,
+            Name = tenant.Name!,
+            IsActive = tenant.IsActive,
+            ValidUpto = tenant.ValidUpTo,
+            HasConnectionString = !string.IsNullOrWhiteSpace(tenant.ConnectionString),
+            AdminEmail = tenant.AdminEmail!,
+            Issuer = tenant.Issuer,
+            Plan = "tenant.Plan",
+            ExpiryState = expiryState,
+            GraceEndsUtc = graceEnds
+        };
     }
 
     public async Task<string> CreateAsync(string id, string name, string? connectionString, string adminEmail, string? issuer, string planKey,
@@ -128,6 +156,10 @@ public class TenantService : ITenantService
     }
 
     #region method internals
+    
+    private async Task<AppTenantInfo> GetTenantInfoAsync(string id, CancellationToken cancellationToken = default) => 
+        await _tenantStore.GetAsync(id).ConfigureAwait(false) ?? 
+        throw new ArgumentException($"Tenant with id {id} not found.", nameof(id));
 
     private async Task RefreshTenantCacheAsync(AppTenantInfo tenant)
     {

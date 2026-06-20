@@ -1,13 +1,13 @@
 using Mediator;
 
+using MessageBus;
+
 using Modules.Multitenancy.Contracts.Events;
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Provisioning;
 
 using Shared.Multitenancy;
-
-using IPublisher = MessageBus.IPublisher;
 
 namespace Modules.Multitenancy.Features.v1.CreateTenant;
 
@@ -17,7 +17,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
     private readonly ITenantProvisioningStarter provisioningService;
     private readonly ITenantInitialPasswordBuffer passwordBuffer;
     private readonly IMediator mediator;
-    private readonly IPublisher _bus;
+    private readonly IBusPublisher _bus;
 
     private readonly TimeProvider timeProvider;
 
@@ -25,7 +25,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         ITenantProvisioningStarter provisioningService, 
         ITenantInitialPasswordBuffer passwordBuffer, 
         IMediator mediator,
-        IPublisher events, 
+        IBusPublisher events, 
         TimeProvider timeProvider)
     {
         _tenantService = tenantService;

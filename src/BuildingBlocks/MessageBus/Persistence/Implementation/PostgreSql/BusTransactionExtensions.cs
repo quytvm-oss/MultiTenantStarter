@@ -49,14 +49,14 @@ public static class BusTransactionExtensions
     // }
     
      public static IBusTransaction BeginTransaction(this IDbConnection dbConnection,
-        IPublisher publisher, bool autoCommit = false)
+         IBusPublisher publisher, bool autoCommit = false)
     {
         return BeginTransaction(dbConnection, IsolationLevel.Unspecified, publisher, autoCommit);
     }
 
    
     public static IBusTransaction BeginTransaction(this IDbConnection dbConnection,
-        IsolationLevel isolationLevel, IPublisher publisher, bool autoCommit = false)
+        IsolationLevel isolationLevel, IBusPublisher publisher, bool autoCommit = false)
     {
         if (dbConnection.State == ConnectionState.Closed) dbConnection.Open();
         var dbTransaction = dbConnection.BeginTransaction(isolationLevel);
@@ -70,14 +70,14 @@ public static class BusTransactionExtensions
 
     
     public static ValueTask<IBusTransaction> BeginTransactionAsync(this IDbConnection dbConnection,
-        IPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
+        IBusPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
     {
         return BeginTransactionAsync(dbConnection, IsolationLevel.Unspecified, publisher, autoCommit, cancellationToken);
     }
 
     
     public static ValueTask<IBusTransaction> BeginTransactionAsync(this IDbConnection dbConnection,
-        IsolationLevel isolationLevel, IPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
+        IsolationLevel isolationLevel, IBusPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
     {
         if (dbConnection.State == ConnectionState.Closed) ((DbConnection)dbConnection).OpenAsync(cancellationToken).GetAwaiter().GetResult();
         var dbTransaction = ((DbConnection)dbConnection).BeginTransactionAsync(isolationLevel, cancellationToken).AsTask().GetAwaiter().GetResult();
@@ -91,14 +91,14 @@ public static class BusTransactionExtensions
 
     
     public static IDbContextTransaction BeginTransaction(this DatabaseFacade database,
-        IPublisher publisher, bool autoCommit = false)
+        IBusPublisher publisher, bool autoCommit = false)
     {
         return BeginTransaction(database, IsolationLevel.Unspecified, publisher, autoCommit);
     }
 
    
     public static IDbContextTransaction BeginTransaction(this DatabaseFacade database,
-        IsolationLevel isolationLevel, IPublisher publisher, bool autoCommit = false)
+        IsolationLevel isolationLevel, IBusPublisher publisher, bool autoCommit = false)
     {
         var trans = database.BeginTransaction(isolationLevel);
         publisher.Transaction = ActivatorUtilities.CreateInstance<PostgreSqlTransaction>(publisher.ServiceProvider);
@@ -109,13 +109,13 @@ public static class BusTransactionExtensions
 
     
     public static Task<IDbContextTransaction> BeginTransactionAsync(this DatabaseFacade database,
-        IPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
+        IBusPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
     {
         return BeginTransactionAsync(database, IsolationLevel.Unspecified, publisher, autoCommit, cancellationToken);
     }
     
     public static Task<IDbContextTransaction> BeginTransactionAsync(this DatabaseFacade database,
-        IsolationLevel isolationLevel, IPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
+        IsolationLevel isolationLevel, IBusPublisher publisher, bool autoCommit = false, CancellationToken cancellationToken = default)
     {
         var trans = database.BeginTransactionAsync(isolationLevel, cancellationToken).GetAwaiter().GetResult();
         publisher.Transaction = ActivatorUtilities.CreateInstance<PostgreSqlTransaction>(publisher.ServiceProvider);

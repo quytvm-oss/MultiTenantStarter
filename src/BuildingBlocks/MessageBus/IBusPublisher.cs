@@ -3,7 +3,7 @@ using MessageBus.Persistence;
 
 namespace MessageBus;
 
-public interface IPublisher
+public interface IBusPublisher
 {
     IServiceProvider ServiceProvider { get; }
 
