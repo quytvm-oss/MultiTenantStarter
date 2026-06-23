@@ -1,14 +1,12 @@
 using Modules.Multitenancy.Contracts.Dtos;
-using Modules.Multitenancy.Contracts.v1.GetTenants;
 
 using Shared.Multitenancy;
-using Shared.Persistence;
 
 namespace Modules.Multitenancy.Contracts.v1;
 
 public interface ITenantService
 {
-    Task<PagedResponse<TenantDto>> GetAllAsync(GetTenantsQuery query, CancellationToken cancellationToken);
+    //Task<PagedResponse<TenantDto>> GetAllAsync(GetTenantsQuery query, CancellationToken cancellationToken);
     
     Task<bool> ExistsWithIdAsync(string id, CancellationToken cancellationToken);
     

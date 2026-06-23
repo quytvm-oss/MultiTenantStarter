@@ -20,6 +20,7 @@ using Microsoft.Extensions.Hosting;
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Data;
 using Modules.Multitenancy.Features.v1.CreateTenant;
+using Modules.Multitenancy.Features.v1.GetTenants;
 using Modules.Multitenancy.Features.v1.GetTenantStatus;
 using Modules.Multitenancy.Provisioning;
 using Modules.Multitenancy.Services;
@@ -196,5 +197,6 @@ public class MultitenancyModule : IModule
         
         CreateTenantEndpoint.Map(group);
         GetTenantStatusEndpoint.Map(group);
+        GetTenantsEndpoint.Map(group);
     }
 }

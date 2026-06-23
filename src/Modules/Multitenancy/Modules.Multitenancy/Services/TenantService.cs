@@ -1,6 +1,9 @@
+using System.Linq.Expressions;
+
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.Stores;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,6 +14,7 @@ using Modules.Multitenancy.Contracts.v1.GetTenants;
 using Modules.Multitenancy.Data;
 
 using Persistence;
+using Persistence.Pagination;
 
 using Shared.Multitenancy;
 using Shared.Persistence;
@@ -40,10 +44,29 @@ public class TenantService : ITenantService
         _logger = logger;
     }
 
-    public Task<PagedResponse<TenantDto>> GetAllAsync(GetTenantsQuery query, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
+    // public async Task<PagedResponse<TenantDto>> GetAllAsync(GetTenantsQuery query, CancellationToken cancellationToken)
+    // {
+    //     ArgumentNullException.ThrowIfNull(query);
+    //
+    //     IQueryable<TenantDto> tenants = _tenantDbContext.TenantInfo
+    //         .AsNoTracking()
+    //         .Select(x => new TenantDto()
+    //         {
+    //             Id = x.Id!,
+    //             Name = x.Name,
+    //             ConnectionString = x.ConnectionString,
+    //             AdminEmail = x.AdminEmail,
+    //             IsActive = x.IsActive,
+    //             ValidToUp = x.ValidUpTo,
+    //             Issuer = x.Issuer
+    //         });
+    //     
+    //     tenants = ApplySorting(tenants, query.Sort);
+    //     
+    //     
+    //     return await tenants.ToPagedResponseAsync(query, cancellationToken)
+    //         .ConfigureAwait(false);
+    // }
 
     public async Task<bool> ExistsWithIdAsync(string id, CancellationToken cancellationToken)
      => await _tenantStore.GetAsync(id).ConfigureAwait(false) is not null;

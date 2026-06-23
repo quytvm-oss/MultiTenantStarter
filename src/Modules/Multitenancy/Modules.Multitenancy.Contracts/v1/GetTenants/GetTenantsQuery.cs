@@ -11,7 +11,7 @@ public sealed class GetTenantsQuery : IPagedQuery, IQuery<PagedResponse<TenantDt
     public int? PageNumber { get; set; }
     public int? PageSize { get; set; }
     
-    public bool Descending { get; init; }
+    //public bool Descending { get; init; } = true;
     
     public string? Sort { get; set; }
 }

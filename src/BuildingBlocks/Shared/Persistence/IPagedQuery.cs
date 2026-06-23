@@ -6,7 +6,7 @@ public interface IPagedQuery
     
     int? PageSize { get; set; }
     
-    bool Descending { get; init; }
+    //bool Descending { get; init; }
     
     string? Sort { get; set; }
 }
