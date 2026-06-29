@@ -18,4 +18,18 @@
       <ProjectReference Include="..\Modules.Identity.Contracts\Modules.Identity.Contracts.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Authorization\" />
+      <Folder Include="Caching\" />
+      <Folder Include="Domain\Events\" />
+      <Folder Include="Events\" />
+      <Folder Include="Features\" />
+      <Folder Include="Services\Interfaces\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Finbuckle.MultiTenant.Identity.EntityFrameworkCore" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    </ItemGroup>
+
 </Project>

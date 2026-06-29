@@ -19,7 +19,9 @@ using Microsoft.Extensions.Hosting;
 
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Data;
+using Modules.Multitenancy.Features.v1.AdjustTenantValidity;
 using Modules.Multitenancy.Features.v1.CreateTenant;
+using Modules.Multitenancy.Features.v1.GetTenantMigrations;
 using Modules.Multitenancy.Features.v1.GetTenants;
 using Modules.Multitenancy.Features.v1.GetTenantStatus;
 using Modules.Multitenancy.Provisioning;
@@ -73,6 +75,7 @@ public class MultitenancyModule : IModule
             // anonymous at resolution. Tenant stays header-driven; root override is post-auth middleware below.
             .WithClaimStrategy(ClaimConstants.Tenant)
             .WithHeaderStrategy(MultitenancyConstants.Identifier)
+            .WithHostStrategy()
             .WithDelegateStrategy(async context =>
             {
                 if (context is not HttpContext httpContext) return null;
@@ -198,5 +201,7 @@ public class MultitenancyModule : IModule
         CreateTenantEndpoint.Map(group);
         GetTenantStatusEndpoint.Map(group);
         GetTenantsEndpoint.Map(group);
+        AdjustTenantValidityEndpoint.Map(group);
+        TenantMigrationsEndpoint.Map(group);
     }
 }

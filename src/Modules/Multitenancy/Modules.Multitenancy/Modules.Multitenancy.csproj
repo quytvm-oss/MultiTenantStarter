@@ -23,4 +23,8 @@
       <PackageReference Include="Mediator.Abstractions" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\v1\RenewTenant\" />
+    </ItemGroup>
+
 </Project>

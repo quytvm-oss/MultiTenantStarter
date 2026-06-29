@@ -98,7 +98,6 @@ public class ObservableHybridCache : HybridCache
         CachingTelemetry.Invalidations.Add(1);
         
         return _inner.RemoveAsync(key, cancellationToken);
-        throw new NotImplementedException();
     }
     
     public override ValueTask RemoveAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)

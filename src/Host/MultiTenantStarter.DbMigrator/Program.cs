@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Modules.Auditing;
 using Modules.Identity;
+using Modules.Identity.Data;
 using Modules.Multitenancy;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using Modules.Multitenancy.Data;
@@ -74,6 +75,13 @@ try
     Console.WriteLine("[tenant-catalog] applying migrations...");
     await db.Database.MigrateAsync();
     Console.WriteLine("[tenant-catalog] done");
+    
+    // Identity
+    var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
+    Console.WriteLine("[identity] applying migrations...");
+    await identityDb.Database.MigrateAsync();
+    Console.WriteLine("[identity] done");
 
     return 0;
 }

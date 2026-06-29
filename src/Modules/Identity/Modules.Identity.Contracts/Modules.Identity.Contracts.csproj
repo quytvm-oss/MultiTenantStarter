@@ -10,4 +10,8 @@
       <PackageReference Include="Mediator.Abstractions" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Authorization\" />
+    </ItemGroup>
+
 </Project>

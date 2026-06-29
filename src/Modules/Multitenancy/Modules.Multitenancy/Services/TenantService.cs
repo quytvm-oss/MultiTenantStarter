@@ -147,9 +147,26 @@ public class TenantService : ITenantService
         throw new NotImplementedException();
     }
 
-    public Task<DateTime> AdjustValidityAsync(string id, DateTime validUpto, CancellationToken cancellationToken = default)
+    public async Task<DateTime> AdjustValidityAsync(string id, DateTime validUpto, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var tenant = await GetTenantInfoAsync(id, cancellationToken).ConfigureAwait(false);
+        
+        // Set directly rather than via SetValidity: this operator override is allowed to move the date
+        // backward (e.g. immediate expiry / correcting a mistake), which SetValidity forbids.
+        var normalized = DateTime.SpecifyKind(validUpto, DateTimeKind.Utc);
+        var previous = tenant.ValidUpTo;
+        tenant.ValidUpTo = normalized;
+        
+        await _tenantStore.UpdateAsync(tenant).ConfigureAwait(false);
+        await RefreshTenantCacheAsync(tenant).ConfigureAwait(false);
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation(
+                "[Multitenancy] operator adjusted tenant {TenantId} validity from {Previous:o} to {ValidUpto:o}",
+                id, previous, normalized);
+        }
+        
+        return normalized;
     }
 
     public async Task MigrateTenantAsync(AppTenantInfo tenantInfo, CancellationToken cancellationToken)
