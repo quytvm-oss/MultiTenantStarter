@@ -31,4 +31,18 @@ public class Group : IAuditableEntity, ISoftDeletable
     public virtual ICollection<GroupRole> GroupRoles { get; private set; } = [];
     
     private Group() {}
+
+    public static Group Create(string name, string? description = null, bool isDefault = false, bool isSystemGroup = false, string? createdBy = null)
+    {
+        return new Group()
+        {
+            Id = Guid.CreateVersion7(),
+            Name = name,
+            Description = description,
+            IsDefault = isDefault,
+            IsSystemGroup = isSystemGroup,
+            CreatedOnUtc = TimeProvider.System.GetUtcNow(),
+            CreatedBy = createdBy
+        };
+    }
 }

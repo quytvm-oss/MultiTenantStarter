@@ -1,20 +1,15 @@
-using System.Linq.Expressions;
-
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.Stores;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Modules.Multitenancy.Contracts.Dtos;
 using Modules.Multitenancy.Contracts.v1;
-using Modules.Multitenancy.Contracts.v1.GetTenants;
 using Modules.Multitenancy.Data;
 
 using Persistence;
-using Persistence.Pagination;
 
 using Shared.Multitenancy;
 using Shared.Persistence;
@@ -107,21 +102,21 @@ public class TenantService : ITenantService
         };
     }
 
-    public async Task<string> CreateAsync(string id, string name, string? connectionString, string adminEmail, string? issuer, string planKey,
-        DateTime validUpto, CancellationToken cancellationToken)
+    public async Task<string> CreateAsync(string id,
+        string name,
+        string? connectionString,
+        string adminEmail, string? issuer, string planKey, DateTime validUpto, CancellationToken cancellationToken)
     {
         if (connectionString?.Trim() == _options.ConnectionString.Trim())
         {
             connectionString = string.Empty;
         }
 
-        AppTenantInfo tenant = new AppTenantInfo()
+        AppTenantInfo tenant = new(id, name, connectionString, adminEmail, issuer)
         {
-            Name = name,
-            Id = id,
-            ConnectionString = connectionString,
-            AdminEmail = adminEmail,
-            Issuer = issuer,
+           //Plan = planKey,
+            // Set ValidUpto directly to the plan term: SetValidity() forbids moving the date backward, and
+            // the ctor seeds now+1mo, so it would reject a term computed from an earlier 'now'.
             ValidUpTo = DateTime.SpecifyKind(validUpto, DateTimeKind.Utc),
         };
         

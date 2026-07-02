@@ -19,12 +19,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Authorization\" />
-      <Folder Include="Caching\" />
       <Folder Include="Domain\Events\" />
       <Folder Include="Events\" />
       <Folder Include="Features\" />
-      <Folder Include="Services\Interfaces\" />
     </ItemGroup>
 
     <ItemGroup>

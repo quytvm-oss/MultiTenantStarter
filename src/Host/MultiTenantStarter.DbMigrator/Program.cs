@@ -1,3 +1,5 @@
+using Jobs.Services;
+
 using Microsoft.EntityFrameworkCore;
 
 using Modules.Auditing;
@@ -6,6 +8,8 @@ using Modules.Identity.Data;
 using Modules.Multitenancy;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using Modules.Multitenancy.Data;
+
+using MultiTenantStarter.DbMigrator;
 
 using Web;
 using Web.Modules;
@@ -61,6 +65,10 @@ builder.AddModules([
     typeof(IdentityModule).Assembly,
     typeof(AuditingModule).Assembly
 ]);
+
+// TenantProvisioningService needs IJobService, but Hangfire's is gated behind EnableJobs (off here).
+// Provide a throwing no-op so the DI graph resolves; the migration code paths don't enqueue jobs.
+builder.Services.AddSingleton<IJobService, NoOpJobService>();
 
 using var host = builder.Build();
 

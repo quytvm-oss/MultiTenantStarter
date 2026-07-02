@@ -39,9 +39,6 @@ public class HangfireStaleLockCleanupService : BackgroundService
             await CleanupAsync(dbOptions.ConnectionString, TimeSpan.FromSeconds(hangfireOptions.IntervalThreshold),stoppingToken).ConfigureAwait(false);
         }
         while (await timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false));
-        
-        
-        throw new NotImplementedException();
     }
 
     private async Task CleanupAsync(string connectionString,TimeSpan staleThreshold, CancellationToken ct)

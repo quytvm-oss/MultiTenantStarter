@@ -35,7 +35,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(x => x.LastModifiedOnUtc).HasColumnName("ModifiedAt");
         
         // Indexes
-        builder.HasIndex(x => x.Name).IsUnique();
+        builder.HasIndex(x => x.Name);
         builder.HasIndex(x => x.IsDeleted);
         builder.HasIndex(x => x.IsDefault);
     }

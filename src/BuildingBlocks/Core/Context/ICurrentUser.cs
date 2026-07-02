@@ -10,7 +10,7 @@ public interface ICurrentUser
     /// <summary>
     /// Gets or sets the name of the current user.
     /// </summary>
-    string? Name { get; set; }
+    string? Name { get; }
 
     /// <summary>
     /// Retrieves the unique identifier of the current user.

@@ -26,4 +26,8 @@
       <ProjectReference Include="..\..\Modules\Multitenancy\Modules.Multitenancy\Modules.Multitenancy.csproj" />
       <ProjectReference Include="..\MultiTenantStarter.Migrations.PostgreSQL\MultiTenantStarter.Migrations.PostgreSQL.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="DemoSeed\" />
+    </ItemGroup>
 </Project>
