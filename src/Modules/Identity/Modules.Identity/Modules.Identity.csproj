@@ -19,8 +19,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Domain\Events\" />
-      <Folder Include="Events\" />
       <Folder Include="Features\" />
     </ItemGroup>
 

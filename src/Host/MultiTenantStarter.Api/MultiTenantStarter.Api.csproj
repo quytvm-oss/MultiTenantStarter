@@ -27,6 +27,8 @@
       <ProjectReference Include="..\..\Modules\Identity\Modules.Identity\Modules.Identity.csproj" />
       <ProjectReference Include="..\..\Modules\Multitenancy\Modules.Multitenancy.Contracts\Modules.Multitenancy.Contracts.csproj" />
       <ProjectReference Include="..\..\Modules\Multitenancy\Modules.Multitenancy\Modules.Multitenancy.csproj" />
+      <ProjectReference Include="..\..\Modules\Notifications\Modules.Notifications.Contracts\Modules.Notifications.Contracts.csproj" />
+      <ProjectReference Include="..\..\Modules\Notifications\Modules.Notifications\Modules.Notifications.csproj" />
       <ProjectReference Include="..\MultiTenantStarter.Migrations.PostgreSQL\MultiTenantStarter.Migrations.PostgreSQL.csproj" />
     </ItemGroup>
 

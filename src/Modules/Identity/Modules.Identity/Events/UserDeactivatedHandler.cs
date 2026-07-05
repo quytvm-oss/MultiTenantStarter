@@ -1,0 +1,28 @@
+using Mediator;
+
+using Microsoft.Extensions.Logging;
+
+using Modules.Identity.Domain.Events;
+
+namespace Modules.Identity.Events;
+
+public sealed class UserDeactivatedHandler(
+    ILogger<UserDeactivatedHandler> logger)
+    : INotificationHandler<UserDeactivatedEvent>
+{
+    public ValueTask Handle(UserDeactivatedEvent notification, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(notification);
+
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogInformation(
+                "User {UserId} deactivated by {DeactivatedBy}: {Reason}",
+                notification.UserId,
+                notification.DeactivatedBy,
+                notification.Reason);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+}

@@ -9,6 +9,7 @@ using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using Modules.Multitenancy.Features.v1.CreateTenant;
 using Modules.Multitenancy.Features.v1.GetTenantStatus;
+using Modules.Notifications;
 
 using Web;
 using Web.MessageBus;
@@ -64,6 +65,7 @@ var moduleAssemblies = new Assembly[]
     typeof(IdentityModule).Assembly,
     typeof(MultitenancyModule).Assembly,
     typeof(AuditingModule).Assembly,
+    typeof(NotificationsModule).Assembly
 };
 
 builder.AddPlatform(o =>

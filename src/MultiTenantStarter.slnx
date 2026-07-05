@@ -32,6 +32,10 @@
     <Project Path="Modules/Multitenancy/Modules.Multitenancy.Contracts/Modules.Multitenancy.Contracts.csproj" />
     <Project Path="Modules/Multitenancy/Modules.Multitenancy/Modules.Multitenancy.csproj" />
   </Folder>
+  <Folder Name="/Modules/Notifications/">
+    <Project Path="Modules/Notifications/Modules.Notifications.Contracts/Modules.Notifications.Contracts.csproj" />
+    <Project Path="Modules/Notifications/Modules.Notifications/Modules.Notifications.csproj" />
+  </Folder>
   <Folder Name="/SolutionItems/">
     <File Path="../.gitignore" />
     <File Path=".editorconfig" />

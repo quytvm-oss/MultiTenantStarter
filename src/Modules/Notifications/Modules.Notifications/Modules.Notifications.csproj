@@ -7,15 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\BuildingBlocks\Mailling\Mailling.csproj" />
       <ProjectReference Include="..\..\..\BuildingBlocks\Persistence\Persistence.csproj" />
       <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />
-      <ProjectReference Include="..\..\Identity\Modules.Identity.Contracts\Modules.Identity.Contracts.csproj" />
-      <ProjectReference Include="..\Modules.Auditing.Contracts\Modules.Auditing.Contracts.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Features\" />
-      <Folder Include="Infrastructure\" />
+      <ProjectReference Include="..\Modules.Notifications.Contracts\Modules.Notifications.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

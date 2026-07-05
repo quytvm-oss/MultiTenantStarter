@@ -2,6 +2,8 @@ using Core.Domain;
 
 using Microsoft.AspNetCore.Identity;
 
+using Modules.Identity.Domain.Events;
+
 namespace Modules.Identity.Domain;
 
 public class User : IdentityUser, IHasDomainEvents
@@ -30,5 +32,26 @@ public class User : IdentityUser, IHasDomainEvents
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
     public void ClearDomainEvents() => _domainEvents.Clear();
     
-    public void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+    private void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+
+    public void Activate(string? activityBy = null, string? tenantId = null)
+    {
+        if (IsActive) return;
+        IsActive = true;
+        AddDomainEvent(UserActivatedEvent.Create(
+            userId: Id, 
+            activatedBy: activityBy,
+            tenantId: tenantId));
+    }
+
+    public void Deactivate(string? deactivatedBy = null, string? reason = null, string? tenantId = null)
+    {
+        if (!IsActive) return;
+        IsActive = false;
+        AddDomainEvent(UserDeactivatedEvent.Create(
+            userId: Id,
+            deactivatedBy: deactivatedBy,
+            reason: reason,
+            tenantId: tenantId));
+    }
 }

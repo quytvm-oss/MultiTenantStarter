@@ -13,6 +13,7 @@ using Modules.Multitenancy;
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using Modules.Multitenancy.Data;
+using Modules.Notifications;
 
 using MultiTenantStarter.DbMigrator;
 using MultiTenantStarter.DbMigrator.DemoSeed;
@@ -90,6 +91,7 @@ var moduleAssemblies = new Assembly[]
     typeof(IdentityModule).Assembly,
     typeof(MultitenancyModule).Assembly,
     typeof(AuditingModule).Assembly,
+    typeof(NotificationsModule).Assembly
 };
 
 // chỉ add platform phần cần thiết
