@@ -14,4 +14,12 @@ public class PasswordHistory
     public virtual User User { get; init; }
     
     private PasswordHistory() {}
+
+    public static PasswordHistory Create(string userId, string passwordHash)
+    {
+        return new PasswordHistory()
+        {
+            UserId = userId, PasswordHash = passwordHash, CreatedAt = TimeProvider.System.GetUtcNow().UtcDateTime
+        };
+    }
 }

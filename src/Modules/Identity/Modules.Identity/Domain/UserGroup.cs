@@ -16,5 +16,17 @@ public class UserGroup
     public virtual Group? Group { get; init; }
     
     private UserGroup() { } // EF Core
+
+
+    public static UserGroup Create(string userId, Guid groupId, string? addedBy = null)
+    {
+        return new UserGroup()
+        {
+            UserId = userId,
+            GroupId = groupId,
+            AddedBy = addedBy,
+            AddedAt = TimeProvider.System.GetUtcNow().UtcDateTime
+        };
+    }
     
 }

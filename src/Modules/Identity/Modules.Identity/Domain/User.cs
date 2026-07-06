@@ -54,4 +54,26 @@ public class User : IdentityUser, IHasDomainEvents
             reason: reason,
             tenantId: tenantId));
     }
+    
+    /// <summary>Records UserRegisteredEvent. Call after user creation.</summary>
+    public void RecordRegistered(string? tenantId = null, string? source = null)
+    {
+        AddDomainEvent(UserRegisteredEvent.Create(
+            userId: Id,
+            email: Email ?? string.Empty,
+            source: source,
+            firstName: FirstName,
+            lastName: LastName,
+            tenantId: tenantId));
+    }
+    
+    /// <summary>Records UserRegisteredEvent. Call after user creation.</summary>
+    public void RequestEmailConfirmation(string? tenantId, string origin)
+    {
+        AddDomainEvent(EmailConfirmationRequestedEvent.Create(
+            userId: Id,
+            email: Email ?? string.Empty,
+            origin: origin,
+            tenantId: tenantId!));
+    }
 }

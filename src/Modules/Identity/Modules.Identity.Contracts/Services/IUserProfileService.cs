@@ -12,7 +12,7 @@ public interface IUserProfileService
     
     Task<int> GetCountAsync(CancellationToken ct = default);
 
-    Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, BufferedUploadRequest image,
+    Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, StreamUploadRequest image,
         bool deleteCurrentImage, CancellationToken ct = default);
     
     Task SetImageUrlAsync(string userId, string? imageUrl, CancellationToken ct = default);

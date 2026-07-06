@@ -13,4 +13,9 @@
       <ProjectReference Include="..\Modules.Notifications.Contracts\Modules.Notifications.Contracts.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Data\" />
+      <Folder Include="Features\" />
+    </ItemGroup>
+
 </Project>
