@@ -11,8 +11,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="DTOs\" />
       <Folder Include="v1\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\BuildingBlocks\Shared\Shared.csproj" />
     </ItemGroup>
 
 </Project>
