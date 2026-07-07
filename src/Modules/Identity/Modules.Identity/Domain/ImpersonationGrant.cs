@@ -45,4 +45,55 @@ public class ImpersonationGrant : IGlobalEntity
     public string? UserAgent { get; private set; }
     
     private ImpersonationGrant() {}
+    
+    public static ImpersonationGrant Create(
+        Guid id,
+        string jti,
+        string actorUserId,
+        string? actorUserName,
+        string actorTenantId,
+        string impersonatedUserId,
+        string? impersonatedUserName,
+        string impersonatedTenantId,
+        string reason,
+        DateTime startedAtUtc,
+        DateTime expiresAtUtc,
+        string? clientId = null,
+        string? ipAddress = null,
+        string? userAgent = null)
+    {
+        return new ImpersonationGrant
+        {
+            Id = id,
+            Jit = jti,
+            ActorUserId = actorUserId,
+            ActorUserName = actorUserName,
+            ActorTenantId = actorTenantId,
+            ImpersonatedUserId = impersonatedUserId,
+            ImpersonatedUserName = impersonatedUserName,
+            ImpersonatedTenantId = impersonatedTenantId,
+            Reason = reason,
+            StartedAtUtc = startedAtUtc,
+            ExpiresAtUtc = expiresAtUtc,
+            ClientId = clientId,
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+        };
+    }
+    
+    public void MarkEnded(DateTime endedAtUtc)
+    {
+        if (IsTerminal) return;
+        EndedAtUtc = endedAtUtc;
+    }
+    
+    public void Revoke(DateTime revokedAtUtc, string revokedByUserId, string? revokedByUserName, string? reason)
+    {
+        if (IsTerminal) return;
+        RevokedAtUtc = revokedAtUtc;
+        RevokedByUserId = revokedByUserId;
+        RevokedByUserName = revokedByUserName;
+        RevokeReason = reason;
+    }
+    public bool IsTerminal => EndedAtUtc.HasValue || RevokedAtUtc.HasValue;
 }

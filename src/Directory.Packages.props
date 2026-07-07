@@ -74,5 +74,6 @@
     <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.2.1-nblumhardt-02317" />
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
     <PackageVersion Include="StackExchange.Redis" Version="3.0.47-preview" />
+    <PackageVersion Include="UAParser" Version="3.1.47" />
   </ItemGroup>
 </Project>

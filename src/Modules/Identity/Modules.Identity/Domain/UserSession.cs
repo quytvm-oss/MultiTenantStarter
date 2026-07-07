@@ -48,4 +48,55 @@ public class UserSession : IHasDomainEvents
     public void ClearDomainEvents() => _domainEvents.Clear();
     
     public void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+
+    public static UserSession Create(
+        string userId,
+        string refreshTokenHash,
+        string ipAddress,
+        string userAgent,
+        DateTime expiresAt,
+        string? deviceType = null,
+        string? browser = null,
+        string? browserVersion = null,
+        string? operatingSystem = null,
+        string? osVersion = null)
+    {
+        return new UserSession()
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = userId,
+            RefreshTokenHash = refreshTokenHash,
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            DeviceType = deviceType,
+            Browser = browser,
+            BrowserVersion = browserVersion,
+            OperatingSystem = operatingSystem,
+            OsVersion = osVersion,
+            CreatedAt = TimeProvider.System.GetUtcNow().UtcDateTime,
+            LastActivityAt = TimeProvider.System.GetUtcNow().UtcDateTime,
+            ExpiresAt = expiresAt
+        };
+    }
+    
+    public void UpdateActivity()
+    {
+        LastActivityAt = TimeProvider.System.GetUtcNow().UtcDateTime;
+    }
+    
+    public void UpdateRefreshToken(string refreshTokenHash, DateTime expiresAt)
+    {
+        RefreshTokenHash = refreshTokenHash;
+        ExpiresAt = expiresAt;
+        LastActivityAt = TimeProvider.System.GetUtcNow().UtcDateTime;
+    }
+
+    public void Revoke(string? revokedBy = null, string? reason = null, string? tenantId = null)
+    {
+        if (IsRevoked) return;
+        IsRevoked = true;
+        RevokedAt = TimeProvider.System.GetUtcNow().UtcDateTime;
+        RevokedBy = revokedBy;
+        RevokedReason = reason;
+    }
 }
