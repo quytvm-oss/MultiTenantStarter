@@ -12,20 +12,13 @@ using Shared.Persistence;
 
 namespace Persistence.Context;
 
-public class EfBaseDbContext : MultiTenantDbContext
+public class EfBaseDbContext(IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
+    DbContextOptions options,
+    IOptions<DatabaseOptions> settings,
+    IHostEnvironment environment)
+    : MultiTenantDbContext(multiTenantContextAccessor, options)
 {
-    private readonly DatabaseOptions _settings;
-    private readonly IMultiTenantContextAccessor<AppTenantInfo> _multiTenantContextAccessor;
-    private readonly IHostEnvironment _environment;
-
-    public EfBaseDbContext(IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
-        DbContextOptions options, IOptions<DatabaseOptions> settings,
-        IHostEnvironment environment) : base(multiTenantContextAccessor, options)
-    {
-        _multiTenantContextAccessor = multiTenantContextAccessor;
-        _settings = settings.Value;
-        _environment = environment;
-    }
+    private readonly DatabaseOptions _settings = settings.Value;
 
     /// <summary>
     /// Configures the model and its relationships by applying global filters, tenant isolation,
@@ -34,7 +27,7 @@ public class EfBaseDbContext : MultiTenantDbContext
     /// <param name="modelBuilder">The <see cref="ModelBuilder"/> instance used to define the model
     /// configuration for the database context.</param>
     /// <exception cref="ArgumentNullException">Thrown when the <paramref name="modelBuilder"/> argument is null.</exception>
-    protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
         modelBuilder.AppendGlobalQueryFilter<ISoftDeletable>(QueryFilters.SoftDelete, s => !s.IsDeleted);
@@ -53,13 +46,13 @@ public class EfBaseDbContext : MultiTenantDbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
-        if (!string.IsNullOrWhiteSpace(_multiTenantContextAccessor?.MultiTenantContext.TenantInfo?.ConnectionString))
+        if (!string.IsNullOrWhiteSpace(multiTenantContextAccessor?.MultiTenantContext.TenantInfo?.ConnectionString))
         {
             optionsBuilder.ConfigureCustomDatabase(
                 _settings.Provider,
-                _multiTenantContextAccessor.MultiTenantContext.TenantInfo.ConnectionString,
+                multiTenantContextAccessor.MultiTenantContext.TenantInfo.ConnectionString,
                 _settings.MigrationsAssembly,
-                _environment.IsDevelopment());
+                environment.IsDevelopment());
         }
         
         //base.OnConfiguring(optionsBuilder);

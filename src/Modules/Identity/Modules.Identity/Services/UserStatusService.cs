@@ -12,16 +12,17 @@ using Modules.Identity.Contracts.Services;
 using Modules.Identity.Domain;
 
 using Shared.Identity;
+using Shared.Multitenancy;
 
 namespace Modules.Identity.Services;
 
 public sealed class UserStatusService : IUserStatusService
 {
     private readonly UserManager<User> _userManager;
-    private readonly IMultiTenantContextAccessor<TenantInfo> _tenantContextAccessor;
+    private readonly IMultiTenantContextAccessor<AppTenantInfo> _tenantContextAccessor;
     private readonly ICurrentUser _currentUser;
 
-    public UserStatusService(UserManager<User> userManager, IMultiTenantContextAccessor<TenantInfo> tenantContextAccessor, ICurrentUser currentUser)
+    public UserStatusService(UserManager<User> userManager, IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor, ICurrentUser currentUser)
     {
         _userManager = userManager;
         _tenantContextAccessor = tenantContextAccessor;

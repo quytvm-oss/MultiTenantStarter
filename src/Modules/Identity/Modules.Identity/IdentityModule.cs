@@ -15,6 +15,8 @@ using Modules.Identity.Services;
 
 using Persistence;
 
+using Storage;
+
 using Web.Modules;
 
 namespace Modules.Identity;
@@ -32,21 +34,43 @@ public class IdentityModule : IModule
         services.AddScoped<IRequestContext>(sp => sp.GetRequiredService<IRequestContextService>());
         
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IImpersonationGrantService, ImpersonationGrantService>();
         
         // User services - focused single-responsibility services
+        services.AddTransient<IUserRegistrationService, UserRegistrationService>();
+        services.AddTransient<IUserProfileService, UserProfileService>();
+        services.AddTransient<IUserStatusService, UserStatusService>();
+        services.AddTransient<IUserRoleService, UserRoleService>();
+        services.AddTransient<IUserPasswordService, UserPasswordService>();
         services.AddTransient<IUserPermissionService, UserPermissionService>();
         
         // Facade for backward compatibility
         services.AddTransient<IUserService, UserService>();
         
+        services.AddTransient<IRoleService, RoleService>();
         services.AddCustomDbContext<IdentityDbContext>();
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddHeroStorage(builder.Configuration);
         services.AddHealthChecks()
             .AddDbContextCheck<IdentityDbContext>(
                 name: "db:identity",
                 failureStatus: HealthStatus.Unhealthy);
         services.AddScoped<IDbInitializer, IdentityDbInitializer>();
 
+        // Configure password policy options
         services.Configure<PasswordPolicyOptions>(builder.Configuration.GetSection("PasswordPolicy"));
+
+        // Register password history service
+        services.AddScoped<IPasswordHistoryService, PasswordHistoryService>();
+
+        // Register password expiry service
+        services.AddScoped<IPasswordExpiryService, PasswordExpiryService>();
+
+        // Register session service and background cleanup
+        services.AddScoped<ISessionService, SessionService>();
+
+        // Register group role service for group-derived permissions
+        services.AddScoped<IGroupRoleService, GroupRoleService>();
 
 
         services.AddIdentity<User, Role>(options =>
