@@ -1,0 +1,116 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+
+using Core.Context;
+using Core.Exceptions;
+
+using Mediator;
+
+using Microsoft.Extensions.Logging;
+
+using Modules.Auditing.Contracts;
+using Modules.Identity.Contracts.Services;
+using Modules.Identity.Contracts.v1.Tokens.RefreshToken;
+
+namespace Modules.Identity.Features.v1.Tokens.RefreshToken;
+
+public class RefreshTokenCommandHandler(
+    ITokenService tokenService,
+    IIdentityService identityService,
+    ISecurityAudit securityAudit,
+    IRequestContext requestContext,
+    ISessionService sessionService,
+    ILogger<RefreshTokenCommandHandler> logger)
+    : ICommandHandler<RefreshTokenCommand, RefreshTokenCommandResponse>
+{
+
+    public async ValueTask<RefreshTokenCommandResponse> Handle(RefreshTokenCommand command, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var clientId = requestContext.ClientId;
+        
+        var validated = await identityService.ValidateRefreshTokenAsync(command.RefreshToken, cancellationToken);
+
+        if (validated is null)
+        {
+            await securityAudit.TokenRevokedAsync("unknown", clientId!, "InvalidRefreshToken", cancellationToken);
+            throw new UnauthorizedException("Invalid refresh token.");
+        }
+        
+        var (subject, claims) = validated.Value;
+        var refreshTokenHash = Sha256Short(command.RefreshToken);
+        var isSessionValid = await sessionService.ValidateSessionAsync(refreshTokenHash, cancellationToken);
+        if (!isSessionValid)
+        {
+            await securityAudit.TokenRevokedAsync(subject, clientId!, "SessionRevoked", cancellationToken);
+            throw new UnauthorizedException("Session has been revoked.");
+        }
+        
+        // Optionally, cross-check the provided access token subject
+        var handler = new JwtSecurityTokenHandler();
+        JwtSecurityToken? parsedAccessToken = null;
+        try
+        {
+            parsedAccessToken = handler.ReadJwtToken(command.Token);
+        }
+        catch (Exception e)
+        {
+            logger.LogDebug(e, "Failed to parse access token during refresh; relying on refresh-token validation only");
+        }
+
+        if (parsedAccessToken is not null)
+        {
+            var accessTokenSubject = parsedAccessToken.Claims
+                .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value
+                 ?? parsedAccessToken.Subject;
+
+            if (!string.IsNullOrEmpty(accessTokenSubject) &&
+                !string.Equals(accessTokenSubject, subject, StringComparison.Ordinal))
+            {
+                await securityAudit.TokenRevokedAsync(subject, clientId!, "RefreshTokenSubjectMismatch", cancellationToken);
+                throw new UnauthorizedException("Access token subject mismatch.");
+            }
+        }
+        
+        // Audit previous token revocation by rotation (no raw tokens)
+        await securityAudit.TokenRevokedAsync(subject, clientId!, "RefreshTokenRotated", cancellationToken);
+        
+        // Issue new tokens
+        var newToken = await tokenService.IssueAsync(subject, claims, null, cancellationToken);
+        
+        // Persist rotated refresh token for this user
+        await identityService.StoreRefreshTokenAsync(subject, newToken.RefreshToken, newToken.RefreshTokenExpiresAt, cancellationToken);
+        
+        // Update the session with the new refresh token hash
+        var newRefreshTokenHash = Sha256Short(newToken.RefreshToken);
+        await sessionService.UpdateSessionRefreshTokenAsync(
+            refreshTokenHash,
+            newRefreshTokenHash,
+            newToken.RefreshTokenExpiresAt,
+            cancellationToken);
+
+        // Audit the newly issued token with a fingerprint
+        var fingerprint = Sha256Short(newToken.AccessToken);
+        await securityAudit.TokenIssuedAsync(
+            userId: subject,
+            userName: claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? string.Empty,
+            clientId: clientId!,
+            tokenFingerprint: fingerprint,
+            expiresUtc: newToken.AccessTokenExpiresAt,
+            ct: cancellationToken);
+        
+        return new RefreshTokenCommandResponse(
+            AccessToken: newToken.AccessToken,
+            RefreshToken: newToken.RefreshToken,
+            RefreshTokenExpiresAt: newToken.RefreshTokenExpiresAt);
+    }
+    
+    private static string Sha256Short(string value)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexString(hash.AsSpan(0, 8));
+    }
+}

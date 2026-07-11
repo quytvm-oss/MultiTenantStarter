@@ -14,6 +14,7 @@ using Modules.Identity.Authorization.Jwt;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
+using Modules.Identity.Features.v1.Tokens.RefreshToken;
 using Modules.Identity.Features.v1.Tokens.TokenGeneration;
 using Modules.Identity.Services;
 
@@ -113,5 +114,7 @@ public class IdentityModule : IModule
         
         // tokens
         group.MapGenerateTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
+        group.MapRefreshTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
+
     }
 }
