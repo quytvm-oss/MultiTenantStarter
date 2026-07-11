@@ -5,20 +5,13 @@ using Modules.Identity.Data;
 
 namespace Modules.Identity.Services;
 
-public class GroupRoleService : IGroupRoleService
+public class GroupRoleService(IdentityDbContext dbContext) : IGroupRoleService
 {
-    private readonly IdentityDbContext _dbContext;
-
-    public GroupRoleService(IdentityDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
-    
     public async Task<IReadOnlyList<string>> GetUserGroupRolesAsync(string userId, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(userId);
         
-        var userGroupIds = await _dbContext.UserGroups
+        var userGroupIds = await dbContext.UserGroups
             .Where(ug => ug.UserId == userId)
             .Select(ug => ug.GroupId)
             .ToListAsync(ct);
@@ -26,7 +19,7 @@ public class GroupRoleService : IGroupRoleService
         if (userGroupIds.Count == 0)
             return [];
         
-        var groupRoles = await _dbContext.GroupRoles
+        var groupRoles = await dbContext.GroupRoles
             .Where(gr => userGroupIds.Contains(gr.GroupId))
             .Select(gr => gr.Role!.Name!)
             .Distinct()

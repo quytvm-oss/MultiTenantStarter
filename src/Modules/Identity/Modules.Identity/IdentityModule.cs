@@ -1,6 +1,9 @@
-﻿using Core.Context;
+﻿using Asp.Versioning;
+
+using Core.Context;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +14,7 @@ using Modules.Identity.Authorization.Jwt;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
+using Modules.Identity.Features.v1.Tokens.TokenGeneration;
 using Modules.Identity.Services;
 
 using Persistence;
@@ -93,13 +97,21 @@ public class IdentityModule : IModule
         services.ConfigureJwtAuth();
     }
 
-    public void ConfigureMiddleware(IApplicationBuilder app)
-    {
-       
-    }
-
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
-       
+        ArgumentNullException.ThrowIfNull(endpoints);
+
+        var apiVersionSet = endpoints.NewApiVersionSet()
+            .HasApiVersion(new ApiVersion(1))
+            .ReportApiVersions()
+            .Build();
+
+        var group = endpoints
+            .MapGroup("api/v{version:apiVersion}/identity")
+            .WithTags("Identity")
+            .WithApiVersionSet(apiVersionSet);
+        
+        // tokens
+        group.MapGenerateTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
     }
 }

@@ -103,6 +103,9 @@ internal sealed class Publisher : IBusPublisher
 
         if (!string.IsNullOrWhiteSpace(options.Source))
             headers[HeaderConstant.Source] = options.Source;
+        
+        if (!string.IsNullOrWhiteSpace(options.CorrelationId))
+            headers[HeaderConstant.CorrelationId] = options.CorrelationId;
 
         return headers;
     }

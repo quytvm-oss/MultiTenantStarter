@@ -16,28 +16,17 @@ using Shared.Persistence;
 
 namespace Modules.Multitenancy.Services;
 
-public class TenantService : ITenantService
+public class TenantService(
+    IMultiTenantStore<AppTenantInfo> tenantStore,
+    IOptions<DatabaseOptions> options,
+    IServiceProvider serviceProvider,
+    TenantDbContext tenantDbContext,
+    TimeProvider timeProvider,
+    ILogger<TenantService> logger)
+    : ITenantService
 {
-    private readonly IMultiTenantStore<AppTenantInfo> _tenantStore;
-    private readonly DatabaseOptions _options;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly TenantDbContext _tenantDbContext;
-    private readonly TimeProvider _timeProvider;
-    private readonly ILogger<TenantService> _logger;
-
-    public TenantService(IMultiTenantStore<AppTenantInfo> tenantStore, 
-        IOptions<DatabaseOptions> options, 
-        IServiceProvider serviceProvider, TenantDbContext tenantDbContext, 
-        TimeProvider timeProvider, 
-        ILogger<TenantService> logger)
-    {
-        _tenantStore = tenantStore;
-        _options = options.Value;
-        _serviceProvider = serviceProvider;
-        _tenantDbContext = tenantDbContext;
-        _timeProvider = timeProvider;
-        _logger = logger;
-    }
+    private readonly DatabaseOptions _options = options.Value;
+    private readonly TenantDbContext _tenantDbContext = tenantDbContext;
 
     // public async Task<PagedResponse<TenantDto>> GetAllAsync(GetTenantsQuery query, CancellationToken cancellationToken)
     // {
@@ -64,16 +53,16 @@ public class TenantService : ITenantService
     // }
 
     public async Task<bool> ExistsWithIdAsync(string id, CancellationToken cancellationToken)
-     => await _tenantStore.GetAsync(id).ConfigureAwait(false) is not null;
+     => await tenantStore.GetAsync(id).ConfigureAwait(false) is not null;
 
     public async Task<bool> ExistsWithNameAsync(string name, CancellationToken cancellationToken)
-    => (await _tenantStore.GetAllAsync().ConfigureAwait(false)).Any(t => t.Name == name);
+    => (await tenantStore.GetAllAsync().ConfigureAwait(false)).Any(t => t.Name == name);
 
     public async Task<TenantStatusDto> GetStatusAsync(string id, CancellationToken cancellationToken)
     {
         var tenant = await GetTenantInfoAsync(id, cancellationToken).ConfigureAwait(false);
         var graceEnds = tenant.ValidUpTo.AddDays(10);
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         string expiryState;
         if (now <= tenant.ValidUpTo)
         {
@@ -120,7 +109,7 @@ public class TenantService : ITenantService
             ValidUpTo = DateTime.SpecifyKind(validUpto, DateTimeKind.Utc),
         };
         
-        await _tenantStore.AddAsync(tenant).ConfigureAwait(false);
+        await tenantStore.AddAsync(tenant).ConfigureAwait(false);
         await RefreshTenantCacheAsync(tenant).ConfigureAwait(false);
 
         return tenant.Id;
@@ -152,11 +141,11 @@ public class TenantService : ITenantService
         var previous = tenant.ValidUpTo;
         tenant.ValidUpTo = normalized;
         
-        await _tenantStore.UpdateAsync(tenant).ConfigureAwait(false);
+        await tenantStore.UpdateAsync(tenant).ConfigureAwait(false);
         await RefreshTenantCacheAsync(tenant).ConfigureAwait(false);
-        if (_logger.IsEnabled(LogLevel.Information))
+        if (logger.IsEnabled(LogLevel.Information))
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "[Multitenancy] operator adjusted tenant {TenantId} validity from {Previous:o} to {ValidUpto:o}",
                 id, previous, normalized);
         }
@@ -166,7 +155,7 @@ public class TenantService : ITenantService
 
     public async Task MigrateTenantAsync(AppTenantInfo tenantInfo, CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         
         scope.ServiceProvider.GetRequiredService<IMultiTenantContextSetter>()
             .MultiTenantContext = new MultiTenantContext<AppTenantInfo>(tenantInfo);
@@ -179,7 +168,7 @@ public class TenantService : ITenantService
 
     public async Task SeedTenantAsync(AppTenantInfo tenantInfo, CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
 
         scope.ServiceProvider.GetRequiredService<IMultiTenantContextSetter>()
             .MultiTenantContext = new MultiTenantContext<AppTenantInfo>(tenantInfo);
@@ -193,12 +182,12 @@ public class TenantService : ITenantService
     #region method internals
     
     private async Task<AppTenantInfo> GetTenantInfoAsync(string id, CancellationToken cancellationToken = default) => 
-        await _tenantStore.GetAsync(id).ConfigureAwait(false) ?? 
+        await tenantStore.GetAsync(id).ConfigureAwait(false) ?? 
         throw new ArgumentException($"Tenant with id {id} not found.", nameof(id));
 
     private async Task RefreshTenantCacheAsync(AppTenantInfo tenant)
     {
-        var cacheStore = _serviceProvider
+        var cacheStore = serviceProvider
             .GetServices<IMultiTenantStore<AppTenantInfo>>()
             .FirstOrDefault(x => x.GetType() == typeof(DistributedCacheStore<AppTenantInfo>));
         

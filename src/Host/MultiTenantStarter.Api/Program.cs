@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 
 using Modules.Auditing;
 using Modules.Identity;
+using Modules.Identity.Contracts;
+using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
 using Modules.Multitenancy;
 using Modules.Multitenancy.Contracts;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
@@ -55,6 +57,8 @@ builder.Services.AddMediator(o =>
     o.ServiceLifetime = ServiceLifetime.Scoped;
     o.Assemblies =
     [
+        typeof(IdentityContractsMarker),
+        typeof(IdentityModule),
         typeof(CreateTenantCommand),
         typeof(CreateTenantCommandHandler)
     ];
@@ -83,7 +87,7 @@ builder.AddCustomMessageBus(moduleAssemblies);
 
 var app = builder.Build();
 
-//app.UseMultiTenantDatabases();
+app.UseMultiTenantDatabases();
 app.UsePlatform(p =>
 {
     p.MapModules = true;

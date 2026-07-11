@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Modules.Auditing;
 using Modules.Identity;
+using Modules.Identity.Contracts;
 using Modules.Multitenancy;
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
@@ -82,6 +83,8 @@ builder.Services.AddMediator(o =>
     o.ServiceLifetime = ServiceLifetime.Scoped;
     o.Assemblies =
     [
+        typeof(IdentityContractsMarker),
+        typeof(IdentityModule),
         typeof(GetTenantStatusQuery),
     ];
 });

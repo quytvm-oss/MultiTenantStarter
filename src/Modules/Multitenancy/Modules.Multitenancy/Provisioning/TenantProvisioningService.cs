@@ -17,31 +17,17 @@ using Shared.Multitenancy;
 
 namespace Modules.Multitenancy.Provisioning;
 
-public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvisioningReader, ITenantProvisioningStateWriter
+public class TenantProvisioningService(
+    TenantDbContext dbContext,
+    IMultiTenantStore<AppTenantInfo> tenantStore,
+    IJobService jobService,
+    IServiceScopeFactory scopeFactory,
+    ILogger<TenantProvisioningService> logger)
+    : ITenantProvisioningStarter, ITenantProvisioningReader, ITenantProvisioningStateWriter
 {
-    private readonly TenantDbContext _dbContext;
-    private readonly IMultiTenantStore<AppTenantInfo> _tenantStore;
-    private readonly IJobService _jobService;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<TenantProvisioningService> _logger;
-
-
-    public TenantProvisioningService(TenantDbContext dbContext, 
-        IMultiTenantStore<AppTenantInfo> tenantStore, 
-        IJobService jobService, 
-        IServiceScopeFactory scopeFactory, 
-        ILogger<TenantProvisioningService> logger)
-    {
-        _dbContext = dbContext;
-        _tenantStore = tenantStore;
-        _jobService = jobService;
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-    }
-
     public async Task<TenantProvisioning> StartAsync(string tenantId, CancellationToken cancellationToken)
     {
-        var tenant = await _tenantStore.GetAsync(tenantId).ConfigureAwait(false)
+        var tenant = await tenantStore.GetAsync(tenantId).ConfigureAwait(false)
             ?? throw new ArgumentException($"Tenant with id {tenantId} not found.", nameof(tenantId));
         
         var existing = await GetLastestAsync(tenantId, cancellationToken).ConfigureAwait(false);
@@ -58,29 +44,29 @@ public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvi
         provisioning.Steps.Add(new TenantProvisioningStep(provisioning.Id, TenantProvisioningStepName.Seeding));
         provisioning.Steps.Add(new TenantProvisioningStep(provisioning.Id, TenantProvisioningStepName.CacheWarm));
         
-        await _dbContext.AddAsync(provisioning,cancellationToken).ConfigureAwait(false);
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await dbContext.AddAsync(provisioning,cancellationToken).ConfigureAwait(false);
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         if (!TryEnsureJobStorage())
         {
-            _logger.LogWarning("Background job storage not available; running provisioning inline for tenant {TenantId}.", tenantId);
+            logger.LogWarning("Background job storage not available; running provisioning inline for tenant {TenantId}.", tenantId);
             provisioning.SetJobId("inline");
-            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             
             await RunInlineProvisioningAsync(tenant.Id, correlationId, cancellationToken).ConfigureAwait(false);
             return provisioning;
         }
 
-        var jobId = _jobService.Enqueue<TenantProvisioningJob>(job => job.RunAsync(tenant.Id, correlationId, cancellationToken));
+        var jobId = jobService.Enqueue<TenantProvisioningJob>(job => job.RunAsync(tenant.Id, correlationId, cancellationToken));
         provisioning.SetJobId(jobId);
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         
         return provisioning;
     }
 
     public async Task<TenantProvisioning?> GetLastestAsync(string tenantId, CancellationToken cancellationToken)
     {
-        return await _dbContext.Set<TenantProvisioning>().Include(x => x.Steps)
+        return await dbContext.Set<TenantProvisioning>().Include(x => x.Steps)
             .Where(x => x.TenantId == tenantId)
             .OrderByDescending(x => x.CreatedUtc)
             .FirstOrDefaultAsync(cancellationToken)
@@ -120,7 +106,7 @@ public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvi
         
         provisioning.MarkRunning(step.ToString());
         stepEntity.MarkRunning();
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
 
@@ -134,7 +120,7 @@ public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvi
             return;
         
         stepEntity.MarkCompleted();
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task MarkFailedAsync(string tenantId, string correlationId, TenantProvisioningStepName step, string? error,
@@ -146,7 +132,7 @@ public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvi
         var stepEntity = provisioning.Steps.First(s => s.Step == step);
         stepEntity.MarkFailed(error!);
 
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task MarkCompletedAsync(string tenantId, string correlationId, CancellationToken cancellationToken)
@@ -159,7 +145,7 @@ public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvi
         }
 
         provisioning.MarkCompleted();
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     
@@ -167,7 +153,7 @@ public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvi
     
     private async Task<TenantProvisioning> RequireAsync(string tenantId, string correlationId, CancellationToken cancellationToken)
     {
-        return await _dbContext.Set<TenantProvisioning>()
+        return await dbContext.Set<TenantProvisioning>()
                    .Include(x => x.Steps)
                    .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.CorrelationId == correlationId, cancellationToken)
                    .ConfigureAwait(false) ?? 
@@ -176,7 +162,7 @@ public class TenantProvisioningService : ITenantProvisioningStarter,ITenantProvi
 
     private async Task RunInlineProvisioningAsync(string tenantId, string correlationId, CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var job = scope.ServiceProvider.GetRequiredService<TenantProvisioningJob>();
         await job.RunAsync(tenantId, correlationId, cancellationToken).ConfigureAwait(false);
     }

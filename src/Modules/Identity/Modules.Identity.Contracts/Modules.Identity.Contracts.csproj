@@ -11,10 +11,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="v1\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\..\..\BuildingBlocks\Core\Core.csproj" />
       <ProjectReference Include="..\..\..\BuildingBlocks\Shared\Shared.csproj" />
       <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />

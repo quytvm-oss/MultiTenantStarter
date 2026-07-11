@@ -20,31 +20,17 @@ using Shared.Multitenancy;
 
 namespace Modules.Identity.Services;
 
-public class IdentityService : IIdentityService
+public class IdentityService(
+    ILogger<IdentityService> logger,
+    IMultiTenantContextAccessor<AppTenantInfo>? multiTenantContextAccessor,
+    IGroupRoleService groupRoleService,
+    TimeProvider timeProvider,
+    IdentityDbContext dbContext,
+    IOptions<TenantGraceOptions> graceOptions,
+    UserManager<User> userManager)
+    : IIdentityService
 {
-    private readonly UserManager<User> _userManager;
-    private readonly ILogger<IdentityService> _logger;
-    private readonly IMultiTenantContextAccessor<AppTenantInfo>? _multiTenantContextAccessor;
-    private readonly IGroupRoleService _groupRoleService;
-    private readonly TimeProvider _timeProvider;
-    private readonly IdentityDbContext _dbContext;
-    private readonly int _gracePeriodDays;
-
-    public IdentityService(ILogger<IdentityService> logger, 
-        IMultiTenantContextAccessor<AppTenantInfo>? multiTenantContextAccessor, 
-        IGroupRoleService groupRoleService, 
-        TimeProvider timeProvider, 
-        IdentityDbContext dbContext, 
-        IOptions<TenantGraceOptions> graceOptions, UserManager<User> userManager)
-    {
-        _logger = logger;
-        _multiTenantContextAccessor = multiTenantContextAccessor;
-        _groupRoleService = groupRoleService;
-        _timeProvider = timeProvider;
-        _dbContext = dbContext;
-        _gracePeriodDays = graceOptions.Value.GracePeriodDays;
-        _userManager = userManager;
-    }
+    private readonly int _gracePeriodDays = graceOptions.Value.GracePeriodDays;
 
     public async Task<(string Subject, IEnumerable<Claim> Claims)?> ValidateCredentialsAsync(string email, string password, string? twoFactorCode = null,
         CancellationToken ct = default)
@@ -84,7 +70,7 @@ public class IdentityService : IIdentityService
     {
         var hashRefreshToken = HashToken(refreshToken);
 
-        var resultUpdated = await _dbContext.Users
+        var resultUpdated = await dbContext.Users
             .IgnoreQueryFilters()
             .Where(u => u.Id == subject)
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.RefreshToken, hashRefreshToken)
@@ -95,9 +81,9 @@ public class IdentityService : IIdentityService
             throw new UnauthorizedException("user not found");
         }
 
-        if (_logger.IsEnabled(LogLevel.Debug))
+        if (logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Stored refresh token for user {UserId}. Token hash: {TokenHash}, Expires: {ExpiresAt}",
                 subject, hashRefreshToken[..Math.Min(8, hashRefreshToken.Length)], expiresAtUtc);
         }
@@ -108,7 +94,7 @@ public class IdentityService : IIdentityService
         ArgumentNullException.ThrowIfNull(userId);
         ArgumentNullException.ThrowIfNull(tenantId);
         
-        var user = await _userManager.Users
+        var user = await userManager.Users
             .IgnoreQueryFilters()
             .Where(u => u.Id == userId && EF.Property<string>(u, "TenantId") == tenantId)
             .FirstOrDefaultAsync(ct);
@@ -120,14 +106,14 @@ public class IdentityService : IIdentityService
         
         var claims = CreateBasicClaims(user, tenantId);
         
-        var userRoleIds = await _dbContext.UserRoles
+        var userRoleIds = await dbContext.UserRoles
             .IgnoreQueryFilters()
             .Where(ur => ur.UserId == user.Id)
             .Select(ur => ur.RoleId).ToListAsync(ct);
 
         if (userRoleIds.Count > 0)
         {
-            var roleNames = await _dbContext.Roles
+            var roleNames = await dbContext.Roles
                 .IgnoreQueryFilters()
                 .Where(x => userRoleIds.Contains(x.Id) && EF.Property<string>(x, "TenantId") == tenantId)
                 .Select(x => x.Name!).ToListAsync(ct);
@@ -142,7 +128,7 @@ public class IdentityService : IIdentityService
 
     private AppTenantInfo GetValidatedTenant()
     {
-        var tenant = _multiTenantContextAccessor!.MultiTenantContext.TenantInfo
+        var tenant = multiTenantContextAccessor!.MultiTenantContext.TenantInfo
                      ?? throw new UnauthorizedException();
         
         if (string.IsNullOrWhiteSpace(tenant.Id))
@@ -153,30 +139,30 @@ public class IdentityService : IIdentityService
     
     private async Task<User> FindAndValidateUserByCredentialsAsync(string email, string password)
     {
-        var user = await _userManager.FindByEmailAsync(email.Trim().Normalize());
+        var user = await userManager.FindByEmailAsync(email.Trim().Normalize());
         if (user is null)
         {
             // Generic 401 — never confirm or deny account existence from this path.
             throw new UnauthorizedException();
         }
         
-        if (_userManager.SupportsUserLockout && await _userManager.IsLockedOutAsync(user))
+        if (userManager.SupportsUserLockout && await userManager.IsLockedOutAsync(user))
         {
-            _logger.LogWarning("Login attempted for locked account {UserId}", user.Id);
+            logger.LogWarning("Login attempted for locked account {UserId}", user.Id);
             throw new CustomException(
                 "Account is temporarily locked due to too many failed login attempts. Try again later.",
                 errors: null,
                 HttpStatusCode.Locked);
         }
         
-        if (!await _userManager.CheckPasswordAsync(user, password))
+        if (!await userManager.CheckPasswordAsync(user, password))
         {
-            if (_userManager.SupportsUserLockout)
+            if (userManager.SupportsUserLockout)
             {
-                await _userManager.AccessFailedAsync(user);
-                if (await _userManager.IsLockedOutAsync(user))
+                await userManager.AccessFailedAsync(user);
+                if (await userManager.IsLockedOutAsync(user))
                 {
-                    _logger.LogWarning(
+                    logger.LogWarning(
                         "Account {UserId} locked out after exceeding failed login threshold.",
                         user.Id);
                 }
@@ -185,9 +171,9 @@ public class IdentityService : IIdentityService
         }
         
         // Successful authentication resets the failed-attempt counter.
-        if (_userManager.SupportsUserLockout && await _userManager.GetAccessFailedCountAsync(user) > 0)
+        if (userManager.SupportsUserLockout && await userManager.GetAccessFailedCountAsync(user) > 0)
         {
-            await _userManager.ResetAccessFailedCountAsync(user);
+            await userManager.ResetAccessFailedCountAsync(user);
         }
 
         return user;
@@ -210,14 +196,14 @@ public class IdentityService : IIdentityService
                 HttpStatusCode.Unauthorized);
         }
 
-        var valid = await _userManager.VerifyTwoFactorTokenAsync(
+        var valid = await userManager.VerifyTwoFactorTokenAsync(
             user,
-            _userManager.Options.Tokens.AuthenticatorTokenProvider,
+            userManager.Options.Tokens.AuthenticatorTokenProvider,
             twoFactorCode);
 
         if (!valid)
         {
-            _logger.LogWarning("Invalid two-factor code for user {UserId}", user.Id);
+            logger.LogWarning("Invalid two-factor code for user {UserId}", user.Id);
             throw new UnauthorizedException("two_factor_invalid: The authenticator code is invalid or expired.");
         }
     }
@@ -234,7 +220,7 @@ public class IdentityService : IIdentityService
             throw new UnauthorizedException($"tenant {tenant.Id} is deactivated");
         }
         
-        if (_timeProvider.GetUtcNow().UtcDateTime > tenant.ValidUpTo.AddDays(_gracePeriodDays))
+        if (timeProvider.GetUtcNow().UtcDateTime > tenant.ValidUpTo.AddDays(_gracePeriodDays))
         {
             throw new UnauthorizedException($"tenant {tenant.Id} validity has expired");
         }
@@ -275,8 +261,8 @@ public class IdentityService : IIdentityService
 
     private async Task AddRoleClaimsAsync(List<Claim> claims, User user, CancellationToken ct)
     {
-        var directRoles = await _userManager.GetRolesAsync(user);
-        var groupRoles = await _groupRoleService.GetUserGroupRolesAsync(user.Id, ct);
+        var directRoles = await userManager.GetRolesAsync(user);
+        var groupRoles = await groupRoleService.GetUserGroupRolesAsync(user.Id, ct);
 
         var allRoles = directRoles.Union(groupRoles).Distinct();
         claims.AddRange(allRoles.Select(r => new Claim(ClaimTypes.Role, r)));
@@ -286,19 +272,19 @@ public class IdentityService : IIdentityService
     {
         var hashedToken = HashToken(refreshToken);
 
-        if (_logger.IsEnabled(LogLevel.Debug))
+        if (logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Validating refresh token for tenant {TenantId}. Token hash: {TokenHash}",
                 tenantId, hashedToken[..Math.Min(8, hashedToken.Length)]);
         }
 
-        var user = await _userManager.Users
+        var user = await userManager.Users
             .FirstOrDefaultAsync(u => u.RefreshToken == hashedToken, ct);
 
         if (user is null)
         {
-            _logger.LogWarning("No user found with matching refresh token hash for tenant {TenantId}", tenantId);
+            logger.LogWarning("No user found with matching refresh token hash for tenant {TenantId}", tenantId);
             throw new UnauthorizedException("refresh token is invalid or expired");
         }
 
@@ -314,10 +300,10 @@ public class IdentityService : IIdentityService
     
     private void ValidateRefreshTokenExpiry(User user)
     {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         if (user.RefreshTokenExpireTime <= now)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Refresh token expired for user {UserId}. Expired at: {ExpiryTime}, Current time: {CurrentTime}",
                 user.Id, user.RefreshTokenExpireTime, now);
             throw new UnauthorizedException("refresh token is invalid or expired");
