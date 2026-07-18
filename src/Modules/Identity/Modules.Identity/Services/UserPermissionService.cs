@@ -30,7 +30,7 @@ public class UserPermissionService(
 
     private static readonly string[] Tags = { CacheKeys.Tags.Permissions };
     
-    public async Task<List<string>?> GetPermissionsAsync(string userId, CancellationToken ct = default)
+    public async Task<List<string>> GetPermissionsAsync(string userId, CancellationToken ct = default)
     {
         var set = await GetOrLoadAsync(userId, ct).ConfigureAwait(false);
         

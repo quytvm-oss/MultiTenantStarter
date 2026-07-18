@@ -48,7 +48,7 @@ public interface IUserService
     
     Task ResetPasswordAsync(string email, string password, string token, CancellationToken cancellationToken);
     
-    Task<List<string>?> GetPermissionsAsync(string userId, CancellationToken cancellationToken);
+    Task<List<string>> GetPermissionsAsync(string userId, CancellationToken cancellationToken);
 
     Task ChangePasswordAsync(string password, string newPassword, string confirmNewPassword, string userId, CancellationToken cancellationToken = default);
     

@@ -15,6 +15,8 @@ using Microsoft.Extensions.Hosting;
 
 using Persistence;
 
+using Shared.Identity;
+
 using Web.Auth;
 using Web.Cors;
 using Web.Exceptions;
@@ -45,7 +47,7 @@ public static class Extensions
         var options = new PlatformOptions();
         configure?.Invoke(options);
 
-        //PermissionConstants.Register(SystemPermissions.All);
+        PermissionConstants.Register(SystemPermissions.All);
 
         builder.Services.AddScoped<CurrentUserMiddleware>();
 

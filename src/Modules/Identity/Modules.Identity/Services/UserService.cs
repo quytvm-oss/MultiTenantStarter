@@ -71,7 +71,7 @@ internal sealed class UserService(
     public Task ResetPasswordAsync(string email, string password, string token, CancellationToken cancellationToken)
     => passwordService.ResetPasswordAsync(email, password, token, cancellationToken);
 
-    public Task<List<string>?> GetPermissionsAsync(string userId, CancellationToken cancellationToken)
+    public Task<List<string>> GetPermissionsAsync(string userId, CancellationToken cancellationToken)
     => permissionService.GetPermissionsAsync(userId, cancellationToken);
 
     public Task ChangePasswordAsync(string password, string newPassword, string confirmNewPassword, string userId,

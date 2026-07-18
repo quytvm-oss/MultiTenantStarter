@@ -1,0 +1,28 @@
+using Mediator;
+
+using Modules.Identity.Contracts.Services;
+using Modules.Identity.Contracts.v1.Users.RegisterUser;
+
+namespace Modules.Identity.Features.v1.Users.RegisterUser;
+
+public sealed class RegisterUserCommandHandler(IUserService userService)
+    : ICommandHandler<RegisterUserCommand, RegisterUserResponse>
+{
+    public async ValueTask<RegisterUserResponse> Handle(RegisterUserCommand command, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        string userId = await userService.RegisterAsync(
+            command.FirstName,
+            command.LastName,
+            command.Email,
+            command.UserName,
+            command.Password,
+            command.ConfirmPassword,
+            command.PhoneNumber ?? string.Empty,
+            command.Origin ?? string.Empty,
+            cancellationToken).ConfigureAwait(false);
+
+        return new RegisterUserResponse(userId);
+    }
+}

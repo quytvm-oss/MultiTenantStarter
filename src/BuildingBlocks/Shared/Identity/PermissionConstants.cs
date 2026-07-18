@@ -13,7 +13,7 @@ public class PermissionConstants
     {
         ArgumentNullException.ThrowIfNull(additionalPermissions);
         _all.AddRange(from permission in additionalPermissions
-            where !_all.Any(p => p.Name == permission.Name)
+            where _all.All(p => p.Name != permission.Name)
             select permission);
     }
 

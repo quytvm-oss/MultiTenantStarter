@@ -1,6 +1,6 @@
 namespace Modules.Identity.Contracts.Authorization;
 
-public class IdentityPermissions
+public static class IdentityPermissions
 {
     public static class Users
     {

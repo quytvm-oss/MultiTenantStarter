@@ -2,6 +2,7 @@
 
 using Core.Context;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -10,12 +11,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
+using Modules.Identity.Authorization;
 using Modules.Identity.Authorization.Jwt;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
 using Modules.Identity.Features.v1.Tokens.RefreshToken;
 using Modules.Identity.Features.v1.Tokens.TokenGeneration;
+using Modules.Identity.Features.v1.Users.GetUserPermissions;
+using Modules.Identity.Features.v1.Users.GetUserRoles;
+using Modules.Identity.Features.v1.Users.GetUsers;
+using Modules.Identity.Features.v1.Users.RegisterUser;
 using Modules.Identity.Services;
 
 using Persistence;
@@ -32,6 +38,7 @@ public class IdentityModule : IModule
     {
         var services = builder.Services;
 
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<ICurrentUserService>());
         services.AddScoped<ICurrentUserInitializer>(sp => sp.GetRequiredService<ICurrentUserService>());
@@ -116,5 +123,10 @@ public class IdentityModule : IModule
         group.MapGenerateTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
         group.MapRefreshTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
 
+        // users
+        group.MapGetListUsersEndpoint();
+        group.MapRegisterUserEndpoint();
+        group.MapGetCurrentUserPermissionsEndpoint();
+        group.MapGetUserRolesEndpoint();
     }
 }
