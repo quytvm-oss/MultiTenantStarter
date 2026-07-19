@@ -13,18 +13,27 @@ using Microsoft.Extensions.Hosting;
 
 using Modules.Identity.Authorization;
 using Modules.Identity.Authorization.Jwt;
+using Modules.Identity.Contracts.Authorization;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
 using Modules.Identity.Features.v1.Tokens.RefreshToken;
 using Modules.Identity.Features.v1.Tokens.TokenGeneration;
+using Modules.Identity.Features.v1.Users.ChangePassword;
+using Modules.Identity.Features.v1.Users.ConfirmEmail;
+using Modules.Identity.Features.v1.Users.ForgotPassword;
+using Modules.Identity.Features.v1.Users.GetUserById;
 using Modules.Identity.Features.v1.Users.GetUserPermissions;
 using Modules.Identity.Features.v1.Users.GetUserRoles;
 using Modules.Identity.Features.v1.Users.GetUsers;
 using Modules.Identity.Features.v1.Users.RegisterUser;
+using Modules.Identity.Features.v1.Users.ResendConfirmationEmail;
+using Modules.Identity.Features.v1.Users.ResetPassword;
 using Modules.Identity.Services;
 
 using Persistence;
+
+using Shared.Identity;
 
 using Storage;
 
@@ -36,8 +45,14 @@ public class IdentityModule : IModule
 {
     public void ConfigureServices(IHostApplicationBuilder builder)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+        PermissionConstants.Register(
+            IdentityPermissions.All);
+        
         var services = builder.Services;
 
+        services.AddScoped<RolePermissionSyncer>();
+        services.AddHostedService<RolePermissionSyncHostedService>();
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<ICurrentUserService>());
@@ -128,5 +143,13 @@ public class IdentityModule : IModule
         group.MapRegisterUserEndpoint();
         group.MapGetCurrentUserPermissionsEndpoint();
         group.MapGetUserRolesEndpoint();
+        group.MapRegisterUserEndpoint();
+        group.MapChangePasswordEndpoint();
+        group.MapConfirmEmailEndpoint();
+        group.MapForgotPasswordEndpoint();
+        group.MapResetPasswordEndpoint();
+        group.MapResendConfirmationEmailEndpoint();
+        group.MapGetCurrentUserPermissionsEndpoint();
+        group.MapGetUserByIdEndpoint();
     }
 }

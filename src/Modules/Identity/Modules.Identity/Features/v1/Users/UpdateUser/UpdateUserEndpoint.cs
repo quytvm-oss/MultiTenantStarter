@@ -1,0 +1,44 @@
+using System.Security.Claims;
+
+using Core.Exceptions;
+
+using Mediator;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+
+using Modules.Identity.Contracts.v1.Users.UpdateUser;
+
+using Shared.Identity.Claims;
+
+namespace Modules.Identity.Features.v1.Users.UpdateUser;
+
+public static class UpdateUserEndpoint
+{
+    internal static RouteHandlerBuilder MapUpdateUserEndpoint(this IEndpointRouteBuilder endpoints)
+    {
+        return endpoints.MapPut("/profile", async ([FromBody] UpdateUserCommand request, ClaimsPrincipal user, IMediator mediator, CancellationToken cancellationToken) =>
+        {
+            if (user.GetUserId() is not { } userId || string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedException();
+            }
+
+            // Force the target id to the authenticated user — this endpoint is for self-update
+            // only, regardless of any id the caller supplied in the body.
+            request.Id = userId;
+
+            await mediator.Send(request, cancellationToken);
+            return TypedResults.Ok();
+        })
+        .WithName("UpdateUserProfile")
+        .WithSummary("Update user profile")
+        .RequireAuthorization()
+        .WithDescription("Update profile details for the authenticated user. Any signed-in user may edit their own profile; no admin permission required.")
+        .Produces(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status400BadRequest);
+    }
+}
