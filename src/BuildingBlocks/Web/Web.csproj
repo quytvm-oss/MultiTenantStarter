@@ -25,6 +25,11 @@
       <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
       <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis" />
       <PackageReference Include="RabbitMQ.Client" />
+      <PackageReference Include="Rebus" />
+      <PackageReference Include="Rebus.PostgreSql" />
+      <PackageReference Include="Rebus.RabbitMq" />
+      <PackageReference Include="Rebus.Serilog" />
+      <PackageReference Include="Rebus.ServiceProvider" />
       <PackageReference Include="Scalar.AspNetCore" />
       <PackageReference Include="Serilog" />
       <PackageReference Include="Serilog.AspNetCore" />

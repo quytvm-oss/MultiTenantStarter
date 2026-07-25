@@ -19,8 +19,10 @@ using Modules.Identity.Data;
 using Modules.Identity.Domain;
 using Modules.Identity.Features.v1.Tokens.RefreshToken;
 using Modules.Identity.Features.v1.Tokens.TokenGeneration;
+using Modules.Identity.Features.v1.Users.AssignUserRoles;
 using Modules.Identity.Features.v1.Users.ChangePassword;
 using Modules.Identity.Features.v1.Users.ConfirmEmail;
+using Modules.Identity.Features.v1.Users.DeleteUser;
 using Modules.Identity.Features.v1.Users.ForgotPassword;
 using Modules.Identity.Features.v1.Users.GetUserById;
 using Modules.Identity.Features.v1.Users.GetUserPermissions;
@@ -29,6 +31,7 @@ using Modules.Identity.Features.v1.Users.GetUsers;
 using Modules.Identity.Features.v1.Users.RegisterUser;
 using Modules.Identity.Features.v1.Users.ResendConfirmationEmail;
 using Modules.Identity.Features.v1.Users.ResetPassword;
+using Modules.Identity.Features.v1.Users.SelfRegistration;
 using Modules.Identity.Services;
 
 using Persistence;
@@ -50,7 +53,7 @@ public class IdentityModule : IModule
             IdentityPermissions.All);
         
         var services = builder.Services;
-
+        
         services.AddScoped<RolePermissionSyncer>();
         services.AddHostedService<RolePermissionSyncHostedService>();
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
@@ -143,13 +146,14 @@ public class IdentityModule : IModule
         group.MapRegisterUserEndpoint();
         group.MapGetCurrentUserPermissionsEndpoint();
         group.MapGetUserRolesEndpoint();
-        group.MapRegisterUserEndpoint();
         group.MapChangePasswordEndpoint();
         group.MapConfirmEmailEndpoint();
         group.MapForgotPasswordEndpoint();
         group.MapResetPasswordEndpoint();
         group.MapResendConfirmationEmailEndpoint();
-        group.MapGetCurrentUserPermissionsEndpoint();
         group.MapGetUserByIdEndpoint();
+        group.MapAssignUserRolesEndpoint();
+        group.MapDeleteUserEndpoint();
+        group.MapSelfRegisterUserEndpoint();
     }
 }

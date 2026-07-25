@@ -6,6 +6,6 @@ public record Permission(string Description, string Action, string Resource, boo
 
     private static string NameFor(string action, string resource)
     {
-        return $"Permission.{resource}.{action}";
+        return $"Permissions.{resource}.{action}";
     }
 };

@@ -37,7 +37,7 @@ public static class Extensions
         {
             services.AddOpenApi(version, options =>
             {
-                //options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+                options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
                 options.AddDocumentTransformer((document, context, _) =>
                 {
                     var provider = context.ApplicationServices;

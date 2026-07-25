@@ -157,6 +157,7 @@ public static class Extensions
 
         app.UseExceptionHandler();
         app.UseResponseCompression();
+        app.UseAppLogging();
 
         // CORS MUST run before UseHttpsRedirection: preflight OPTIONS can't follow an HTTP→HTTPS redirect, so
         // the browser would block the call. Safe before routing because we use one global policy (no [EnableCors]).
@@ -189,7 +190,7 @@ public static class Extensions
             app.UseAppOpenApi();
         }
 
-        //app.UseAuthentication();
+        app.UseAuthentication();
 
         // Let each module register its own middleware (e.g. Auditing registers AuditHttpMiddleware)
         app.UseModuleMiddlewares();
@@ -200,8 +201,7 @@ public static class Extensions
         // {
         //     app.UseHeroQuotas();
         // }
-
-        // app.UseAuthorization();
+        app.UseAuthorization();
 
         if (options.MapModules)
         {

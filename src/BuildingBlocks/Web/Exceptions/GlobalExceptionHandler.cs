@@ -87,7 +87,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             statusCode = StatusCodes.Status500InternalServerError;
             problemDetails.Status = statusCode;
             problemDetails.Title = "An unexpected error occurred";
-            problemDetails.Detail = "An unexpected error occurred. Please try again later.";
+            problemDetails.Detail = exception.Message;
         }
         
         httpContext.Response.StatusCode = statusCode;
