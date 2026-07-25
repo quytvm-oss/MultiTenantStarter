@@ -37,7 +37,7 @@ public static class PersistenceExtensions
             var env = sp.GetRequiredService<IHostEnvironment>();
             var dbConfig = sp.GetRequiredService<IOptions<DatabaseOptions>>().Value;
             options.ConfigureCustomDatabase(dbConfig.Provider, dbConfig.ConnectionString, dbConfig.MigrationsAssembly, env.IsDevelopment());
-            options.AddInterceptors(sp.GetRequiredService<ISaveChangesInterceptor>());
+            options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
         });
         return services;
     }

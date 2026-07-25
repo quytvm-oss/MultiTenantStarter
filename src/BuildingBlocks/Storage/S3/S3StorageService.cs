@@ -40,7 +40,9 @@ internal sealed partial class S3StorageService : IStorageService
         if (string.IsNullOrWhiteSpace(_options.Bucket))
             throw new InvalidOperationException("Storage:S3:Bucket is required when using S3 storage.");
     }
-    
+
+    public string RootPath => string.Empty;
+
     public async Task<string> UploadAsync<T>(StreamUploadRequest request, FileType fileType, 
         CancellationToken cancellationToken = default) where T : class
     {

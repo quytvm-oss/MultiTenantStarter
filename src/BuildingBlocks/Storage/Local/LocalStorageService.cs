@@ -18,14 +18,51 @@ internal class LocalStorageService : IStorageService
     private const string UploadBasePath = "uploads";
     private readonly string _rootPath;
     private readonly FileExtensionContentTypeProvider _contentTypeProvider = new();
+    
 
+    // public LocalStorageService(IWebHostEnvironment environment, IOptions<LocalStorageOptions> options)
+    // {
+    //     ArgumentNullException.ThrowIfNull(environment);
+    //     ArgumentNullException.ThrowIfNull(options);
+    //
+    //     var configuredRoot = options.Value.StorageRoot?.Trim();
+    //
+    //     if (string.IsNullOrWhiteSpace(configuredRoot))
+    //     {
+    //         configuredRoot = "storage";
+    //     }
+    //
+    //     _rootPath = Path.GetFullPath(
+    //         Path.IsPathRooted(configuredRoot)
+    //             ? configuredRoot
+    //             : Path.Combine(environment.ContentRootPath, configuredRoot));
+    //
+    //     Directory.CreateDirectory(_rootPath);
+    // }
+    
     public LocalStorageService(IWebHostEnvironment environment, IOptions<LocalStorageOptions> options)
     {
         ArgumentNullException.ThrowIfNull(environment);
-        _rootPath = !string.IsNullOrWhiteSpace(options.Value.StorageRoot)
-            ? options.Value.StorageRoot
-            : Path.Combine(environment.ContentRootPath, "storage");
+        ArgumentNullException.ThrowIfNull(options);
+
+        var configuredRoot = options.Value.StorageRoot?.Trim();
+
+        if (string.IsNullOrWhiteSpace(configuredRoot))
+        {
+            configuredRoot = "Storage";
+        }
+
+        var hostRoot = Directory.GetParent(environment.ContentRootPath)!.FullName;
+
+        _rootPath = Path.GetFullPath(
+            Path.IsPathRooted(configuredRoot)
+                ? configuredRoot
+                : Path.Combine(hostRoot, configuredRoot));
+
+        Directory.CreateDirectory(_rootPath);
     }
+    
+    public string RootPath => _rootPath;
 
     public async Task<string> UploadAsync<T>(StreamUploadRequest request, FileType fileType,
         CancellationToken cancellationToken = default)
@@ -90,19 +127,19 @@ internal class LocalStorageService : IStorageService
         return relativePath.Replace("\\", "/", StringComparison.Ordinal);
     }
 
-    public Task<string> UploadAsync<T>(BufferedUploadRequest request, FileType fileType, 
+    public async Task<string> UploadAsync<T>(BufferedUploadRequest request, FileType fileType, 
         CancellationToken cancellationToken = default) 
         where T : class
     {
         ArgumentNullException.ThrowIfNull(request);
-        var stream = new MemoryStream(request.Data, writable: false);
+        using var stream = new MemoryStream(request.Data, writable: false);
         var streamRequest = new StreamUploadRequest
         {
             FileName    = request.FileName,
             ContentType = request.ContentType,
             Stream      = stream
         };
-        return UploadAsync<T>(streamRequest, fileType, cancellationToken);
+        return await  UploadAsync<T>(streamRequest, fileType, cancellationToken);
     }
 
     public Task<FileDownloadResponse?> DownloadAsync(string path, CancellationToken cancellationToken = default)

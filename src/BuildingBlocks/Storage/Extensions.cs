@@ -2,8 +2,10 @@
 using Amazon.S3;
 using Amazon.S3.Transfer;
 
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 using Storage.Abstractions;
@@ -44,7 +46,7 @@ public static class Extensions
                 "Storage:Local:StorageRoot is required when using Local storage.")
             .ValidateDataAnnotations().ValidateOnStart();
         
-        services.AddScoped<IStorageService, LocalStorageService>();
+        services.AddSingleton<IStorageService, LocalStorageService>();
         return services;
     }
 
@@ -83,7 +85,33 @@ public static class Extensions
             });
         });
 
-        services.AddTransient<IStorageService, S3StorageService>();
+        services.AddSingleton<IStorageService, S3StorageService>();
         return services;
+    }
+    
+    public static IApplicationBuilder UseFileStorageStaticContent(this WebApplication app)
+    {
+        var options = app.Services
+            .GetRequiredService<IOptions<StorageOptions>>()
+            .Value;
+
+        if (!string.Equals(
+                options.Provider?.Trim(),
+                "local",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return app;
+        }
+
+        var localStorage = app.Services
+            .GetRequiredService<IStorageService>();
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(localStorage.RootPath),
+            RequestPath = "/api/v1/static-contents"
+        });
+
+        return app;
     }
 }

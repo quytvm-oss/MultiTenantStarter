@@ -7,6 +7,8 @@ namespace Storage.Abstractions;
 
 public interface IStorageService
 {
+    string RootPath { get; }
+    
     Task<string> UploadAsync<T>(
         StreamUploadRequest request,
         FileType fileType,

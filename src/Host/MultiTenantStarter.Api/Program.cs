@@ -13,6 +13,8 @@ using Modules.Multitenancy.Features.v1.CreateTenant;
 using Modules.Multitenancy.Features.v1.GetTenantStatus;
 using Modules.Notifications;
 
+using Storage;
+
 using Web;
 using Web.MessageBus;
 using Web.Modules;
@@ -96,6 +98,7 @@ app.UsePlatform(p =>
     p.MapSseEndpoints = true;
     p.MapRealtime = true;
 });
+app.UseFileStorageStaticContent();
 
 app.MapGet("/", () => Results.Ok(new { message = "hello world!" }))
     .WithTags("PlayGround")

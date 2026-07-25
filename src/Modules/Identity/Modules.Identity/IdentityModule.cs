@@ -26,12 +26,14 @@ using Modules.Identity.Features.v1.Users.DeleteUser;
 using Modules.Identity.Features.v1.Users.ForgotPassword;
 using Modules.Identity.Features.v1.Users.GetUserById;
 using Modules.Identity.Features.v1.Users.GetUserPermissions;
+using Modules.Identity.Features.v1.Users.GetUserProfile;
 using Modules.Identity.Features.v1.Users.GetUserRoles;
 using Modules.Identity.Features.v1.Users.GetUsers;
 using Modules.Identity.Features.v1.Users.RegisterUser;
 using Modules.Identity.Features.v1.Users.ResendConfirmationEmail;
 using Modules.Identity.Features.v1.Users.ResetPassword;
 using Modules.Identity.Features.v1.Users.SelfRegistration;
+using Modules.Identity.Features.v1.Users.UpdateUser;
 using Modules.Identity.Services;
 
 using Persistence;
@@ -155,5 +157,7 @@ public class IdentityModule : IModule
         group.MapAssignUserRolesEndpoint();
         group.MapDeleteUserEndpoint();
         group.MapSelfRegisterUserEndpoint();
+        group.MapGetMeEndpoint();
+        group.MapUpdateUserEndpoint();
     }
 }

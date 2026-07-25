@@ -2,6 +2,8 @@
 
 using Modules.Identity.Contracts.v1.Users.UpdateUser;
 
+using Storage.Constant;
+
 namespace Modules.Identity.Features.v1.Users.UpdateUser;
 
 public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
@@ -28,11 +30,11 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .EmailAddress()
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
-        // When(x => x.Image is not null, () =>
-        // {
-        //     RuleFor(x => x.Image!)
-        //         .SetValidator(new UserImageValidator(FileType.Image));
-        // });
+        When(x => x.Image is not null, () =>
+        {
+            RuleFor(x => x.Image!)
+                .SetValidator(new UserImageValidator(FileType.Image));
+        });
 
         // Prevent deleting and uploading image at the same time
         RuleFor(x => x)

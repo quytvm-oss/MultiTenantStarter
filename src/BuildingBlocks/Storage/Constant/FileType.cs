@@ -8,11 +8,11 @@ public enum FileType
     Backup
 }
 
-internal sealed record FileTypeRules(
+public sealed record FileTypeRules(
     IReadOnlyList<string> AllowedExtensions,
     int MaxSizeInMb);
 
-internal static class FileTypeMetadata
+public static class FileTypeMetadata
 {
     private static readonly Dictionary<FileType, FileTypeRules> _rules = new()
     {
