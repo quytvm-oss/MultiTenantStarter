@@ -13,6 +13,8 @@ public class RequestContextService(
     : IRequestContextService
 {
     private readonly Uri? _originUrl = originOptions.Value.OriginUrl;
+    
+    private readonly string? _staticContentPath = originOptions.Value.StaticContentPath;
 
     public string? IpAddress  
      => httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
@@ -40,7 +42,14 @@ public class RequestContextService(
             var request = httpContextAccessor.HttpContext?.Request;
             if (request is not null && !string.IsNullOrWhiteSpace(request.Scheme) && request.Host.HasValue)
             {
-                return $"{request.Scheme}://{request.Host.Value}{request.PathBase}".TrimEnd('/');
+                var baseUri = $"{request.Scheme}://{request.Host.Value}{request.PathBase}".TrimEnd('/');
+                var staticContentPath = string.IsNullOrWhiteSpace(_staticContentPath)
+                    ? null
+                    : _staticContentPath.Trim('/');
+
+                return staticContentPath is null
+                    ? baseUri
+                    : $"{baseUri}/{staticContentPath}";
             }
             return null;
         }

@@ -98,7 +98,6 @@ app.UsePlatform(p =>
     p.MapSseEndpoints = true;
     p.MapRealtime = true;
 });
-app.UseFileStorageStaticContent();
 
 app.MapGet("/", () => Results.Ok(new { message = "hello world!" }))
     .WithTags("PlayGround")

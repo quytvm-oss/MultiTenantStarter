@@ -50,6 +50,7 @@
       <ProjectReference Include="..\Mailling\Mailling.csproj" />
       <ProjectReference Include="..\MessageBus\MessageBus.csproj" />
       <ProjectReference Include="..\Persistence\Persistence.csproj" />
+      <ProjectReference Include="..\Storage\Storage.csproj" />
     </ItemGroup>
 
 </Project>

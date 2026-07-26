@@ -178,9 +178,10 @@ public static class Extensions
             {
                 Directory.CreateDirectory(assetsPath);
             }
-
             app.UseStaticFiles();
         }
+        
+        app.UseFileStorageStaticContent();
 
         app.UseJobDashboard();
         app.UseRouting();

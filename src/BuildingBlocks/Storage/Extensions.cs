@@ -88,30 +88,4 @@ public static class Extensions
         services.AddSingleton<IStorageService, S3StorageService>();
         return services;
     }
-    
-    public static IApplicationBuilder UseFileStorageStaticContent(this WebApplication app)
-    {
-        var options = app.Services
-            .GetRequiredService<IOptions<StorageOptions>>()
-            .Value;
-
-        if (!string.Equals(
-                options.Provider?.Trim(),
-                "local",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return app;
-        }
-
-        var localStorage = app.Services
-            .GetRequiredService<IStorageService>();
-
-        app.UseStaticFiles(new StaticFileOptions
-        {
-            FileProvider = new PhysicalFileProvider(localStorage.RootPath),
-            RequestPath = "/api/v1/static-contents"
-        });
-
-        return app;
-    }
 }

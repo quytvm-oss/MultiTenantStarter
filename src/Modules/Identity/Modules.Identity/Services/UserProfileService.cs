@@ -31,6 +31,8 @@ internal sealed class UserProfileService(
 {
     private readonly Uri? _originUrl = originOptions.Value.OriginUrl;
     
+    private readonly string? _staticContentPath = originOptions.Value.StaticContentPath;
+    
     public async Task<UserDto> GetAsync(string userId, CancellationToken ct = default)
     {
         var user = await userManager.FindByIdAsync(userId);
@@ -47,6 +49,7 @@ internal sealed class UserProfileService(
             IsActive = user.IsActive,
             EmailConfirmed = user.EmailConfirmed,
             PhoneNumber = user.PhoneNumber,
+            ImageUrl = ResolveImageUrl(user.ImageUrl),
             TwoFactorEnabled = user.TwoFactorEnabled
         };
     }
@@ -182,11 +185,13 @@ internal sealed class UserProfileService(
             return null;
         }
 
+        // Absolute URLs (e.g., S3) pass through unchanged.
         if (imageUrl.IsAbsoluteUri)
         {
             return imageUrl.ToString();
         }
         
+        // For relative paths from local storage, prefix with the API origin and wwwroot.
         if (_originUrl is null)
         {
             var request = httpContextAccessor.HttpContext?.Request;
@@ -194,7 +199,10 @@ internal sealed class UserProfileService(
             {
                 var baseUri = $"{request.Scheme}://{request.Host.Value}{request.PathBase}";
                 var relativePath = imageUrl.ToString().TrimStart('/');
-                return $"{baseUri.TrimEnd('/')}/{relativePath}";
+                var prefixedRelativePath =  string.IsNullOrWhiteSpace(_staticContentPath)
+                    ? relativePath
+                    : $"{_staticContentPath.TrimStart('/')}/{relativePath}";
+                return $"{baseUri.TrimEnd('/')}/{prefixedRelativePath}";
             }
 
             return imageUrl.ToString();

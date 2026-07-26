@@ -25,6 +25,7 @@ using Modules.Identity.Features.v1.Users.ConfirmEmail;
 using Modules.Identity.Features.v1.Users.DeleteUser;
 using Modules.Identity.Features.v1.Users.ForgotPassword;
 using Modules.Identity.Features.v1.Users.GetUserById;
+using Modules.Identity.Features.v1.Users.GetUserGroups;
 using Modules.Identity.Features.v1.Users.GetUserPermissions;
 using Modules.Identity.Features.v1.Users.GetUserProfile;
 using Modules.Identity.Features.v1.Users.GetUserRoles;
@@ -32,7 +33,9 @@ using Modules.Identity.Features.v1.Users.GetUsers;
 using Modules.Identity.Features.v1.Users.RegisterUser;
 using Modules.Identity.Features.v1.Users.ResendConfirmationEmail;
 using Modules.Identity.Features.v1.Users.ResetPassword;
+using Modules.Identity.Features.v1.Users.SearchUsers;
 using Modules.Identity.Features.v1.Users.SelfRegistration;
+using Modules.Identity.Features.v1.Users.SetProfileImage;
 using Modules.Identity.Features.v1.Users.UpdateUser;
 using Modules.Identity.Services;
 
@@ -159,5 +162,8 @@ public class IdentityModule : IModule
         group.MapSelfRegisterUserEndpoint();
         group.MapGetMeEndpoint();
         group.MapUpdateUserEndpoint();
+        group.MapSetProfileImageEndpoint();
+        group.MapGetUserGroupsEndpoint();
+        group.MapSearchUsersEndpoint();
     }
 }
