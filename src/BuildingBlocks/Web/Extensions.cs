@@ -157,7 +157,7 @@ public static class Extensions
 
         app.UseExceptionHandler();
         app.UseResponseCompression();
-        app.UseAppLogging();
+        //app.UseAppLogging();
 
         // CORS MUST run before UseHttpsRedirection: preflight OPTIONS can't follow an HTTP→HTTPS redirect, so
         // the browser would block the call. Safe before routing because we use one global policy (no [EnableCors]).

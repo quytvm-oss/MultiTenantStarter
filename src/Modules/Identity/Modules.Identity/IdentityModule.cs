@@ -17,6 +17,12 @@ using Modules.Identity.Contracts.Authorization;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
+using Modules.Identity.Features.v1.Permissions.GetPermissionCatalog;
+using Modules.Identity.Features.v1.Sessions.GetMySessions;
+using Modules.Identity.Features.v1.Sessions.GetTenantSessions;
+using Modules.Identity.Features.v1.Sessions.GetUserSessions;
+using Modules.Identity.Features.v1.Sessions.RevokeAllSessions;
+using Modules.Identity.Features.v1.Sessions.RevokeSession;
 using Modules.Identity.Features.v1.Tokens.RefreshToken;
 using Modules.Identity.Features.v1.Tokens.TokenGeneration;
 using Modules.Identity.Features.v1.Users.AssignUserRoles;
@@ -145,6 +151,10 @@ public class IdentityModule : IModule
         // tokens
         group.MapGenerateTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
         group.MapRefreshTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
+        
+        // permission catalog — every permission registered with the host,
+        // filtered to the caller's tenant context (root vs admin set)
+        group.MapGetPermissionCatalogEndpoint();
 
         // users
         group.MapGetListUsersEndpoint();
@@ -165,5 +175,12 @@ public class IdentityModule : IModule
         group.MapSetProfileImageEndpoint();
         group.MapGetUserGroupsEndpoint();
         group.MapSearchUsersEndpoint();
+        
+        // sessions - user endpoints
+        group.MapGetMySessionsEndpoint();
+        group.MapGetUserSessionsEndpoint();
+        group.MapRevokeAllSessionsEndpoint();
+        group.MapRevokeSessionEndpoint();
+        group.MapGetTenantSessionsEndpoint();
     }
 }
