@@ -16,4 +16,12 @@
       <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="v1\Roles\DeleteRole\" />
+      <Folder Include="v1\Roles\GetRoles\" />
+      <Folder Include="v1\Roles\GetRoleWithPermissions\" />
+      <Folder Include="v1\Roles\GetRole\" />
+      <Folder Include="v1\Roles\UpdatePermissions\" />
+    </ItemGroup>
+
 </Project>
