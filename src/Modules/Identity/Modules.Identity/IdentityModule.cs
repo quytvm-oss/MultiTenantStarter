@@ -18,6 +18,8 @@ using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
 using Modules.Identity.Features.v1.Permissions.GetPermissionCatalog;
+using Modules.Identity.Features.v1.Sessions.AdminRevokeAllSessions;
+using Modules.Identity.Features.v1.Sessions.AdminRevokeSession;
 using Modules.Identity.Features.v1.Sessions.GetMySessions;
 using Modules.Identity.Features.v1.Sessions.GetTenantSessions;
 using Modules.Identity.Features.v1.Sessions.GetUserSessions;
@@ -182,5 +184,7 @@ public class IdentityModule : IModule
         group.MapRevokeAllSessionsEndpoint();
         group.MapRevokeSessionEndpoint();
         group.MapGetTenantSessionsEndpoint();
+        group.MapAdminRevokeAllSessionsEndpoint();
+        group.MapAdminRevokeSessionEndpoint();
     }
 }
