@@ -18,6 +18,12 @@ using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
 using Modules.Identity.Features.v1.Permissions.GetPermissionCatalog;
+using Modules.Identity.Features.v1.Roles.DeleteRole;
+using Modules.Identity.Features.v1.Roles.GetRoleById;
+using Modules.Identity.Features.v1.Roles.GetRoles;
+using Modules.Identity.Features.v1.Roles.GetRoleWithPermissions;
+using Modules.Identity.Features.v1.Roles.UpdateRolePermissions;
+using Modules.Identity.Features.v1.Roles.UpsertRole;
 using Modules.Identity.Features.v1.Sessions.AdminRevokeAllSessions;
 using Modules.Identity.Features.v1.Sessions.AdminRevokeSession;
 using Modules.Identity.Features.v1.Sessions.GetMySessions;
@@ -186,5 +192,13 @@ public class IdentityModule : IModule
         group.MapGetTenantSessionsEndpoint();
         group.MapAdminRevokeAllSessionsEndpoint();
         group.MapAdminRevokeSessionEndpoint();
+        
+        //roles
+        group.MapGetRolesQuery();
+        group.MapGetRoleByIdEndpoint();
+        group.MapGetRoleWithPermissionsEndpoint();
+        group.MapUpdateRolePermissionsEndpoint();
+        group.MapCreateOrUpdateRoleEndpoint();
+        group.MapDeleteRoleEndpoint();
     }
 }
