@@ -29,7 +29,7 @@ public class GenerateTokenCommandHandler(
     IRequestContext requestContext,
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
-    IBusPublisher eventBus,
+    //IBusPublisher eventBus,
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {
@@ -122,13 +122,13 @@ public class GenerateTokenCommandHandler(
             TokenFingerprint: fingerprint,
             AccessTokenExpiresAtUtc: token.AccessTokenExpiresAt);
         
-        await eventBus.PublishAsync(integrationEvent,x =>
-        {
-            x.Name = "token.generated";
-            x.Source = "Identity";
-            x.TenantId = tenantId;
-            x.CorrelationId = correlationId;
-        }  , cancellationToken);
+        // await eventBus.PublishAsync(integrationEvent,x =>
+        // {
+        //     x.Name = "token.generated";
+        //     x.Source = "Identity";
+        //     x.TenantId = tenantId;
+        //     x.CorrelationId = correlationId;
+        // }  , cancellationToken);
         
         return token;
     }

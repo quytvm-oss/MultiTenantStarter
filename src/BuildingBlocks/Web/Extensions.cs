@@ -24,6 +24,7 @@ using Web.FeatureFlags;
 using Web.Health;
 using Web.Idempotency;
 using Web.Mediator.Behaviors;
+using Web.MessageBus;
 using Web.Modules;
 using Web.Observability.Logging.Serilog;
 using Web.Observability.OpenTelemetry;

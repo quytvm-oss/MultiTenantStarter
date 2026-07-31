@@ -10,7 +10,7 @@ using Modules.Identity.Domain.Events;
 namespace Modules.Identity.Events;
 
 public sealed class UserRegisteredHandler(
-    IBusPublisher eventBus,
+    //IBusPublisher eventBus,
     ILogger<UserRegisteredHandler> logger)
     : INotificationHandler<UserRegisteredEvent>
 {
@@ -36,11 +36,11 @@ public sealed class UserRegisteredHandler(
             FirstName: notification.FirstName ?? string.Empty,
             LastName: notification.LastName ?? string.Empty);
 
-        await eventBus.PublishAsync(integrationEvent,x =>
-        {
-            x.Name = "user.register";
-            x.Source = "Identity";
-            x.TenantId = notification.TenantId;
-        }, cancellationToken);
+        // await eventBus.PublishAsync(integrationEvent,x =>
+        // {
+        //     x.Name = "user.register";
+        //     x.Source = "Identity";
+        //     x.TenantId = notification.TenantId;
+        // }, cancellationToken);
     }
 }

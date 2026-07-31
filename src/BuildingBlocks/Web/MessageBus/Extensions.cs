@@ -45,7 +45,7 @@ public static class Extensions
         return builder;
     }
     
-    public static IServiceCollection AddHeroMessaging<TMarker>(
+    public static IServiceCollection AddHeroMessaging(
         this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -59,16 +59,15 @@ public static class Extensions
 
         services.AddRebus(config => config
             .Transport(t => t.UseRabbitMq(
-                connectionString: dbSettings?.ConnectionString,
-                // tableName: options.MessagesTableName,
+                connectionString: options.RabbitMq.ConnectionString,
                 inputQueueName: options.QueueName))
-            .Subscriptions(s => s.StoreInPostgres(
-                connectionString: dbSettings?.ConnectionString,
-                tableName: options.SubscriptionsTableName,
-                isCentralized: true))
+            // .Subscriptions(s => s.StoreInPostgres(
+            //     connectionString: dbSettings?.ConnectionString,
+            //     tableName: options.Storage.SubscriptionsTableName,
+            //     isCentralized: true))
             .Outbox(o => o.StoreInPostgreSql(
                 connectionString: dbSettings?.ConnectionString,
-                tableName: options.OutboxTableName))
+                tableName:  options.Storage.OutboxTableName))
             .Routing(r => r.TypeBased().MapFallback(options.QueueName))
             .Options(o =>
             {
@@ -77,7 +76,19 @@ public static class Extensions
             })
             .Logging(l => l.Serilog()));
 
-        services.AutoRegisterHandlersFromAssemblyOf<TMarker>();
+        //services.AutoRegisterHandlersFromAssemblyOf<TMarker>();
+
+        return services;
+    }
+    
+    public static IServiceCollection AddHeroMessagingModules(
+        this IServiceCollection services,
+        IEnumerable<Assembly> assemblies)
+    {
+        foreach (var assembly in assemblies.Distinct())
+        {
+            services.AutoRegisterHandlersFromAssembly(assembly);
+        }
 
         return services;
     }

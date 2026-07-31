@@ -17,7 +17,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
     private readonly ITenantProvisioningStarter provisioningService;
     private readonly ITenantInitialPasswordBuffer passwordBuffer;
     private readonly IMediator mediator;
-    private readonly IBusPublisher _bus;
+    //private readonly IBusPublisher _bus;
 
     private readonly TimeProvider timeProvider;
 
@@ -25,14 +25,14 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         ITenantProvisioningStarter provisioningService, 
         ITenantInitialPasswordBuffer passwordBuffer, 
         IMediator mediator,
-        IBusPublisher events, 
+      //  IBusPublisher events, 
         TimeProvider timeProvider)
     {
         _tenantService = tenantService;
         this.provisioningService = provisioningService;
         this.passwordBuffer = passwordBuffer;
         this.mediator = mediator;
-        this._bus = events;
+     //   this._bus = events;
         this.timeProvider = timeProvider;
     }
 
@@ -80,16 +80,16 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         //     PeriodEndUtc: periodEnd),cancellationToken).ConfigureAwait(false);
         // }
 
-        await _bus.PublishAsync(new TenantSubscribedIntegrationEvent(
-            TenantId: tenantId,
-            CorrelationId: provisioning.CorrelationId,
-            PeriodStartUtc: periodStart,
-            PeriodEndUtc: periodEnd), x =>
-        {
-            x.Name = "tenant.created";
-            x.Source = "Multitenancy";
-            x.TenantId = tenantId;
-        }, cancellationToken);
+        // await _bus.PublishAsync(new TenantSubscribedIntegrationEvent(
+        //     TenantId: tenantId,
+        //     CorrelationId: provisioning.CorrelationId,
+        //     PeriodStartUtc: periodStart,
+        //     PeriodEndUtc: periodEnd), x =>
+        // {
+        //     x.Name = "tenant.created";
+        //     x.Source = "Multitenancy";
+        //     x.TenantId = tenantId;
+        // }, cancellationToken);
 
         return new CreateTenantCommandResponse(
             tenantId,
