@@ -24,8 +24,4 @@
       <PackageReference Include="UAParser" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Features\v1\Groups\" />
-    </ItemGroup>
-
 </Project>

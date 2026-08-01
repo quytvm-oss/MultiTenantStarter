@@ -7,6 +7,8 @@ using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Provisioning;
 
+using Rebus.Bus;
+
 using Shared.Multitenancy;
 
 namespace Modules.Multitenancy.Features.v1.CreateTenant;
@@ -17,23 +19,23 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
     private readonly ITenantProvisioningStarter provisioningService;
     private readonly ITenantInitialPasswordBuffer passwordBuffer;
     private readonly IMediator mediator;
-    //private readonly IBusPublisher _bus;
+    private readonly IBus _bus;
 
-    private readonly TimeProvider timeProvider;
+    private readonly TimeProvider _timeProvider;
 
     public CreateTenantCommandHandler(ITenantService tenantService, 
         ITenantProvisioningStarter provisioningService, 
         ITenantInitialPasswordBuffer passwordBuffer, 
         IMediator mediator,
-      //  IBusPublisher events, 
+        IBus bus, 
         TimeProvider timeProvider)
     {
         _tenantService = tenantService;
         this.provisioningService = provisioningService;
         this.passwordBuffer = passwordBuffer;
         this.mediator = mediator;
-     //   this._bus = events;
-        this.timeProvider = timeProvider;
+        this._bus = bus;
+        this._timeProvider = timeProvider;
     }
 
     public async ValueTask<CreateTenantCommandResponse> Handle(CreateTenantCommand command, CancellationToken cancellationToken)
@@ -47,7 +49,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         //     : command.PlanKey!;
         // var term = await mediator.Send(new GetPlanTermQuery(planKey), cancellationToken).ConfigureAwait(false);
         
-        var periodStart = timeProvider.GetUtcNow().UtcDateTime;
+        var periodStart = _timeProvider.GetUtcNow().UtcDateTime;
         var periodEnd = periodStart.AddMonths(3);
 
         var tenantId = await _tenantService.CreateAsync(
@@ -79,17 +81,12 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         //     PeriodStartUtc: periodStart,
         //     PeriodEndUtc: periodEnd),cancellationToken).ConfigureAwait(false);
         // }
-
-        // await _bus.PublishAsync(new TenantSubscribedIntegrationEvent(
-        //     TenantId: tenantId,
-        //     CorrelationId: provisioning.CorrelationId,
-        //     PeriodStartUtc: periodStart,
-        //     PeriodEndUtc: periodEnd), x =>
-        // {
-        //     x.Name = "tenant.created";
-        //     x.Source = "Multitenancy";
-        //     x.TenantId = tenantId;
-        // }, cancellationToken);
+        
+        await _bus.Send(new TenantSubscribedIntegrationEvent(
+            TenantId: tenantId,
+            CorrelationId: provisioning.CorrelationId,
+            PeriodStartUtc: periodStart,
+            PeriodEndUtc: periodEnd));
 
         return new CreateTenantCommandResponse(
             tenantId,

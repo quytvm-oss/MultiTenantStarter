@@ -17,6 +17,13 @@ using Modules.Identity.Contracts.Authorization;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
+using Modules.Identity.Features.v1.Groups.AddUsersToGroup;
+using Modules.Identity.Features.v1.Groups.CreateGroup;
+using Modules.Identity.Features.v1.Groups.DeleteGroup;
+using Modules.Identity.Features.v1.Groups.GetGroupById;
+using Modules.Identity.Features.v1.Groups.GetGroups;
+using Modules.Identity.Features.v1.Groups.RemoveUserFromGroup;
+using Modules.Identity.Features.v1.Groups.UpdateGroup;
 using Modules.Identity.Features.v1.Permissions.GetPermissionCatalog;
 using Modules.Identity.Features.v1.Roles.DeleteRole;
 using Modules.Identity.Features.v1.Roles.GetRoleById;
@@ -200,5 +207,14 @@ public class IdentityModule : IModule
         group.MapUpdateRolePermissionsEndpoint();
         group.MapCreateOrUpdateRoleEndpoint();
         group.MapDeleteRoleEndpoint();
+        
+        // groups
+        group.MapCreateGroupEndpoint();
+        group.MapAddUsersToGroupEndpoint();
+        group.MapDeleteGroupEndpoint();
+        group.MapGetGroupByIdEndpoint();
+        group.MapGetGroupsEndpoint();
+        group.MapRemoveUserFromGroupEndpoint();
+        group.MapUpdateGroupEndpoint();
     }
 }

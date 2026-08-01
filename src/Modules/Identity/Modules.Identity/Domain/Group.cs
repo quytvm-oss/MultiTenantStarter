@@ -45,4 +45,26 @@ public class Group : IAuditableEntity, ISoftDeletable
             CreatedBy = createdBy
         };
     }
+
+    public void Update(string name, string? description, string? modifiedBy = null)
+    {
+        Name = name;
+        Description = description;
+        LastModifiedOnUtc = TimeProvider.System.GetUtcNow();
+        LastModifiedBy = modifiedBy;
+    }
+
+    public void SetAsDefault(bool isDefault, string? modifiedBy = null)
+    {
+        IsDefault = isDefault;
+        LastModifiedOnUtc  = TimeProvider.System.GetUtcNow();
+        LastModifiedBy = modifiedBy;
+    }
+
+    public void Delete(string? deleteBy = null)
+    {
+        IsDeleted = true;
+        DeletedOnUtc = TimeProvider.System.GetUtcNow();
+        DeletedBy = deleteBy;
+    }
 }

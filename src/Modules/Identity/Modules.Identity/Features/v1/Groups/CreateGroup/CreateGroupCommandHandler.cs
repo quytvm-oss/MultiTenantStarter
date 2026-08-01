@@ -1,0 +1,79 @@
+using System.Net;
+
+using Core.Context;
+using Core.Exceptions;
+
+using Mediator;
+
+using Microsoft.EntityFrameworkCore;
+
+using Modules.Identity.Contracts.DTOs;
+using Modules.Identity.Contracts.v1.Groups.CreateGroup;
+using Modules.Identity.Data;
+using Modules.Identity.Domain;
+
+namespace Modules.Identity.Features.v1.Groups.CreateGroup;
+
+public class CreateGroupCommandHandler(IdentityDbContext dbContext, ICurrentUser currentUser)
+    : ICommandHandler<CreateGroupCommand, GroupDto>
+{
+    
+    public async ValueTask<GroupDto> Handle(CreateGroupCommand command, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        
+        // Validate name is unique within tenant
+        var nameExists = await dbContext.Groups
+            .AnyAsync(x => x.Name == command.Name, cancellationToken);
+
+        if (nameExists)
+            throw new CustomException($"Group with name '{command.Name}' already exists.", (IEnumerable<string>?)null,
+                HttpStatusCode.Conflict);
+        
+        // Validate role IDs exist — fetch Id+Name in a single query to avoid a second roundtrip later
+        List<(string Id, string Name)> resolvedRoles = [];
+        if (command.RoleIds is { Count: > 0 })
+        {
+            var rawRoles = await dbContext.Roles
+                .Where(r => command.RoleIds.Contains(r.Id))
+                .Select(r => new { r.Id, r.Name })
+                .ToListAsync(cancellationToken);
+            resolvedRoles = rawRoles.Select(r => (r.Id, r.Name!)).ToList();
+            
+            var invalidRoleIds = command.RoleIds.Except(resolvedRoles.Select(r => r.Id)).ToList();
+            if (invalidRoleIds.Count > 0)
+            {
+                throw new NotFoundException($"Role not found:  {string.Join(",", invalidRoleIds)}");
+            }
+        }
+
+        var group = Group.Create(
+            name: command.Name,
+            description: command.Description,
+            isDefault: command.IsDefault,
+            isSystemGroup: false,
+            createdBy: currentUser.GetUserId().ToString());
+        
+        // Add role assignments
+        foreach (var role in resolvedRoles)
+        {
+            dbContext.GroupRoles.Add(GroupRole.Create(group.Id, role.Item1));
+        }
+        
+        dbContext.Groups.Add(group);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new GroupDto()
+        {
+            Id = group.Id,
+            Name = group.Name,
+            Description = group.Description,
+            IsDefault = group.IsDefault,
+            IsSystemGroup = group.IsSystemGroup,
+            MemberCount = 0,
+            RoleIds = resolvedRoles.Select(r => r.Id).ToList().AsReadOnly(),
+            RoleNames = resolvedRoles.Select(r => r.Name).ToList().AsReadOnly(),
+            CreatedAt = group.CreatedOnUtc
+        };
+    }
+}

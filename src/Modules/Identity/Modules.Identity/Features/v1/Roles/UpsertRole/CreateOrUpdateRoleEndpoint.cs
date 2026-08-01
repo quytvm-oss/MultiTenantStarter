@@ -19,6 +19,7 @@ public static class CreateOrUpdateRoleEndpoint
     {
         return endpoints.MapPost("/roles", async (IMediator mediator,[FromBody] UpsertRoleCommand command, CancellationToken ct) => 
             TypedResults.Ok(await mediator.Send(command, ct)))
+            .WithTags("Roles")
             .WithName("CreateOrUpdateRole")
             .WithSummary("Create or update role")
             .RequirePermission(IdentityPermissions.Roles.Create)

@@ -20,6 +20,7 @@ public static class DeleteRoleEndpoint
                 await mediator.Send(new DeleteRoleCommand(id), ct);
                 return TypedResults.NoContent();
             })
+            .WithTags("Roles")
             .WithName("DeleteRole")
             .WithSummary("Deletes a role")
             .RequirePermission(IdentityPermissions.Roles.Delete)

@@ -18,6 +18,7 @@ public static class GetRoleByIdEndpoint
     {
         return endpoints.MapGet("/roles/{id:guid}", async (string id, IMediator mediator, CancellationToken ct) =>
             TypedResults.Ok(await mediator.Send(new GetRoleQuery(id), ct)))
+            .WithTags("Roles")
             .WithName("GetRoleById")
             .WithSummary("Gets a role by id")
             .RequirePermission(IdentityPermissions.Roles.View)
