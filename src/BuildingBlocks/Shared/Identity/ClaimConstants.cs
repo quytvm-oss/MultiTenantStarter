@@ -11,4 +11,8 @@ public class ClaimConstants
     public const string Fullname = "fullName";
     
     public const string ImageUrl = "image_url";
+    
+    public const string ActorSubject = "actor_sub";
+
+    public const string ActorTenant = "actor_tenant";
 }

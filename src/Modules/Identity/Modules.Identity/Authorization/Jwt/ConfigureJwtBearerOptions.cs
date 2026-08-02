@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
@@ -11,6 +12,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+
+using Modules.Identity.Contracts.Services;
+
+using Shared.Identity;
 
 namespace Modules.Identity.Authorization.Jwt;
 
@@ -83,32 +88,102 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
             OnChallenge = context =>
             {
                 context.HandleResponse();
-                if (context.Response.HasStarted)
+                if (!context.Response.HasStarted)
                 {
-                    return Task.CompletedTask;
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/problem+json";
+
+                    // Was an Authorization header even sent? Helps distinguish "JWT rejected"
+                    // from "no token at all" — both produce 401 but for very different reasons.
+                    bool hadAuthHeader = !string.IsNullOrEmpty(context.HttpContext.Request.Headers.Authorization);
+
+                    // RFC 9457 ProblemDetails — matches the contract the rest of the API uses
+                    // for error responses (via the global exception handler).
+                    var problem = new ProblemDetails
+                    {
+                        Type = "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1",
+                        Title = "Unauthorized",
+                        Status = StatusCodes.Status401Unauthorized,
+                        Detail = "Authentication is required to access this resource.",
+                        Instance = context.HttpContext.Request.Path,
+                    };
+
+                    // In Development surface the actual JwtBearer rejection reason; in Production keep the
+                    // body opaque to avoid leaking validation internals.
+                    if (isDev)
+                    {
+                        if (context.HttpContext.Items[FailureKey] is string reason)
+                        {
+                            problem.Extensions["reason"] = reason;
+                        }
+                        else if (!hadAuthHeader)
+                        {
+                            problem.Extensions["reason"] = "No Authorization header on the request.";
+                        }
+                        else
+                        {
+                            // Header present but JwtBearer didn't fire OnAuthenticationFailed —
+                            // typically means the bearer scheme didn't match the AuthorizationPolicy.
+                            problem.Extensions["reason"] = "Bearer token present but JwtBearer did not validate it (scheme mismatch?).";
+                        }
+
+                        var challengeLogger = context.HttpContext.RequestServices
+                            .GetRequiredService<ILoggerFactory>()
+                            .CreateLogger("FSH.Identity.JwtAuth");
+                        challengeLogger.LogWarning(
+                            "JwtBearer challenge for {Method} {Path}: hadAuthHeader={HadHeader} reason={Reason}",
+                            SanitizeForLog(context.HttpContext.Request.Method),
+                            SanitizeForLog(context.HttpContext.Request.Path.ToString()),
+                            hadAuthHeader,
+                            problem.Extensions["reason"]);
+                    }
+
+                    var traceId = context.HttpContext.TraceIdentifier;
+                    if (!string.IsNullOrEmpty(traceId))
+                    {
+                        problem.Extensions["traceId"] = traceId;
+                    }
+
+                    var result = System.Text.Json.JsonSerializer.Serialize(problem);
+                    return context.Response.WriteAsync(result);
+                }
+                return Task.CompletedTask;
+            },
+            // Server-side teeth behind /impersonation/revoke: for an impersonation token, reject if its
+            // grant is revoked/ended — otherwise revocation wouldn't stop tokens already in flight.
+            OnTokenValidated = async context =>
+            {
+                var actSub = context.Principal?.FindFirstValue(ClaimConstants.ActorSubject);
+                if (string.IsNullOrEmpty(actSub))
+                {
+                    // Not an impersonation token — zero cost for normal sessions.
+                    return;
                 }
 
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.ContentType = "application/problem+json";
-
-                var problem = new ProblemDetails
+                var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                if (string.IsNullOrEmpty(jti))
                 {
-                    Type = "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1",
-                    Title = "Unauthorized",
-                    Status = StatusCodes.Status401Unauthorized,
-                    Detail = "Authentication is required to access this resource.",
-                    Instance = context.HttpContext.Request.Path,
-                };
-
-                if (isDev && context.HttpContext.Items[FailureKey] is string reason)
-                {
-                    problem.Extensions["reason"] = reason;
+                    // jti is always minted by Start; reject defensively so a malformed/stripped token
+                    // can't bypass the revocation check.
+                    context.HttpContext.Items[FailureKey] = "Impersonation token missing jti claim";
+                    context.Fail("impersonation token missing jti claim");
+                    return;
                 }
 
-                problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+                // Resolve in a CHILD scope: this hook runs before Finbuckle resolves the tenant, so a request-
+                // scoped IdentityDbContext would cache a null-tenant context and NRE later tenant query filters.
+                await using var hookScope = context.HttpContext.RequestServices.CreateAsyncScope();
+                var grants = hookScope.ServiceProvider
+                    .GetRequiredService<IImpersonationGrantService>();
+                var revoked = await grants
+                    .IsRevokedOrEndedAsync(jti, context.HttpContext.RequestAborted)
+                    .ConfigureAwait(false);
 
-                var result = System.Text.Json.JsonSerializer.Serialize(problem);
-                return context.Response.WriteAsync(result);
+                if (revoked)
+                {
+                    context.HttpContext.Items[FailureKey] = "Impersonation grant revoked or ended";
+                    context.Fail("impersonation grant revoked or ended");
+                }
             },
             OnForbidden = _ => throw new ForbiddenException(),
             OnMessageReceived = context =>

@@ -1,3 +1,13 @@
+using Mediator;
+
+using Modules.Identity.Contracts.DTOs;
+
 namespace Modules.Identity.Contracts.v1.TwoFactor;
 
-public record EnrollTwoFactorCommand();
+/// <summary>
+/// Begin TOTP enrollment for the current user. Generates (or replaces) the user's
+/// authenticator shared secret and returns it along with an otpauth:// URI suitable
+/// for rendering as a QR code. Two-factor is NOT enabled until the caller confirms
+/// the code via <see cref="VerifyEnrollTwoFactorCommand"/>.
+/// </summary>
+public record EnrollTwoFactorCommand() : ICommand<TwoFactorEnrollmentResponse>;

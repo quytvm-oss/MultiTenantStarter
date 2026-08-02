@@ -24,6 +24,10 @@ using Modules.Identity.Features.v1.Groups.GetGroupById;
 using Modules.Identity.Features.v1.Groups.GetGroups;
 using Modules.Identity.Features.v1.Groups.RemoveUserFromGroup;
 using Modules.Identity.Features.v1.Groups.UpdateGroup;
+using Modules.Identity.Features.v1.Impersonation.EndImpersonation;
+using Modules.Identity.Features.v1.Impersonation.GetImpersonationGrants;
+using Modules.Identity.Features.v1.Impersonation.RevokeImpersonationGrant;
+using Modules.Identity.Features.v1.Impersonation.StartImpersonation;
 using Modules.Identity.Features.v1.Permissions.GetPermissionCatalog;
 using Modules.Identity.Features.v1.Roles.DeleteRole;
 using Modules.Identity.Features.v1.Roles.GetRoleById;
@@ -40,6 +44,9 @@ using Modules.Identity.Features.v1.Sessions.RevokeAllSessions;
 using Modules.Identity.Features.v1.Sessions.RevokeSession;
 using Modules.Identity.Features.v1.Tokens.RefreshToken;
 using Modules.Identity.Features.v1.Tokens.TokenGeneration;
+using Modules.Identity.Features.v1.TwoFactor.Disable;
+using Modules.Identity.Features.v1.TwoFactor.Enroll;
+using Modules.Identity.Features.v1.TwoFactor.VerifyEnroll;
 using Modules.Identity.Features.v1.Users.AssignUserRoles;
 using Modules.Identity.Features.v1.Users.ChangePassword;
 using Modules.Identity.Features.v1.Users.ConfirmEmail;
@@ -216,5 +223,16 @@ public class IdentityModule : IModule
         group.MapGetGroupsEndpoint();
         group.MapRemoveUserFromGroupEndpoint();
         group.MapUpdateGroupEndpoint();
+        
+        // impersonal grant
+        group.MapStartImpersonationEndpoint();
+        group.MapEndImpersonationEndpoint();
+        group.MapRevokeImpersonationGrantEndpoint();
+        group.MapGetImpersonationGrantsEndpoint();
+        
+        // two factor
+        group.MapEnrollTwoFactorEndpoint();
+        group.MapVerifyEnrollTwoFactorEndpoint();
+        group.MapDisableTwoFactorEndpoint();
     }
 }
