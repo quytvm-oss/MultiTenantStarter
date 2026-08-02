@@ -4,6 +4,7 @@ using Core.Exceptions;
 using Mediator;
 
 using Modules.Identity.Contracts.DTOs;
+using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Impersonation.GetImpersonationGrants;
 using Modules.Identity.Services;
 
@@ -12,7 +13,7 @@ using Shared.Multitenancy;
 namespace Modules.Identity.Features.v1.Impersonation.GetImpersonationGrants;
 
 public class GetImpersonationGrantsQueryHandler(
-    ImpersonationGrantService impersonationGrantService,
+    IImpersonationGrantService impersonationGrantService,
     ICurrentUser currentUser)
     : IQueryHandler<GetImpersonationGrantsQuery, IReadOnlyList<ImpersonationGrantDto>>
 {

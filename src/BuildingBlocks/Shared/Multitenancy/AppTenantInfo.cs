@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 
 using Finbuckle.MultiTenant.Abstractions;
 
+using Shared.Quota;
+
 namespace Shared.Multitenancy;
 
 public class AppTenantInfo : TenantInfo, IAppTenantInfo
@@ -42,10 +44,10 @@ public class AppTenantInfo : TenantInfo, IAppTenantInfo
     public string? Issuer { get; set; }
 
     /// <summary>Plan name used to resolve quota defaults (e.g. "free", "pro"). Null falls back to <c>QuotaOptions.DefaultPlan</c>.</summary>
-    //public string? Plan { get; set; }
+    public string? Plan { get; set; }
 
     /// <summary>Per-tenant quota overrides. Serialized as JSON by the tenant store; empty by default.</summary>
-    //public Dictionary<QuotaResource, long> QuotaLimits { get; set; } = new();
+    public Dictionary<QuotaResource, long> QuotaLimits { get; set; } = new();
 
     public void AddValidity(int months) =>
         ValidUpTo = ValidUpTo.AddMonths(months);
