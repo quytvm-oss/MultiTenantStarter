@@ -24,6 +24,7 @@ using Modules.Multitenancy.Features.v1.CreateTenant;
 using Modules.Multitenancy.Features.v1.GetTenantMigrations;
 using Modules.Multitenancy.Features.v1.GetTenants;
 using Modules.Multitenancy.Features.v1.GetTenantStatus;
+using Modules.Multitenancy.Features.v1.ResetTenantTheme;
 using Modules.Multitenancy.Provisioning;
 using Modules.Multitenancy.Services;
 
@@ -40,6 +41,7 @@ public class MultitenancyModule : IModule
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.AddScoped<ITenantService, TenantService>();
+        builder.Services.AddScoped<ITenantThemeService, TenantThemeService>();
         builder.Services.AddScoped<ITenantProvisioningStarter, TenantProvisioningService>();
         builder.Services.AddScoped<ITenantProvisioningReader, TenantProvisioningService>();
         builder.Services.AddScoped<ITenantProvisioningStateWriter, TenantProvisioningService>();
@@ -203,5 +205,6 @@ public class MultitenancyModule : IModule
         GetTenantsEndpoint.Map(group);
         AdjustTenantValidityEndpoint.Map(group);
         TenantMigrationsEndpoint.Map(group);
+        ResetTenantThemeEndpoint.Map(group);
     }
 }

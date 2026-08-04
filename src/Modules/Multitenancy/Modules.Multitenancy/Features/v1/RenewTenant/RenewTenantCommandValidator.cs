@@ -10,5 +10,8 @@ namespace Modules.Multitenancy.Features.v1.RenewTenant;
 /// </summary>
 public class RenewTenantCommandValidator : AbstractValidator<RenewTenantCommand>
 {
-    
+    public RenewTenantCommandValidator()
+    {
+        //RuleFor(x => x.)
+    }
 }

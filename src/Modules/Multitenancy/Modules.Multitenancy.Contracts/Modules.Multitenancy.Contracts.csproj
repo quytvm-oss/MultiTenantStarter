@@ -15,4 +15,9 @@
       <PackageReference Include="Mediator.Abstractions" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="v1\TenantProvisioning\" />
+      <Folder Include="v1\UpdateTenantTheme\" />
+    </ItemGroup>
+
 </Project>
