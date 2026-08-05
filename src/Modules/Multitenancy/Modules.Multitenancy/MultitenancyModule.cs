@@ -25,6 +25,9 @@ using Modules.Multitenancy.Features.v1.GetTenantMigrations;
 using Modules.Multitenancy.Features.v1.GetTenants;
 using Modules.Multitenancy.Features.v1.GetTenantStatus;
 using Modules.Multitenancy.Features.v1.ResetTenantTheme;
+using Modules.Multitenancy.Features.v1.TenantProvisioning.GetTenantProvisioningStatus;
+using Modules.Multitenancy.Features.v1.TenantProvisioning.RetryTenantProvisioning;
+using Modules.Multitenancy.Features.v1.UpdateTenantTheme;
 using Modules.Multitenancy.Provisioning;
 using Modules.Multitenancy.Services;
 
@@ -206,5 +209,8 @@ public class MultitenancyModule : IModule
         AdjustTenantValidityEndpoint.Map(group);
         TenantMigrationsEndpoint.Map(group);
         ResetTenantThemeEndpoint.Map(group);
+        UpdateTenantThemeEndpoint.Map(group);
+        GetTenantProvisioningStatusEndpoint.Map(group);
+        RetryTenantProvisioningEndpoint.Map(group);
     }
 }
