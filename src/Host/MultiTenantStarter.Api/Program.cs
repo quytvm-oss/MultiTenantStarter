@@ -2,18 +2,13 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 
 using Modules.Auditing;
+using Modules.Auditing.Contracts;
 using Modules.Identity;
 using Modules.Identity.Contracts;
-using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
 using Modules.Multitenancy;
-using Modules.Multitenancy.Contracts;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
-using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using Modules.Multitenancy.Features.v1.CreateTenant;
-using Modules.Multitenancy.Features.v1.GetTenantStatus;
 using Modules.Notifications;
-
-using Storage;
 
 using Web;
 using Web.MessageBus;
@@ -61,6 +56,8 @@ builder.Services.AddMediator(o =>
     [
         typeof(IdentityContractsMarker),
         typeof(IdentityModule),
+        typeof(AuditingContractsMarker),
+        typeof(AuditingModule),
         typeof(CreateTenantCommand),
         typeof(CreateTenantCommandHandler)
     ];

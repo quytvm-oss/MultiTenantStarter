@@ -1,7 +1,11 @@
+using System.Text.Json;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using Shared.Multitenancy;
+using Shared.Quota;
 
 namespace Modules.Multitenancy.Data.Configurations;
 
@@ -15,6 +19,19 @@ public class AppTenantInfoConfiguration : IEntityTypeConfiguration<AppTenantInfo
         
         builder.HasKey(x => x.Id);
         
-        // builder.Property(t => t.Plan).HasMaxLength(64);
+        builder.Property(t => t.Plan).HasMaxLength(64);
+        
+        builder.Property(t => t.QuotaLimits)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => string.IsNullOrWhiteSpace(v)
+                    ? new Dictionary<QuotaResource, long>()
+                    : JsonSerializer.Deserialize<Dictionary<QuotaResource, long>>(v, (JsonSerializerOptions?)null)
+                      ?? new Dictionary<QuotaResource, long>())
+            .HasColumnType("jsonb")
+            .Metadata.SetValueComparer(new ValueComparer<Dictionary<QuotaResource, long>>(
+                (a, b) => ReferenceEquals(a, b) || (a != null && b != null && a.SequenceEqual(b)),
+                v => v.Aggregate(0, (h, kv) => HashCode.Combine(h, (int)kv.Key, kv.Value.GetHashCode())),
+                v => new Dictionary<QuotaResource, long>(v)));
     }
 }
