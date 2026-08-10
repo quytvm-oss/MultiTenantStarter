@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Asp.Versioning;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +12,8 @@ using Microsoft.Extensions.Hosting;
 
 using Modules.Auditing.Contracts;
 using Modules.Auditing.Core;
+using Modules.Auditing.Features.GetAuditById;
+using Modules.Auditing.Features.GetAudits;
 using Modules.Auditing.Infrastructure.Http;
 using Modules.Auditing.Infrastructure.Serialization;
 using Modules.Auditing.Persistence;
@@ -70,6 +75,18 @@ public class AuditingModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
-        
+        ArgumentNullException.ThrowIfNull(endpoints);
+        var apiVersionSet = endpoints.NewApiVersionSet()
+            .HasApiVersion(new ApiVersion(1))
+            .ReportApiVersions()
+            .Build();
+
+        var group = endpoints
+            .MapGroup("api/v{version:apiVersion}/audits")
+            .WithTags("Audits")
+            .WithApiVersionSet(apiVersionSet);
+
+        group.MapGetAuditsEndpoint();
+        group.MapGetAuditByIdEndpoint();
     }
 }

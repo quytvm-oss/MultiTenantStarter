@@ -13,8 +13,4 @@
       <ProjectReference Include="..\Modules.Auditing.Contracts\Modules.Auditing.Contracts.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Features\" />
-    </ItemGroup>
-
 </Project>
