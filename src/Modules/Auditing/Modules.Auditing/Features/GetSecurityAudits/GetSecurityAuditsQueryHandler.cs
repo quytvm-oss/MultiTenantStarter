@@ -1,0 +1,79 @@
+using Mediator;
+
+using Microsoft.EntityFrameworkCore;
+
+using Modules.Auditing.Contracts;
+using Modules.Auditing.Contracts.DTOs;
+using Modules.Auditing.Contracts.v1.GetSecurityAudits;
+using Modules.Auditing.Persistence;
+using static Modules.Auditing.Persistence.AuditJsonbFunctions;
+
+namespace Modules.Auditing.Features.GetSecurityAudits;
+
+public class GetSecurityAuditsQueryHandler(AuditDbContext dbContext)
+    : IQueryHandler<GetSecurityAuditsQuery, IReadOnlyList<AuditSummaryDto>>
+{
+    private const int MaxPageSize = 200;
+    private const int DefaultPageSize = 50;
+
+    public async ValueTask<IReadOnlyList<AuditSummaryDto>> Handle(GetSecurityAuditsQuery query, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        IQueryable<AuditRecord> audits = dbContext.AuditRecords
+            .AsNoTracking()
+            .Where(a => a.EventType == (int)AuditEventType.Security);
+
+        if (query.FromUtc.HasValue)
+        {
+            audits = audits.Where(a => a.OccurredAtUtc >= query.FromUtc.Value);
+        }
+
+        if (query.ToUtc.HasValue)
+        {
+            audits = audits.Where(a => a.OccurredAtUtc <= query.ToUtc.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.UserId))
+        {
+            audits = audits.Where(a => a.UserId == query.UserId);
+        }
+
+        if (query.Action.HasValue && query.Action.Value != SecurityAction.None)
+        {
+            string actionValue = query.Action.Value.ToString();
+            // PostgreSQL renders jsonb::text in canonical form with a space after the
+            // colon ({"action": "Value"}), so the pattern must include that space.
+            audits = audits.Where(a => a.PayloadJson != null &&
+                EF.Functions.ILike(AsText(a.PayloadJson), $"%\"action\": \"{actionValue}\"%"));
+        }
+
+        // Cap server-side so an unpaged call can't materialize a tenant's whole audit history.
+        var take = query.Take is >= 1 and <= MaxPageSize ? query.Take.Value : DefaultPageSize;
+        var skip = query.Skip is > 0 ? query.Skip.Value : 0;
+
+        var list = await audits
+            .OrderByDescending(a => a.OccurredAtUtc)
+            .Skip(skip)
+            .Take(take)
+            .Select(a => new AuditSummaryDto
+            {
+                Id = a.Id,
+                OccurredAtUtc = a.OccurredAtUtc,
+                EventType = (AuditEventType)a.EventType,
+                Severity = (AuditSeverity)a.Severity,
+                TenantId = a.TenantId,
+                UserId = a.UserId,
+                UserName = a.UserName,
+                TraceId = a.TraceId,
+                CorrelationId = a.CorrelationId,
+                RequestId = a.RequestId,
+                Source = a.Source,
+                Tags = (AuditTag)a.Tags
+            })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return list;
+    }
+}

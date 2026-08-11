@@ -14,6 +14,11 @@ using Modules.Auditing.Contracts;
 using Modules.Auditing.Core;
 using Modules.Auditing.Features.GetAuditById;
 using Modules.Auditing.Features.GetAudits;
+using Modules.Auditing.Features.GetAuditsByCorrelation;
+using Modules.Auditing.Features.GetAuditsByTrace;
+using Modules.Auditing.Features.GetAuditSummary;
+using Modules.Auditing.Features.GetExceptionAudits;
+using Modules.Auditing.Features.GetSecurityAudits;
 using Modules.Auditing.Infrastructure.Http;
 using Modules.Auditing.Infrastructure.Serialization;
 using Modules.Auditing.Persistence;
@@ -88,5 +93,10 @@ public class AuditingModule : IModule
 
         group.MapGetAuditsEndpoint();
         group.MapGetAuditByIdEndpoint();
+        group.MapGetAuditsByCorrelationEndpoint();
+        group.MapGetAuditsByTraceEndpoint();
+        group.MapGetAuditSummaryEndpoint();
+        group.MapGetExceptionAuditsEndpoint();
+        group.MapGetSecurityAuditsEndpoint();
     }
 }
