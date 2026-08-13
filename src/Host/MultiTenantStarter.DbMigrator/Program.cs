@@ -8,6 +8,7 @@ using Jobs.Services;
 using Microsoft.EntityFrameworkCore;
 
 using Modules.Auditing;
+using Modules.Files;
 using Modules.Identity;
 using Modules.Identity.Contracts;
 using Modules.Multitenancy;
@@ -94,7 +95,8 @@ var moduleAssemblies = new Assembly[]
     typeof(IdentityModule).Assembly,
     typeof(MultitenancyModule).Assembly,
     typeof(AuditingModule).Assembly,
-    typeof(NotificationsModule).Assembly
+    typeof(NotificationsModule).Assembly,
+    typeof(FilesModule).Assembly
 };
 
 // chỉ add platform phần cần thiết

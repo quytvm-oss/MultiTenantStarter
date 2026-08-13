@@ -9,6 +9,8 @@
     <ItemGroup>
       <ProjectReference Include="..\..\BuildingBlocks\Persistence\Persistence.csproj" />
       <ProjectReference Include="..\..\Modules\Auditing\Modules.Auditing\Modules.Auditing.csproj" />
+      <ProjectReference Include="..\..\Modules\Files\Modules.Files.Contracts\Modules.Files.Contracts.csproj" />
+      <ProjectReference Include="..\..\Modules\Files\Modules.Files\Modules.Files.csproj" />
       <ProjectReference Include="..\..\Modules\Identity\Modules.Identity\Modules.Identity.csproj" />
       <ProjectReference Include="..\..\Modules\Multitenancy\Modules.Multitenancy\Modules.Multitenancy.csproj" />
     </ItemGroup>

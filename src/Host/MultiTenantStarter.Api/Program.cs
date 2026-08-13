@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 using Modules.Auditing;
 using Modules.Auditing.Contracts;
+using Modules.Files;
 using Modules.Identity;
 using Modules.Identity.Contracts;
 using Modules.Multitenancy;
@@ -68,7 +69,8 @@ var moduleAssemblies = new Assembly[]
     typeof(IdentityModule).Assembly,
     typeof(MultitenancyModule).Assembly,
     typeof(AuditingModule).Assembly,
-    typeof(NotificationsModule).Assembly
+    typeof(NotificationsModule).Assembly,
+    typeof(FilesModule).Assembly,
 };
 
 builder.AddPlatform(o =>
