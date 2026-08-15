@@ -1,4 +1,5 @@
-using Web.MessageBus;
+using Core.Messaging;
+
 
 namespace Modules.Multitenancy.Contracts.Events;
 

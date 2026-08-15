@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\BuildingBlocks\Shared\Shared.csproj" />
-      <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />
     </ItemGroup>
 
     <ItemGroup>

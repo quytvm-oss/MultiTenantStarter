@@ -1,4 +1,4 @@
-namespace Web.MessageBus;
+namespace Core.Messaging;
 
 public interface IIntegrationEvent
 {

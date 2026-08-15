@@ -8,7 +8,14 @@
 
     <ItemGroup>
       <Folder Include="Authorizations\" />
-      <Folder Include="v1\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Mediator.Abstractions" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\BuildingBlocks\Shared\Shared.csproj" />
     </ItemGroup>
 
 </Project>
