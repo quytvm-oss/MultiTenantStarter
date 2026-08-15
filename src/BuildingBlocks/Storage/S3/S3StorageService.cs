@@ -212,23 +212,148 @@ internal sealed partial class S3StorageService : IStorageService
             _logger.LogWarning(ex, "Unexpected error deleting S3 object {Path}", path);
         }
     }
-    
-     // -----------------------------------------------------------------------
-    // Private helpers
-    // -----------------------------------------------------------------------
-    private string BuildKey<T>(string fileName) where T : class
-    {
-        var folder       = NonAlphanumericRegex().Replace(typeof(T).Name.ToLowerInvariant(), "_");
-        var relativePath = $"{UploadBasePath}/{folder}/{Guid.NewGuid():N}_{fileName}";
 
-        return string.IsNullOrWhiteSpace(_options.Prefix)
-            ? relativePath
-            : $"{_options.Prefix.TrimEnd('/')}/{relativePath}";
+    public async Task<long> GetSizeAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return 0;
+        }
+        
+        try
+        {
+            var key = NormalizeKey(path);
+            var metadata = await _s3.GetObjectMetadataAsync(new GetObjectMetadataRequest
+            {
+                BucketName = _options.Bucket,
+                Key = key
+            }, cancellationToken).ConfigureAwait(false);
+
+            return metadata.ContentLength;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return 0;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogWarning(ex, "S3 error reading object size {Path}: {StatusCode}", path, ex.StatusCode);
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Unexpected error reading S3 object size: {Path}", path);
+            return 0;
+        }
     }
 
- 
-   
-    private string BuildPublicUrl(string key)
+    public async Task<PresignedUploadUrl> GenerateUploadUrlAsync(string storageKey, string contentType, long maxBytes, TimeSpan ttl,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
+
+        var key = NormalizeKey(storageKey);
+        var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
+
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _options.Bucket,
+            Key = key,
+            Verb = HttpVerb.PUT,
+            Expires = expiresAt.UtcDateTime,
+            ContentType = contentType,
+            Protocol = ResolvePresignProtocol()
+        };
+
+        var url = await _s3.GetPreSignedURLAsync(request).ConfigureAwait(false);
+
+        var requiredHeaders = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Content-Type"] = contentType
+        };
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("Issued presigned PUT URL for bucket {Bucket} key {Key} expires {ExpiresAt}",
+                _options.Bucket, key, expiresAt);
+        }
+
+        return new PresignedUploadUrl(new Uri(url), requiredHeaders, expiresAt);
+    }
+
+    public async Task<Uri> GenerateDownloadUrlAsync(string storageKey, TimeSpan ttl, string? responseContentDisposition,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
+
+        var key = NormalizeKey(storageKey);
+
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _options.Bucket,
+            Key = key,
+            Verb = HttpVerb.GET,
+            Expires = DateTime.UtcNow.Add(ttl),
+            Protocol = ResolvePresignProtocol()
+        };
+
+        if (!string.IsNullOrWhiteSpace(responseContentDisposition))
+        {
+            request.ResponseHeaderOverrides.ContentDisposition = responseContentDisposition;
+        }
+
+        var url = await _s3.GetPreSignedURLAsync(request).ConfigureAwait(false);
+        return new Uri(url);
+    }
+
+    public async Task<StoredObjectMetadata?> HeadObjectAsync(string storageKey, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(storageKey))
+        {
+            return null;
+        }
+
+        try
+        {
+            var key = NormalizeKey(storageKey);
+            var metadata = await _s3.GetObjectMetadataAsync(new GetObjectMetadataRequest
+            {
+                BucketName = _options.Bucket,
+                Key = key
+            }, cancellationToken).ConfigureAwait(false);
+
+            var contentType = string.IsNullOrWhiteSpace(metadata.Headers.ContentType)
+                ? "application/octet-stream"
+                : metadata.Headers.ContentType;
+
+            var lastModified = metadata.LastModified.HasValue
+                ? new DateTimeOffset(DateTime.SpecifyKind(metadata.LastModified.Value, DateTimeKind.Utc), TimeSpan.Zero)
+                : DateTimeOffset.UtcNow;
+
+            return new StoredObjectMetadata(
+                metadata.ContentLength,
+                contentType,
+                lastModified,
+                metadata.ETag);
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogWarning(ex, "S3 HEAD failed for {Key}: {StatusCode}", storageKey, ex.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Unexpected error on S3 HEAD for {Key}", storageKey);
+            return null;
+        }
+    }
+
+    public string BuildPublicUrl(string key)
     {
         var safeKey = key.TrimStart('/');
         
@@ -252,6 +377,33 @@ internal sealed partial class S3StorageService : IStorageService
             ? $"https://{_options.Bucket}.s3.amazonaws.com/{safeKey}"
             : $"https://{_options.Bucket}.s3.{_options.Region}.amazonaws.com/{safeKey}";
     }
+    
+    // MinIO and other S3-compatibles often serve plain HTTP, but the SDK defaults presigned URLs to
+    // HTTPS regardless of ServiceURL scheme (un-PUTable there). Infer protocol from ServiceURL.
+    private Protocol ResolvePresignProtocol()
+    {
+        if (!string.IsNullOrWhiteSpace(_options.ServiceUrl)
+            && Uri.TryCreate(_options.ServiceUrl, UriKind.Absolute, out var uri)
+            && string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+        {
+            return Protocol.HTTP;
+        }
+        return Protocol.HTTPS;
+    }
+
+    // -----------------------------------------------------------------------
+    // Private helpers
+    // -----------------------------------------------------------------------
+    private string BuildKey<T>(string fileName) where T : class
+    {
+        var folder       = NonAlphanumericRegex().Replace(typeof(T).Name.ToLowerInvariant(), "_");
+        var relativePath = $"{UploadBasePath}/{folder}/{Guid.NewGuid():N}_{fileName}";
+
+        return string.IsNullOrWhiteSpace(_options.Prefix)
+            ? relativePath
+            : $"{_options.Prefix.TrimEnd('/')}/{relativePath}";
+    }
+    
     
     private string NormalizeKey(string path)
     {
