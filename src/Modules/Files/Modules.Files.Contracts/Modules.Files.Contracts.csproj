@@ -7,10 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Authorizations\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Mediator.Abstractions" />
     </ItemGroup>
 

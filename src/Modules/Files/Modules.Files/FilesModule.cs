@@ -1,9 +1,14 @@
-﻿using Microsoft.AspNetCore.Routing;
+﻿using FluentValidation;
+
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
+using Modules.Files.Authorization;
+using Modules.Files.Contracts;
 using Modules.Files.Data;
+using Modules.Files.Services;
 
 using Persistence;
 
@@ -26,6 +31,15 @@ public class FilesModule : IModule
 
         builder.Services.AddCustomDbContext<FilesDbContext>();
         builder.Services.AddScoped<IDbInitializer,FilesDbInitializer>();
+        
+        builder.Services.AddScoped<FileAccessPolicyRegistry>();
+        builder.Services.AddSingleton<IFileScanner, NoOpFileScanner>();
+        builder.Services.AddValidatorsFromAssembly(typeof(FilesModule).Assembly);
+        
+        // Default uploader-only policies for the built-in OwnerTypes. Owning modules register their
+        // own policies for additional OwnerTypes via services.AddFileAccessPolicy<TPolicy>().
+        builder.Services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("MyFiles"));
+        builder.Services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("User"));
         
         builder.Services.AddHealthChecks().AddDbContextCheck<FilesDbContext>(
             name: "db:files",
