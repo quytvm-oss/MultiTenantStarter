@@ -10,6 +10,7 @@ public class NotificationsModule : IModule
 {
     public void ConfigureServices(IHostApplicationBuilder builder)
     {
+        
     }
 
     public void ConfigureMiddleware(IApplicationBuilder app)
