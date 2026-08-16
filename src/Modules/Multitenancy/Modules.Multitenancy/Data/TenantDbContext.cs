@@ -14,7 +14,7 @@ public class TenantDbContext : EFCoreStoreDbContext<AppTenantInfo>
     
     public const string Schema = "tenant";
     
-    public TenantDbContext(DbContextOptions options) : base(options)
+    public TenantDbContext(DbContextOptions<TenantDbContext> options) : base(options)
     {
     }
     

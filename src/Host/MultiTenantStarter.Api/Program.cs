@@ -69,7 +69,7 @@ var moduleAssemblies = new Assembly[]
     typeof(IdentityModule).Assembly,
     typeof(MultitenancyModule).Assembly,
     typeof(AuditingModule).Assembly,
-  //  typeof(NotificationsModule).Assembly,
+    typeof(NotificationsModule).Assembly,
     typeof(FilesModule).Assembly,
 };
 

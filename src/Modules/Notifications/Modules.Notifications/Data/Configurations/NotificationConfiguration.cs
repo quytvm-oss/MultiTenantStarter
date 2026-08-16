@@ -22,6 +22,10 @@ public class NotificationConfiguration: IEntityTypeConfiguration<Notification>
         builder.Property(x => x.MetadataJson).HasColumnType("jsonb").IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.ReadAtUtc);
+        
+        builder.Property(x => x.Platform) 
+            .HasConversion(x => x.ToString(), x => Enum.Parse<Platform>(x))
+            .IsRequired();
 
         // Inbox query is always `WHERE UserId=? ORDER BY CreatedAtUtc DESC` with an optional
         // unread filter — single composite covers all paths.

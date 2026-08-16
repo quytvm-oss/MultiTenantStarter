@@ -7,7 +7,7 @@ public class Notification : AggregateRoot<Guid>
     public string UserId { get; private set; } = default!;
     
     /// <summary>Logical event type, e.g. <c>chat.mention</c>. Used by the UI to pick an icon.</summary>
-    public Type Type { get; private set; }
+    public string Type { get; private set; }
 
     public string Title { get; private set; } = default!;
 
