@@ -1,7 +1,5 @@
 using Core.Messaging;
 
-using Web.MessageBus;
-
 namespace Modules.Identity.Contracts.Events;
 
 /// <summary>
