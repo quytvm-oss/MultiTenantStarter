@@ -1,0 +1,95 @@
+name: multitenants
+
+services:
+  postgres:
+    image: postgres:15.4-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 31072001
+      POSTGRES_DB: multitenant
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: mt-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3.12.2-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "ping"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+
+  migrator:
+    build:
+      context: ../..
+      dockerfile: src/Host/MultitenantStarter.DbMigrator/Dockerfile
+    image: dbmigrator:local
+    container_name: migrator
+    ports:
+      - "5001:5001"
+    environment:
+      DatabaseOptions__ConnectionString: "Host=postgres;Port=5432;Database=multitenant;Username=postgres;Password=31072001;Minimum Pool Size=5"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["apply", "--seed"]
+
+  api:
+    build:
+      context: ../..
+      dockerfile: src/Host/MultitenantStarter.Api/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      ASPNETCORE_URLS: "http://+:5000"
+      DatabaseOptions__ConnectionString: "Host=postgres;Port=5432;Database=multitenant;Username=postgres;Password=31072001;Minimum Pool Size=5"
+      CachingOptions__Redis: "redis:6379"
+      HangfireOptions__Username: "root"
+      HangfireOptions__Password: "root123456789"
+      HangfireOptions__Route: "/jobs"
+      RebusOptions__RabbitMq__ConnectionString: "amqp://guest:guest@rabbitmq:5672"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

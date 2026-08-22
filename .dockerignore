@@ -1,0 +1,15 @@
+# .NET build artifacts
+**/bin
+**/obj
+**/.vs
+
+# Test projects (not needed in any runtime image)
+src/Tests/
+
+# VCS / editor / docs / local dev
+.git
+.github
+.idea
+.vscode
+*.md
+deploy/
