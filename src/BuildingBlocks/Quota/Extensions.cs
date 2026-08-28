@@ -1,5 +1,5 @@
 ﻿namespace Quota;
 
-public class Extensions
+public static class Extensions
 {
 }

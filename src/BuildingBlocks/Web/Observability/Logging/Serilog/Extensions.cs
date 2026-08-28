@@ -27,7 +27,7 @@ public static class Extensions
         builder.Services.AddSerilog((context, logger) =>
         {
             var httpEnricher = context.GetRequiredService<HttpRequestContextEnricher>();
-        
+
             // Single source of truth for levels/overrides/sinks — appsettings wins.
             // Programmatic overrides intentionally avoided here; configure via
             // Serilog:MinimumLevel:Override in appsettings instead.
@@ -36,11 +36,11 @@ public static class Extensions
                 .Enrich.With(httpEnricher)
                 // Suppress double-logging: the global exception handler already captures
                 // unhandled exceptions; ExceptionHandlerMiddleware re-logs the same event.
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
-                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Error)
-                .MinimumLevel.Override("Hangfire", LogEventLevel.Warning)
-                .MinimumLevel.Override("Finbuckle.MultiTenant", LogEventLevel.Warning)
+                // .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                // .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+                // .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Error)
+                // .MinimumLevel.Override("Hangfire", LogEventLevel.Warning)
+                // .MinimumLevel.Override("Finbuckle.MultiTenant", LogEventLevel.Warning)
                 .Filter.ByExcluding(
                     Matching.FromSource(
                         "Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware"));
@@ -134,7 +134,7 @@ public static class Extensions
         }
         else if (options.Exporter.Otlp.Enabled)
         {
-            endpoint =  options.Exporter.Otlp.Endpoint;
+            endpoint = options.Exporter.Otlp.Endpoint;
             protocolRaw = options.Exporter.Otlp.Protocol;
         }
         else

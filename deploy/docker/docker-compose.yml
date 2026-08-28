@@ -7,13 +7,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 31072001
       POSTGRES_DB: multitenant
-
     ports:
       - "5433:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -49,6 +46,23 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   migrator:
     build:
@@ -93,3 +107,4 @@ volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  minio_data:
