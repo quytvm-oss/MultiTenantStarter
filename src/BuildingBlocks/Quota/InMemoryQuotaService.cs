@@ -40,9 +40,33 @@ public class InMemoryQuotaService : IQuotaService
         _timeProvider = timeProvider;
     }
 
-    public ValueTask<QuotaCheckResult> CheckAndRecordAsync(string tenantId, QuotaResource resource, long amount, CancellationToken ct = default)
+    public async ValueTask<QuotaCheckResult> CheckAndRecordAsync(string tenantId, QuotaResource resource, long amount, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        var (limit, exempt) = ResolveLimit(tenantId, resource);
+
+        if (exempt || limit == long.MaxValue)
+        {
+            var after = await RecordAsync(tenantId, resource, amount, ct).ConfigureAwait(false);
+            return QuotaCheckResult.Unlimited(resource, after);
+        }
+
+        if (!IsCounterResource(resource))
+        {
+            return await CheckAsync(tenantId, resource, amount, ct).ConfigureAwait(false);
+        }
+
+        var key = GetCounterKey(tenantId, resource);
+        var newValue = _counters.AddOrUpdate(key, amount, (_,v) => v + amount);
+
+        if (newValue <= limit)
+        {
+            return new QuotaCheckResult(true, resource,  newValue, limit, GetPeriodResetUtc(resource));
+        }
+
+        _counters.AddOrUpdate(key, 0, (_, v) => v - amount);
+        
+        return new QuotaCheckResult(false, resource, newValue - amount, limit, GetPeriodResetUtc(resource));
     }
 
     public ValueTask<QuotaCheckResult> CheckAsync(string tenantId, QuotaResource resource, long amount, CancellationToken ct = default)
@@ -67,12 +91,32 @@ public class InMemoryQuotaService : IQuotaService
 
     public ValueTask<long> GetCurrentAsync(string tenantId, QuotaResource resource, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+
+        if (!IsCounterResource(resource))
+        {
+            if (_gauges.TryGetValue(resource, out var provider))
+            {
+                return provider.GetCurrentAsync(tenantId, ct);
+            }
+
+            return ValueTask.FromResult(0L);
+        }
+
+        return ValueTask.FromResult(GetCounter(tenantId, resource));
     }
 
     public ValueTask<long> RecordAsync(string tenantId, QuotaResource resource, long amount, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        if (!IsCounterResource(resource))
+        {
+            return GetCurrentAsync(tenantId, resource, ct);
+        }
+        
+        var key = GetCounterKey(tenantId, resource);
+        var updated = _counters.AddOrUpdate(key, amount, (_, v) => v + amount);
+        return ValueTask.FromResult(updated);
     }
 
     #region
@@ -96,12 +140,19 @@ public class InMemoryQuotaService : IQuotaService
 
     private long GetCounter(string tenantId, QuotaResource resource)
     {
-        return _counters.TryGetValue(GetCounterKey(tenantId, resource), out var value) ? value : 0;
+        return _counters.GetValueOrDefault(GetCounterKey(tenantId, resource), 0);
     }
 
     private static bool IsPeriodic(QuotaResource resource) => resource switch
     {
         QuotaResource.ApiCalls => true,
+        _ => false
+    };
+
+    private static bool IsCounterResource(QuotaResource resource) => resource switch
+    {
+        QuotaResource.ApiCalls => true,
+        QuotaResource.StorageBytes => true,
         _ => false
     };
 
