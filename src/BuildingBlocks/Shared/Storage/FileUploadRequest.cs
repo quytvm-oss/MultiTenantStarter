@@ -15,7 +15,7 @@ public sealed class StreamUploadRequest
 /// Upload request carrying buffered bytes — safe to use outside the HTTP request lifetime,
 /// e.g. background jobs, Hangfire, message consumers.
 /// </summary>
-public sealed class BufferedUploadRequest
+public sealed class FileUploadRequest
 {
     public required string FileName    { get; init; }
     public required string ContentType { get; init; }

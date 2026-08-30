@@ -83,7 +83,7 @@ internal sealed class UserProfileService(
         string firstName,
         string lastName,
         string phoneNumber,
-        StreamUploadRequest? image,
+        FileUploadRequest? image,
         bool deleteCurrentImage,
         CancellationToken ct = default)
     {
@@ -93,7 +93,7 @@ internal sealed class UserProfileService(
         var oldImagePath = user.ImageUrl?.ToString();
         string? newImagePath = null;
 
-        if (image?.Stream is not null)
+        if (image?.Data.Length > 0)
         {
             newImagePath = await storageService.UploadAsync<User>(image, FileType.Image, ct);
             user.ImageUrl = new Uri(newImagePath, UriKind.Relative);

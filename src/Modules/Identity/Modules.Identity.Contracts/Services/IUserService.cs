@@ -27,7 +27,7 @@ public interface IUserService
     Task<string> RegisterAsync(string firstName, string lastName, string email,string userName, string password,string confirmPassword, string phoneNumber, string origin,
         CancellationToken ct = default);
 
-    Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, StreamUploadRequest image,
+    Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, FileUploadRequest image,
         bool deleteCurrentImage, CancellationToken ct = default);
     
     Task DeleteAsync(string userId, CancellationToken ct = default);

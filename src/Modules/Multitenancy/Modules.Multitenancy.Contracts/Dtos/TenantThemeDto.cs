@@ -61,9 +61,9 @@ public sealed record BrandAssetsDto
 
     public bool DeleteFavicon { get; init; }
     
-    public BufferedUploadRequest? Logo { get; init; }
-    public BufferedUploadRequest? LogoDark { get; init; }
-    public BufferedUploadRequest? Favicon { get; init; }
+    public FileUploadRequest? Logo { get; init; }
+    public FileUploadRequest? LogoDark { get; init; }
+    public FileUploadRequest? Favicon { get; init; }
 }
 
 [ImmutableObject(true)]

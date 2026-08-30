@@ -43,7 +43,7 @@ internal sealed class UserService(
         string confirmPassword, string phoneNumber, string origin, CancellationToken ct = default)
     => registrationService.RegisterAsync(firstName, lastName, email, userName, password, confirmPassword, phoneNumber, origin, ct);
 
-    public Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, StreamUploadRequest image,
+    public Task UpdateAsync(string userId, string firstName, string lastName, string phoneNumber, FileUploadRequest image,
         bool deleteCurrentImage, CancellationToken ct = default)
     => profileService.UpdateAsync(userId, firstName, lastName, phoneNumber, image, deleteCurrentImage, ct);
 

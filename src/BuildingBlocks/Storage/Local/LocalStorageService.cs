@@ -19,7 +19,6 @@ internal class LocalStorageService : IStorageService
     private readonly string _rootPath;
     private readonly FileExtensionContentTypeProvider _contentTypeProvider = new();
     
-    
     // Dev-only presigning fallback when Storage:Provider != s3 (prod uses S3StorageService). Token
     // store is process-static so the dev middleware can consume the token without re-resolving DI.
     private static LocalPresignTokenStore? _staticTokenStore;
@@ -70,70 +69,7 @@ internal class LocalStorageService : IStorageService
     
     public string RootPath => _rootPath;
 
-    public async Task<string> UploadAsync<T>(StreamUploadRequest request, FileType fileType,
-        CancellationToken cancellationToken = default)
-        where T : class
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        var rules = FileTypeMetadata.GetRules(fileType);
-        var extension = Path.GetExtension(request.FileName);
-
-        if (string.IsNullOrWhiteSpace(extension) ||
-            !rules.AllowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"File type '{extension}' is not allowed. Allowed: {string.Join(", ", rules.AllowedExtensions)}");
-        }
-
-        if (request.Stream.CanSeek && request.Stream.Length > rules.MaxSizeInMb * 1024L * 1024L)
-        {
-            throw new InvalidOperationException($"File exceeds the maximum allowed size of {rules.MaxSizeInMb} MB.");
-        }
-
-
-        var folder = Regex.Replace(typeof(T).Name.ToLowerInvariant(), @"[^a-z0-9]", "_");
-        var safeFileName = $"{Guid.NewGuid():N}_{SanitizeFileName(request.FileName)}";
-        var relativePath = Path.Combine(UploadBasePath, folder, safeFileName);
-        var fullPath = ResolveAndValidatePath(relativePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-
-        var success = false;
-        var fileStream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous);
-        try
-        {
-            var maxBytes = rules.MaxSizeInMb * 1024L * 1024L;
-            var totalRead = 0L;
-            var buffer = ArrayPool<byte>.Shared.Rent(81920);
-            try
-            {
-                int read;
-                while ((read = await request.Stream.ReadAsync(buffer, cancellationToken)) > 0)
-                {
-                    totalRead += read;
-                    if (totalRead > maxBytes)
-                        throw new InvalidOperationException($"File exceeds max size of {rules.MaxSizeInMb} MB.");
-
-                    await fileStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-                }
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
-
-            success = true;
-        }
-        finally
-        {
-            await fileStream.DisposeAsync();
-            if (!success) File.Delete(fullPath);
-        }
-
-        return relativePath.Replace("\\", "/", StringComparison.Ordinal);
-    }
-
-    public async Task<string> UploadAsync<T>(BufferedUploadRequest request, FileType fileType, 
+    public async Task<string> UploadAsync<T>(FileUploadRequest request, FileType fileType, 
         CancellationToken cancellationToken = default) 
         where T : class
     {
@@ -290,6 +226,69 @@ internal class LocalStorageService : IStorageService
         // Resolved later against the dashboard's API origin (as UserProfileService does for legacy
         // avatars). The leading slash lets clients distinguish absolute from server-relative URLs.
         return $"/{normalized}";
+    }
+    
+    private async Task<string> UploadAsync<T>(StreamUploadRequest request, FileType fileType,
+        CancellationToken cancellationToken = default)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var rules = FileTypeMetadata.GetRules(fileType);
+        var extension = Path.GetExtension(request.FileName);
+
+        if (string.IsNullOrWhiteSpace(extension) ||
+            !rules.AllowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"File type '{extension}' is not allowed. Allowed: {string.Join(", ", rules.AllowedExtensions)}");
+        }
+
+        if (request.Stream.CanSeek && request.Stream.Length > rules.MaxSizeInMb * 1024L * 1024L)
+        {
+            throw new InvalidOperationException($"File exceeds the maximum allowed size of {rules.MaxSizeInMb} MB.");
+        }
+
+
+        var folder = Regex.Replace(typeof(T).Name.ToLowerInvariant(), @"[^a-z0-9]", "_");
+        var safeFileName = $"{Guid.NewGuid():N}_{SanitizeFileName(request.FileName)}";
+        var relativePath = Path.Combine(UploadBasePath, folder, safeFileName);
+        var fullPath = ResolveAndValidatePath(relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+
+        var success = false;
+        var fileStream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous);
+        try
+        {
+            var maxBytes = rules.MaxSizeInMb * 1024L * 1024L;
+            var totalRead = 0L;
+            var buffer = ArrayPool<byte>.Shared.Rent(81920);
+            try
+            {
+                int read;
+                while ((read = await request.Stream.ReadAsync(buffer, cancellationToken)) > 0)
+                {
+                    totalRead += read;
+                    if (totalRead > maxBytes)
+                        throw new InvalidOperationException($"File exceeds max size of {rules.MaxSizeInMb} MB.");
+
+                    await fileStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+
+            success = true;
+        }
+        finally
+        {
+            await fileStream.DisposeAsync();
+            if (!success) File.Delete(fullPath);
+        }
+
+        return relativePath.Replace("\\", "/", StringComparison.Ordinal);
     }
 
     private string ResolveAndValidatePath(string relativePath)

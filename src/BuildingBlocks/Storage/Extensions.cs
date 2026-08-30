@@ -3,11 +3,18 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Transfer;
 
+using Finbuckle.MultiTenant.Abstractions;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Quota;
+
+using Shared.Multitenancy;
 
 using Storage.Abstractions;
 using Storage.Local;
@@ -110,5 +117,29 @@ public static class Extensions
 
         services.AddSingleton<IStorageService, S3StorageService>();
         return services;
+    }
+
+    private static void RegisterStorageService<TInner>(
+        this IServiceCollection services,
+        bool quotaEnabled,
+        ServiceLifetime lifetime) where TInner : class, IStorageService
+    {
+        if (quotaEnabled)
+        {
+            services.AddScoped<IStorageService>(sp =>
+                new QuotaMeteredStorageService(
+                    sp.GetRequiredService<TInner>(),
+                    sp.GetRequiredService<IQuotaService>(),
+                    sp.GetRequiredService<IMultiTenantContextAccessor<AppTenantInfo>>(),
+                    sp.GetRequiredService<ILogger<QuotaMeteredStorageService>>()));
+
+            return;
+        }
+
+        
+        services.Add(new ServiceDescriptor(
+            typeof(IStorageService),
+            sp => sp.GetRequiredService<IStorageService>(),
+            lifetime));
     }
 }

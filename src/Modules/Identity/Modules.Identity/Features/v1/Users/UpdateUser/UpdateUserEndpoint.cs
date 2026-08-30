@@ -32,15 +32,17 @@ public static class UpdateUserEndpoint
                     throw new UnauthorizedException();
                 }
 
-                StreamUploadRequest? image = null;
+                FileUploadRequest? image = null;
 
                 if (request.Image is not null)
                 {
-                    image = new StreamUploadRequest
+                    await using var stream = new MemoryStream();
+                    await request.Image.CopyToAsync(stream, cancellationToken);
+                    image = new FileUploadRequest
                     {
                         FileName = request.Image.FileName,
                         ContentType = request.Image.ContentType,
-                        Stream = request.Image.OpenReadStream()
+                        Data = stream.ToArray()
                     };
                 }
 

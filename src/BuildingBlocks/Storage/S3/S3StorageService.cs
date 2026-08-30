@@ -43,55 +43,7 @@ internal sealed partial class S3StorageService : IStorageService
 
     public string RootPath => string.Empty;
 
-    public async Task<string> UploadAsync<T>(StreamUploadRequest request, FileType fileType, 
-        CancellationToken cancellationToken = default) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(request.Stream, nameof(request.Stream));
-        
-        var rules     = FileTypeMetadata.GetRules(fileType);
-        var extension = Path.GetExtension(request.FileName);
-
-        if (string.IsNullOrWhiteSpace(extension) ||
-            !rules.AllowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Extension '{extension}' is not allowed. Allowed: {string.Join(", ", rules.AllowedExtensions)}");
-        }
-        
-        // Validate size via stream length — no buffer copy needed.
-        // Note: if the stream is not seekable (e.g. a raw network stream),
-        // Length will throw; callers should enforce size upstream in that case.
-        var maxBytes = rules.MaxSizeInMb * 1024L * 1024L;
-
-        // Fast path: seekable stream — check before upload.
-        if (request.Stream.CanSeek && request.Stream.Length > maxBytes)
-            throw new InvalidOperationException($"File exceeds the maximum allowed size of {rules.MaxSizeInMb} MB.");
-        
-        var key = BuildKey<T>(SanitizeFileName(request.FileName));
-        var uploadStream = request.Stream.CanSeek
-            ? request.Stream
-            : new MaxReadStream(request.Stream, maxBytes);
-
-        var uploadRequest = new TransferUtilityUploadRequest()
-        {
-            BucketName = _options.Bucket,
-            Key = key,
-            InputStream = uploadStream,
-            ContentType = request.ContentType,
-            PartSize = _options.MultipartPartSizeBytes,
-            AutoCloseStream = false
-        };
-        
-        await _transfer.UploadAsync(uploadRequest, cancellationToken).ConfigureAwait(false);
-        
-        if (_logger.IsEnabled(LogLevel.Information))
-            _logger.LogInformation("Uploaded {Key} to S3 bucket {Bucket}", key, _options.Bucket);
-        
-        return BuildPublicUrl(key);
-    }
-
-    public Task<string> UploadAsync<T>(BufferedUploadRequest request, FileType fileType, 
+    public Task<string> UploadAsync<T>(FileUploadRequest request, FileType fileType, 
         CancellationToken cancellationToken = default) 
         where T : class
     {
@@ -394,6 +346,55 @@ internal sealed partial class S3StorageService : IStorageService
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
+    private async Task<string> UploadAsync<T>(StreamUploadRequest request, FileType fileType, 
+        CancellationToken cancellationToken = default) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.Stream, nameof(request.Stream));
+        
+        var rules     = FileTypeMetadata.GetRules(fileType);
+        var extension = Path.GetExtension(request.FileName);
+
+        if (string.IsNullOrWhiteSpace(extension) ||
+            !rules.AllowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Extension '{extension}' is not allowed. Allowed: {string.Join(", ", rules.AllowedExtensions)}");
+        }
+        
+        // Validate size via stream length — no buffer copy needed.
+        // Note: if the stream is not seekable (e.g. a raw network stream),
+        // Length will throw; callers should enforce size upstream in that case.
+        var maxBytes = rules.MaxSizeInMb * 1024L * 1024L;
+
+        // Fast path: seekable stream — check before upload.
+        if (request.Stream.CanSeek && request.Stream.Length > maxBytes)
+            throw new InvalidOperationException($"File exceeds the maximum allowed size of {rules.MaxSizeInMb} MB.");
+        
+        var key = BuildKey<T>(SanitizeFileName(request.FileName));
+        var uploadStream = request.Stream.CanSeek
+            ? request.Stream
+            : new MaxReadStream(request.Stream, maxBytes);
+
+        var uploadRequest = new TransferUtilityUploadRequest()
+        {
+            BucketName = _options.Bucket,
+            Key = key,
+            InputStream = uploadStream,
+            ContentType = request.ContentType,
+            PartSize = _options.MultipartPartSizeBytes,
+            AutoCloseStream = false
+        };
+        
+        await _transfer.UploadAsync(uploadRequest, cancellationToken).ConfigureAwait(false);
+        
+        if (_logger.IsEnabled(LogLevel.Information))
+            _logger.LogInformation("Uploaded {Key} to S3 bucket {Bucket}", key, _options.Bucket);
+        
+        return BuildPublicUrl(key);
+    }
+    
+    
     private string BuildKey<T>(string fileName) where T : class
     {
         var folder       = NonAlphanumericRegex().Replace(typeof(T).Name.ToLowerInvariant(), "_");
