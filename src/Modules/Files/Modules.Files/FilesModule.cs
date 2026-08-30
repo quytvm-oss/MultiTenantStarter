@@ -1,5 +1,9 @@
-﻿using FluentValidation;
+﻿using Asp.Versioning;
 
+using FluentValidation;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -8,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Modules.Files.Authorization;
 using Modules.Files.Contracts;
 using Modules.Files.Data;
+using Modules.Files.Features.v1.RequestUploadUrl;
 using Modules.Files.Services;
 
 using Persistence;
@@ -49,5 +54,19 @@ public class FilesModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
+        
+        var versionSet = endpoints.NewApiVersionSet()
+            .HasApiVersion(new ApiVersion(1))
+            .ReportApiVersions()
+            .Build();
+
+        var group = endpoints.MapGroup("api/v{version:apiVersion}/files")
+            .WithTags("Files")
+            .WithApiVersionSet(versionSet)
+            .RequireAuthorization();
+        
+        // Literal routes first so they win over the /{id:guid} catch-all (matches the Catalog
+        // pattern for /trash etc.).
+        group.MapRequestUploadUrlEndpoint();         // POST  /upload-url
     }
 }
