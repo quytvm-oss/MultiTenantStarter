@@ -73,5 +73,5 @@ RUN apt-get update \
     && apt-get install -y curl \
     && mkdir -p /vsdbg \
     && curl -sSL https://aka.ms/getvsdbgsh \
-       | /bin/sh /dev/stdin -v latest -l /vsdbg \
+        | /bin/sh /dev/stdin -v latest -l /vsdbg \
     && rm -rf /var/lib/apt/lists/*

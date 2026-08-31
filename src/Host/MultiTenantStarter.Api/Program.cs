@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Modules.Auditing;
 using Modules.Auditing.Contracts;
 using Modules.Files;
+using Modules.Files.Contracts;
 using Modules.Identity;
 using Modules.Identity.Contracts;
 using Modules.Multitenancy;
@@ -59,6 +60,8 @@ builder.Services.AddMediator(o =>
         typeof(IdentityModule),
         typeof(AuditingContractsMarker),
         typeof(AuditingModule),
+        typeof(FilesContractsMarker),
+        typeof(FilesModule),
         typeof(CreateTenantCommand),
         typeof(CreateTenantCommandHandler)
     ];

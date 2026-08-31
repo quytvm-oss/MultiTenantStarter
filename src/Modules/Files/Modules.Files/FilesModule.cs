@@ -11,11 +11,14 @@ using Microsoft.Extensions.Hosting;
 
 using Modules.Files.Authorization;
 using Modules.Files.Contracts;
+using Modules.Files.Contracts.Authorization;
 using Modules.Files.Data;
 using Modules.Files.Features.v1.RequestUploadUrl;
 using Modules.Files.Services;
 
 using Persistence;
+
+using Shared.Identity;
 
 using Web.Modules;
 
@@ -34,18 +37,21 @@ public class FilesModule : IModule
     {
         ArgumentNullException.ThrowIfNull(builder);
 
+        PermissionConstants.Register(FilesPermissions.All);
+
+        builder.Services.Configure<FilesOptions>(builder.Configuration.GetSection("Files"));
         builder.Services.AddCustomDbContext<FilesDbContext>();
-        builder.Services.AddScoped<IDbInitializer,FilesDbInitializer>();
-        
+        builder.Services.AddScoped<IDbInitializer, FilesDbInitializer>();
+
         builder.Services.AddScoped<FileAccessPolicyRegistry>();
         builder.Services.AddSingleton<IFileScanner, NoOpFileScanner>();
         builder.Services.AddValidatorsFromAssembly(typeof(FilesModule).Assembly);
-        
+
         // Default uploader-only policies for the built-in OwnerTypes. Owning modules register their
         // own policies for additional OwnerTypes via services.AddFileAccessPolicy<TPolicy>().
         builder.Services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("MyFiles"));
         builder.Services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("User"));
-        
+
         builder.Services.AddHealthChecks().AddDbContextCheck<FilesDbContext>(
             name: "db:files",
             failureStatus: HealthStatus.Unhealthy);
@@ -54,7 +60,7 @@ public class FilesModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
-        
+
         var versionSet = endpoints.NewApiVersionSet()
             .HasApiVersion(new ApiVersion(1))
             .ReportApiVersions()
@@ -64,7 +70,7 @@ public class FilesModule : IModule
             .WithTags("Files")
             .WithApiVersionSet(versionSet)
             .RequireAuthorization();
-        
+
         // Literal routes first so they win over the /{id:guid} catch-all (matches the Catalog
         // pattern for /trash etc.).
         group.MapRequestUploadUrlEndpoint();         // POST  /upload-url
