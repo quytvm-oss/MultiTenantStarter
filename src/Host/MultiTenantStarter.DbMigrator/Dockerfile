@@ -18,6 +18,7 @@ COPY ["src/BuildingBlocks/Mailling/Mailling.csproj", "src/BuildingBlocks/Maillin
 COPY ["src/BuildingBlocks/MessageBus/MessageBus.csproj", "src/BuildingBlocks/MessageBus/"]
 COPY ["src/BuildingBlocks/Persistence/Persistence.csproj", "src/BuildingBlocks/Persistence/"]
 COPY ["src/BuildingBlocks/Storage/Storage.csproj", "src/BuildingBlocks/Storage/"]
+COPY ["src/BuildingBlocks/Quota/Quota.csproj", "src/BuildingBlocks/Quota/"]
 COPY ["src/BuildingBlocks/Shared/Shared.csproj", "src/BuildingBlocks/Shared/"]
 COPY ["src/BuildingBlocks/Web/Web.csproj", "src/BuildingBlocks/Web/"]
 
