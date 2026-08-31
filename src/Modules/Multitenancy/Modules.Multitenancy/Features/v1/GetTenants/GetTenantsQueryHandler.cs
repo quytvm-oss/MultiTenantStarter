@@ -39,14 +39,13 @@ public class GetTenantsQueryHandler : IQueryHandler<GetTenantsQuery, PagedRespon
                 ValidToUp = x.ValidUpTo,
                 Issuer = x.Issuer
             });
-        
+
         tenants = ApplySorting(tenants, query.Sort);
-        
-        
+
         return await tenants.ToPagedResponseAsync(query, cancellationToken)
             .ConfigureAwait(false);
     }
-    
+
     private static IQueryable<TenantDto> ApplySorting(
         IQueryable<TenantDto> query,
         string? sort)

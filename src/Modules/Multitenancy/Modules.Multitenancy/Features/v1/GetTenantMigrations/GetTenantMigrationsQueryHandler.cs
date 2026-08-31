@@ -13,8 +13,8 @@ using Shared.Multitenancy;
 
 namespace Modules.Multitenancy.Features.v1.GetTenantMigrations;
 
-public sealed class GetTenantMigrationsQueryHandler : 
-    IQueryHandler<GetTenantMigrationsQuery,IReadOnlyCollection<TenantMigrationStatusDto>>
+public sealed class GetTenantMigrationsQueryHandler :
+    IQueryHandler<GetTenantMigrationsQuery, IReadOnlyCollection<TenantMigrationStatusDto>>
 {
     private readonly IMultiTenantStore<AppTenantInfo> _tenantStore;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -29,33 +29,33 @@ public sealed class GetTenantMigrationsQueryHandler :
     public async ValueTask<IReadOnlyCollection<TenantMigrationStatusDto>> Handle(GetTenantMigrationsQuery query, CancellationToken cancellationToken)
     {
         var tenants = await _tenantStore.GetAllAsync().ConfigureAwait(false);
-        
+
         var tenantMigrationStatuses = new List<TenantMigrationStatusDto>();
 
         foreach (var tenant in tenants)
         {
             var tenantStatus = new TenantMigrationStatusDto()
             {
-                TenantId = tenant.Id, 
-                Name = tenant.Name!, 
-                IsActive = tenant.IsActive, 
+                TenantId = tenant.Id,
+                Name = tenant.Name!,
+                IsActive = tenant.IsActive,
                 ValidUpto = tenant.ValidUpTo,
             };
 
             try
             {
-                using IServiceScope tenantScope  = _scopeFactory.CreateScope();
+                using IServiceScope tenantScope = _scopeFactory.CreateScope();
 
                 var dbContext = tenantScope.ServiceProvider.GetRequiredService<TenantDbContext>();
-                
+
                 var appliedMigrations = await dbContext.Database
                     .GetAppliedMigrationsAsync(cancellationToken)
                     .ConfigureAwait(false);
-                
+
                 var pendingMigrations = await dbContext.Database
                     .GetPendingMigrationsAsync(cancellationToken)
                     .ConfigureAwait(false);
-                
+
                 tenantStatus.Provider = dbContext.Database.ProviderName;
                 tenantStatus.LastAppliedMigration = appliedMigrations.LastOrDefault();
                 tenantStatus.PendingMigrations = pendingMigrations.ToArray();
@@ -68,7 +68,7 @@ public sealed class GetTenantMigrationsQueryHandler :
             }
             tenantMigrationStatuses.Add(tenantStatus);
         }
-        
+
         return tenantMigrationStatuses;
     }
 }

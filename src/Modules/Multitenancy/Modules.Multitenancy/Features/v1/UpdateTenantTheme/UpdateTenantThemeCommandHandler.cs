@@ -18,12 +18,12 @@ public class UpdateTenantThemeCommandHandler(
     public async ValueTask<Unit> Handle(UpdateTenantThemeCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
-        
+
         var tenantId = tenantAccessor.MultiTenantContext?.TenantInfo?.Id
             ?? throw new InvalidOperationException("No tenant context available");
 
         await tenantThemeService.UpdateThemeAsync(tenantId, command.Theme, cancellationToken);
-        
+
         return Unit.Value;
     }
 }

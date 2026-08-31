@@ -23,11 +23,11 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
 
     private readonly TimeProvider _timeProvider;
 
-    public CreateTenantCommandHandler(ITenantService tenantService, 
-        ITenantProvisioningStarter provisioningService, 
-        ITenantInitialPasswordBuffer passwordBuffer, 
+    public CreateTenantCommandHandler(ITenantService tenantService,
+        ITenantProvisioningStarter provisioningService,
+        ITenantInitialPasswordBuffer passwordBuffer,
         IMediator mediator,
-        IBus bus, 
+        IBus bus,
         TimeProvider timeProvider)
     {
         _tenantService = tenantService;
@@ -48,7 +48,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         //     ? billingOptions.Value.DefaultPlanKey
         //     : command.PlanKey!;
         // var term = await mediator.Send(new GetPlanTermQuery(planKey), cancellationToken).ConfigureAwait(false);
-        
+
         var periodStart = _timeProvider.GetUtcNow().UtcDateTime;
         var periodEnd = periodStart.AddMonths(3);
 
@@ -81,7 +81,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         //     PeriodStartUtc: periodStart,
         //     PeriodEndUtc: periodEnd),cancellationToken).ConfigureAwait(false);
         // }
-        
+
         await _bus.Send(new TenantSubscribedIntegrationEvent(
             TenantId: tenantId,
             CorrelationId: provisioning.CorrelationId,

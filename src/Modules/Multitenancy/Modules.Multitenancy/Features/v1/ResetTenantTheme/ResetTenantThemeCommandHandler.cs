@@ -14,12 +14,12 @@ public class ResetTenantThemeCommandHandler(
     IMultiTenantContextAccessor<AppTenantInfo> multiTenantContext)
     : ICommandHandler<ResetTenantThemeCommand>
 {
-   
+
     public async ValueTask<Unit> Handle(ResetTenantThemeCommand command, CancellationToken cancellationToken)
     {
         var tenantId = multiTenantContext.MultiTenantContext.TenantInfo?.Id
             ?? throw new MultiTenantException("No tenant context available");
-        
+
         await tenantThemeService.ResetThemeAsync(tenantId, cancellationToken).ConfigureAwait(false);
         return Unit.Value;
     }

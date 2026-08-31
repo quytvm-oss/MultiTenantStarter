@@ -24,6 +24,10 @@
     <Project Path="Modules/Auditing/Modules.Auditing.Contracts/Modules.Auditing.Contracts.csproj" />
     <Project Path="Modules/Auditing/Modules.Auditing/Modules.Auditing.csproj" />
   </Folder>
+  <Folder Name="/Modules/Billing/">
+    <Project Path="Modules/Billing/Modules.Billing.Contracts/Modules.Billing.Contracts.csproj" />
+    <Project Path="Modules/Billing/Modules.Billing/Modules.Billing.csproj" />
+  </Folder>
   <Folder Name="/Modules/Files/">
     <Project Path="Modules/Files/Modules.Files.Contracts/Modules.Files.Contracts.csproj" />
     <Project Path="Modules/Files/Modules.Files/Modules.Files.csproj" />
@@ -39,6 +43,10 @@
   <Folder Name="/Modules/Notifications/">
     <Project Path="Modules/Notifications/Modules.Notifications.Contracts/Modules.Notifications.Contracts.csproj" />
     <Project Path="Modules/Notifications/Modules.Notifications/Modules.Notifications.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Webhooks/">
+    <Project Path="Modules/Webhooks/Modules.Webhooks.Contracts/Modules.Webhooks.Contracts.csproj" />
+    <Project Path="Modules/Webhooks/Modules.Webhooks/Modules.Webhooks.csproj" />
   </Folder>
   <Folder Name="/SolutionItems/">
     <File Path="../.gitignore" />

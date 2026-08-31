@@ -9,12 +9,15 @@
     <ItemGroup>
       <ProjectReference Include="..\..\BuildingBlocks\Persistence\Persistence.csproj" />
       <ProjectReference Include="..\..\Modules\Auditing\Modules.Auditing\Modules.Auditing.csproj" />
+      <ProjectReference Include="..\..\Modules\Billing\Modules.Billing.Contracts\Modules.Billing.Contracts.csproj" />
+      <ProjectReference Include="..\..\Modules\Billing\Modules.Billing\Modules.Billing.csproj" />
       <ProjectReference Include="..\..\Modules\Files\Modules.Files.Contracts\Modules.Files.Contracts.csproj" />
       <ProjectReference Include="..\..\Modules\Files\Modules.Files\Modules.Files.csproj" />
       <ProjectReference Include="..\..\Modules\Identity\Modules.Identity\Modules.Identity.csproj" />
       <ProjectReference Include="..\..\Modules\Multitenancy\Modules.Multitenancy\Modules.Multitenancy.csproj" />
       <ProjectReference Include="..\..\Modules\Notifications\Modules.Notifications.Contracts\Modules.Notifications.Contracts.csproj" />
       <ProjectReference Include="..\..\Modules\Notifications\Modules.Notifications\Modules.Notifications.csproj" />
+      <ProjectReference Include="..\..\Modules\Webhooks\Modules.Webhooks\Modules.Webhooks.csproj" />
     </ItemGroup>
 
 </Project>

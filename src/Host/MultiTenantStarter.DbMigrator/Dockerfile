@@ -33,6 +33,11 @@ COPY ["src/Modules/Auditing/Modules.Auditing/Modules.Auditing.csproj", "src/Modu
 COPY ["src/Modules/Auditing/Modules.Auditing.Contracts/Modules.Auditing.Contracts.csproj", "src/Modules/Auditing/Modules.Auditing.Contracts/"]
 COPY ["src/Modules/Files/Modules.Files/Modules.Files.csproj", "src/Modules/Files/Modules.Files/"]
 COPY ["src/Modules/Files/Modules.Files.Contracts/Modules.Files.Contracts.csproj", "src/Modules/Files/Modules.Files.Contracts/"]
+COPY ["src/Modules/Billing/Modules.Billing/Modules.Billing.csproj", "src/Modules/Billing/Modules.Billing/"]
+COPY ["src/Modules/Billing/Modules.Billing.Contracts/Modules.Billing.Contracts.csproj", "src/Modules/Billing/Modules.Billing.Contracts/"]
+COPY ["src/Modules/Webhooks/Modules.Webhooks/Modules.Webhooks.csproj", "src/Modules/Webhooks/Modules.Webhooks/"]
+COPY ["src/Modules/Webhooks/Modules.Webhooks.Contracts/Modules.Webhooks.Contracts.csproj", "src/Modules/Webhooks/Modules.Webhooks.Contracts/"]
+
 
 # Host
 COPY ["src/Host/MultiTenantStarter.Migrations.PostgreSQL/MultiTenantStarter.Migrations.PostgreSQL.csproj","src/Host/MultiTenantStarter.Migrations.PostgreSQL/"]

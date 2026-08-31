@@ -20,7 +20,7 @@ public class AdjustTenantValidityCommandHandler : IQueryHandler<AdjustTenantVali
         var validUpto = await _tenantService
             .AdjustValidityAsync(query.TenantId, query.ValidUpto, cancellationToken)
             .ConfigureAwait(false);
-        
+
         return new AdjustTenantValidityCommandResponse(query.TenantId, validUpto);
     }
 }
