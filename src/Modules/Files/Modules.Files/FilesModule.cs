@@ -13,6 +13,7 @@ using Modules.Files.Authorization;
 using Modules.Files.Contracts;
 using Modules.Files.Contracts.Authorization;
 using Modules.Files.Data;
+using Modules.Files.Features.v1.ListMyFiles;
 using Modules.Files.Features.v1.RequestUploadUrl;
 using Modules.Files.Services;
 
@@ -74,5 +75,6 @@ public class FilesModule : IModule
         // Literal routes first so they win over the /{id:guid} catch-all (matches the Catalog
         // pattern for /trash etc.).
         group.MapRequestUploadUrlEndpoint();         // POST  /upload-url
+        group.MapListMyFilesEndpoint();              // GET   /mine
     }
 }

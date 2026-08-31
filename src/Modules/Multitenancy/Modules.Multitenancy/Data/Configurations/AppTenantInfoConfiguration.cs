@@ -16,18 +16,18 @@ public class AppTenantInfoConfiguration : IEntityTypeConfiguration<AppTenantInfo
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.ToTable("Tenants", MultitenancyConstants.Schema);
-        
+
         builder.HasKey(x => x.Id);
-        
+
         builder.Property(t => t.Plan).HasMaxLength(64);
-        
+
         builder.Property(t => t.QuotaLimits)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
                 v => string.IsNullOrWhiteSpace(v)
                     ? new Dictionary<QuotaResource, long>()
                     : JsonSerializer.Deserialize<Dictionary<QuotaResource, long>>(v, (JsonSerializerOptions?)null)
-                      ?? new Dictionary<QuotaResource, long>())
+                        ?? new Dictionary<QuotaResource, long>())
             .HasColumnType("jsonb")
             .Metadata.SetValueComparer(new ValueComparer<Dictionary<QuotaResource, long>>(
                 (a, b) => ReferenceEquals(a, b) || (a != null && b != null && a.SequenceEqual(b)),

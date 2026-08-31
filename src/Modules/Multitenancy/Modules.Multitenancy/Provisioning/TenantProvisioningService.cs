@@ -29,22 +29,22 @@ public class TenantProvisioningService(
     {
         var tenant = await tenantStore.GetAsync(tenantId).ConfigureAwait(false)
             ?? throw new ArgumentException($"Tenant with id {tenantId} not found.", nameof(tenantId));
-        
+
         var existing = await GetLastestAsync(tenantId, cancellationToken).ConfigureAwait(false);
         if (existing is not null && (existing.Status is TenantProvisioningStatus.Running or TenantProvisioningStatus.Pending))
         {
             throw new CustomException($"Provisioning already running for tenant {tenantId}.");
         }
-        
-        var correlationId =  Guid.CreateVersion7().ToString();
+
+        var correlationId = Guid.CreateVersion7().ToString();
         var provisioning = new TenantProvisioning(tenant.Id, correlationId);
-        
+
         provisioning.Steps.Add(new TenantProvisioningStep(provisioning.Id, TenantProvisioningStepName.Database));
         provisioning.Steps.Add(new TenantProvisioningStep(provisioning.Id, TenantProvisioningStepName.Migrations));
         provisioning.Steps.Add(new TenantProvisioningStep(provisioning.Id, TenantProvisioningStepName.Seeding));
         provisioning.Steps.Add(new TenantProvisioningStep(provisioning.Id, TenantProvisioningStepName.CacheWarm));
-        
-        await dbContext.AddAsync(provisioning,cancellationToken).ConfigureAwait(false);
+
+        await dbContext.AddAsync(provisioning, cancellationToken).ConfigureAwait(false);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         if (!TryEnsureJobStorage())
@@ -52,7 +52,7 @@ public class TenantProvisioningService(
             logger.LogWarning("Background job storage not available; running provisioning inline for tenant {TenantId}.", tenantId);
             provisioning.SetJobId("inline");
             await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            
+
             await RunInlineProvisioningAsync(tenant.Id, correlationId, cancellationToken).ConfigureAwait(false);
             return provisioning;
         }
@@ -60,7 +60,7 @@ public class TenantProvisioningService(
         var jobId = jobService.Enqueue<TenantProvisioningJob>(job => job.RunAsync(tenant.Id, correlationId, cancellationToken));
         provisioning.SetJobId(jobId);
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        
+
         return provisioning;
     }
 
@@ -100,10 +100,10 @@ public class TenantProvisioningService(
     {
         var provisioning = await RequireAsync(tenantId, correlationId, cancellationToken).ConfigureAwait(false);
         var stepEntity = provisioning.Steps.First(s => s.Step == step);
-        
+
         if (stepEntity.Status == TenantProvisioningStatus.Completed)
             return false;
-        
+
         provisioning.MarkRunning(step.ToString());
         stepEntity.MarkRunning();
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -115,10 +115,10 @@ public class TenantProvisioningService(
     {
         var provisioning = await RequireAsync(tenantId, correlationId, cancellationToken).ConfigureAwait(false);
         var stepEntity = provisioning.Steps.First(s => s.Step == step);
-        
+
         if (stepEntity.Status == TenantProvisioningStatus.Completed)
             return;
-        
+
         stepEntity.MarkCompleted();
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -148,15 +148,15 @@ public class TenantProvisioningService(
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    
+
     #region private methods
-    
+
     private async Task<TenantProvisioning> RequireAsync(string tenantId, string correlationId, CancellationToken cancellationToken)
     {
         return await dbContext.Set<TenantProvisioning>()
                    .Include(x => x.Steps)
                    .FirstOrDefaultAsync(x => x.TenantId == tenantId && x.CorrelationId == correlationId, cancellationToken)
-                   .ConfigureAwait(false) ?? 
+                   .ConfigureAwait(false) ??
                throw new ArgumentException($"Tenant provisioning not found for tenant {tenantId} and correlation id {correlationId}.");
     }
 
@@ -176,7 +176,7 @@ public class TenantProvisioningService(
         }
         catch (InvalidOperationException)
         {
-           return false;
+            return false;
         }
     }
 
@@ -202,6 +202,6 @@ public class TenantProvisioningService(
             provisioning.CompletedUtc,
             steps);
     }
-    
+
     #endregion
 }
