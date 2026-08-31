@@ -13,7 +13,13 @@ using Modules.Files.Authorization;
 using Modules.Files.Contracts;
 using Modules.Files.Contracts.Authorization;
 using Modules.Files.Data;
+using Modules.Files.Features.v1.ChangeVisibility;
+using Modules.Files.Features.v1.DeleteFile;
+using Modules.Files.Features.v1.FinalizeUpload;
+using Modules.Files.Features.v1.GetFileDownloadUrl;
+using Modules.Files.Features.v1.GetFileMetadata;
 using Modules.Files.Features.v1.ListMyFiles;
+using Modules.Files.Features.v1.ListSharedFiles;
 using Modules.Files.Features.v1.RequestUploadUrl;
 using Modules.Files.Services;
 
@@ -76,5 +82,14 @@ public class FilesModule : IModule
         // pattern for /trash etc.).
         group.MapRequestUploadUrlEndpoint();         // POST  /upload-url
         group.MapListMyFilesEndpoint();              // GET   /mine
+        group.MapListSharedFilesEndpoint();          // GET   /shared
+                                                     // group.MapListTrashedFilesEndpoint();         // GET   /trash
+                                                     //group.MapRestoreFileEndpoint();              // POST  /{id}/restore  (literal verb path)
+
+        group.MapFinalizeUploadEndpoint();           // POST  /{id}/finalize
+        group.MapGetFileDownloadUrlEndpoint();       // GET   /{id}/url
+        group.MapChangeFileVisibilityEndpoint();     // PATCH /{id}/visibility
+        group.MapGetFileMetadataEndpoint();          // GET   /{id}
+        group.MapDeleteFileEndpoint();               // DELETE /{id}
     }
 }

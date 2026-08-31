@@ -1,6 +1,10 @@
+using System.Net;
+
 using Core.Domain;
+using Core.Exceptions;
 
 using Modules.Files.Contracts.Enums;
+using Modules.Files.Domain.Events;
 
 namespace Modules.Files.Domain;
 
@@ -13,11 +17,11 @@ public class FileAsset : AggregateRoot<Guid>, ISoftDeletable
     public string FileName { get; private set; } = default!;
 
     public string OriginalFileName { get; private set; } = default!;
-    
+
     public string ContentType { get; private set; } = default!;
-    
+
     public long SizeBytes { get; private set; }
-    
+
     public string StorageKey { get; private set; } = default!;
 
     public Visibility Visibility { get; private set; }
@@ -29,16 +33,16 @@ public class FileAsset : AggregateRoot<Guid>, ISoftDeletable
     public DateTimeOffset? UploadDeadline { get; private set; }
 
     public string CreatedByUserId { get; private set; } = default!;
-    
+
     public DateTime CreatedAtUtc { get; private set; }
-    
+
     public DateTime? UpdatedAtUtc { get; private set; }
-    
+
     public bool IsDeleted { get; private set; }
     public DateTimeOffset? DeletedOnUtc { get; private set; }
     public string? DeletedBy { get; private set; }
-    
-    public FileAsset(){}
+
+    public FileAsset() { }
 
     public static FileAsset CreatePending(
         Guid id,
@@ -63,7 +67,7 @@ public class FileAsset : AggregateRoot<Guid>, ISoftDeletable
         {
             throw new ArgumentOutOfRangeException(nameof(declaredSizeBytes), "Declared size must be positive.");
         }
-        
+
         return new FileAsset
         {
             Id = id == Guid.Empty ? Guid.CreateVersion7() : id,
@@ -81,5 +85,48 @@ public class FileAsset : AggregateRoot<Guid>, ISoftDeletable
             CreatedByUserId = createdByUserId,
             CreatedAtUtc = DateTime.UtcNow
         };
+    }
+
+    public void MarkAvailable(long actualSize, ScanStatus scanResult)
+    {
+        if (Status != FileAssetStatus.PendingUpload)
+        {
+            throw new CustomException(
+                $"Cannot finalize file in status {Status}.",
+                errors: null,
+                HttpStatusCode.Conflict);
+        }
+        if (actualSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(actualSize), "Actual size must be positive.");
+        }
+
+        SizeBytes = actualSize;
+        ScanStatus = scanResult;
+        Status = scanResult == ScanStatus.Infected ? FileAssetStatus.Quarantined : FileAssetStatus.Available;
+        UploadDeadline = null;
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(DomainEvent.Create((id, ts) =>
+            new FileFinalizedDomainEvent(Id, OwnerType, OwnerId, Status, id, ts)));
+    }
+
+    /// <summary>
+    /// Flip the file's <see cref="Visibility"/> after upload. Idempotent. Refuses to mutate
+    /// files that haven't finished uploading or are quarantined — those are not in a state
+    /// where the URL contract is well-defined.
+    /// </summary>
+    public void ChangeVisibility(Visibility next)
+    {
+        if (Status != FileAssetStatus.Available)
+        {
+            throw new CustomException(
+                $"Cannot change visibility while file is in status {Status}.",
+                errors: null,
+                HttpStatusCode.Conflict);
+        }
+        if (Visibility == next) return;
+        Visibility = next;
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 }
