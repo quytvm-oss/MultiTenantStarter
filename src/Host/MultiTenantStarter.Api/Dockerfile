@@ -3,6 +3,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 WORKDIR /app
 
+ARG BUILD_CONFIGURATION=Release
+
 # .NET SDK configuration
 COPY ["global.json", "./"]
 
@@ -48,10 +50,28 @@ RUN dotnet restore "src/Host/MultiTenantStarter.Api/MultiTenantStarter.Api.cspro
 COPY src src
 
 WORKDIR /app/src/Host/MultiTenantStarter.Api
-RUN dotnet publish -c Release -o /app/publish --no-restore
+#RUN dotnet publish -c Release -o /app/publish --no-restore
+# Publish
+RUN dotnet publish \
+    -c ${BUILD_CONFIGURATION} \
+    -o /app/publish \
+    --no-restore
 
-##Final stage
+##Final stage production
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "MultiTenantStarter.Api.dll"]
+
+
+# Development debugging
+FROM final AS debug
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y curl \
+    && mkdir -p /vsdbg \
+    && curl -sSL https://aka.ms/getvsdbgsh \
+       | /bin/sh /dev/stdin -v latest -l /vsdbg \
+    && rm -rf /var/lib/apt/lists/*

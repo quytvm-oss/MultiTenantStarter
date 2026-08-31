@@ -83,6 +83,9 @@ services:
     build:
       context: ../..
       dockerfile: src/Host/MultitenantStarter.Api/Dockerfile
+      target: debug
+      args:
+        BUILD_CONFIGURATION: Debug
     ports:
       - "5000:5000"
     environment:
