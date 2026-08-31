@@ -21,6 +21,7 @@ using Modules.Files.Features.v1.GetFileMetadata;
 using Modules.Files.Features.v1.ListMyFiles;
 using Modules.Files.Features.v1.ListSharedFiles;
 using Modules.Files.Features.v1.RequestUploadUrl;
+using Modules.Files.Features.v1.RestoreFile;
 using Modules.Files.Services;
 
 using Persistence;
@@ -84,7 +85,7 @@ public class FilesModule : IModule
         group.MapListMyFilesEndpoint();              // GET   /mine
         group.MapListSharedFilesEndpoint();          // GET   /shared
                                                      // group.MapListTrashedFilesEndpoint();         // GET   /trash
-                                                     //group.MapRestoreFileEndpoint();              // POST  /{id}/restore  (literal verb path)
+        group.MapRestoreFileEndpoint();              // POST  /{id}/restore  (literal verb path)
 
         group.MapFinalizeUploadEndpoint();           // POST  /{id}/finalize
         group.MapGetFileDownloadUrlEndpoint();       // GET   /{id}/url

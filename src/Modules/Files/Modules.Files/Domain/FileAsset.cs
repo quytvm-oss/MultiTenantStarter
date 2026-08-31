@@ -129,4 +129,14 @@ public class FileAsset : AggregateRoot<Guid>, ISoftDeletable
         Visibility = next;
         UpdatedAtUtc = DateTime.UtcNow;
     }
+
+    /// <summary>Reverses a soft delete. Idempotent.</summary>
+    public void Restore()
+    {
+        if (!IsDeleted) return;
+        IsDeleted = false;
+        DeletedOnUtc = null;
+        DeletedBy = null;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
 }
