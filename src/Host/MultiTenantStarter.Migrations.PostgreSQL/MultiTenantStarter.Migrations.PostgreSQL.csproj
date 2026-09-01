@@ -17,6 +17,7 @@
       <ProjectReference Include="..\..\Modules\Multitenancy\Modules.Multitenancy\Modules.Multitenancy.csproj" />
       <ProjectReference Include="..\..\Modules\Notifications\Modules.Notifications.Contracts\Modules.Notifications.Contracts.csproj" />
       <ProjectReference Include="..\..\Modules\Notifications\Modules.Notifications\Modules.Notifications.csproj" />
+      <ProjectReference Include="..\..\Modules\Webhooks\Modules.Webhooks.Contracts\Modules.Webhooks.Contracts.csproj" />
       <ProjectReference Include="..\..\Modules\Webhooks\Modules.Webhooks\Modules.Webhooks.csproj" />
     </ItemGroup>
 

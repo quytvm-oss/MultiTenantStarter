@@ -1,5 +1,5 @@
 ﻿namespace Modules.Webhooks.Contracts;
 
-public class Class1
+public class WebhooksContractsMarker
 {
 }

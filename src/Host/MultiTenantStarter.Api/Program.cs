@@ -11,6 +11,8 @@ using Modules.Multitenancy;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Features.v1.CreateTenant;
 using Modules.Notifications;
+using Modules.Webhooks;
+using Modules.Webhooks.Contracts;
 
 using Web;
 using Web.MessageBus;
@@ -63,7 +65,9 @@ builder.Services.AddMediator(o =>
         typeof(FilesContractsMarker),
         typeof(FilesModule),
         typeof(CreateTenantCommand),
-        typeof(CreateTenantCommandHandler)
+        typeof(CreateTenantCommandHandler),
+        typeof(WebhooksModule),
+        typeof(WebhooksContractsMarker),
     ];
 });
 
@@ -74,6 +78,7 @@ var moduleAssemblies = new Assembly[]
     typeof(AuditingModule).Assembly,
     typeof(NotificationsModule).Assembly,
     typeof(FilesModule).Assembly,
+    typeof(WebhooksModule).Assembly,
 };
 
 builder.AddPlatform(o =>

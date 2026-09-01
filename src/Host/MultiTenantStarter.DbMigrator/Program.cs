@@ -16,6 +16,7 @@ using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
 using Modules.Multitenancy.Data;
 using Modules.Notifications;
+using Modules.Webhooks;
 
 using MultiTenantStarter.DbMigrator;
 using MultiTenantStarter.DbMigrator.DemoSeed;
@@ -96,7 +97,8 @@ var moduleAssemblies = new Assembly[]
     typeof(MultitenancyModule).Assembly,
     typeof(AuditingModule).Assembly,
     typeof(NotificationsModule).Assembly,
-    typeof(FilesModule).Assembly
+    typeof(FilesModule).Assembly,
+    typeof(WebhooksModule).Assembly,
 };
 
 // chỉ add platform phần cần thiết
@@ -120,10 +122,10 @@ builder.AddModules(moduleAssemblies);
 builder.Services.AddSingleton<IJobService, NoOpJobService>();
 
 foreach (var descriptor in builder.Services
-             .Where(d => d.ServiceType == typeof(IHostedService)
-                         && (typeof(BackgroundService).IsAssignableFrom(d.ImplementationType)
-                             || d.ImplementationType?.Name == "TenantStoreInitializerHostedService"))
-             .ToList())
+            .Where(d => d.ServiceType == typeof(IHostedService)
+                        && (typeof(BackgroundService).IsAssignableFrom(d.ImplementationType)
+                        || d.ImplementationType?.Name == "TenantStoreInitializerHostedService"))
+            .ToList())
 {
     builder.Services.Remove(descriptor);
 }
@@ -143,23 +145,23 @@ try
     // ── Step 0 — wait for the database to come up ────────────────────────
     // Postgres may still be initialising on cold-start; exp. backoff (≤2 min), then TimeoutException + exit 1.
     var connectionString = host.Services.GetRequiredService<IConfiguration>()["DatabaseOptions:ConnectionString"]
-                           ?? throw new InvalidOperationException("DatabaseOptions:ConnectionString is not configured.");
+                        ?? throw new InvalidOperationException("DatabaseOptions:ConnectionString is not configured.");
     await Console.Out.WriteLineAsync("[migrator] waiting for postgres…").ConfigureAwait(false);
     await PostgresMigratorLock.WaitForDatabaseAsync(connectionString, logger, CancellationToken.None)
         .ConfigureAwait(false);
     await Console.Out.WriteLineAsync("[migrator] postgres ready").ConfigureAwait(false);
-    
+
     // Log the connected role + database so a misconfigured low-priv connection string surfaces now,
     // not as "permission denied for schema public" during MigrateAsync.
     await LogConnectionIdentityAsync(connectionString).ConfigureAwait(false);
-    
+
     // ── Step 0b — acquire the advisory lock ──────────────────────────────
     // Session-level lock: concurrent runs block here; auto-releases on connection close (no orphan on crash).
     await Console.Out.WriteLineAsync("[migrator] acquiring advisory lock…").ConfigureAwait(false);
     await using var migratorLock =
         await PostgresMigratorLock.AcquireAsync(connectionString, logger, CancellationToken.None)
             .ConfigureAwait(false);
-    
+
     // ── Step 1 — tenant catalog ───────────────────────────────────────────
     // Always applied first: the per-tenant migrator below reads every tenant out of this database.
     using (var scope = host.Services.CreateScope())
@@ -191,7 +193,7 @@ try
         {
             await Console.Out.WriteLineAsync("[tenant-catalog] already at head").ConfigureAwait(false);
         }
-        
+
         // Seed the root tenant the first time the catalog comes up so the
         // per-tenant pass below has at least one tenant to iterate.
         var seeded = await tenantDb.TenantInfo.
@@ -210,7 +212,7 @@ try
             await Console.Out.WriteLineAsync("[tenant-catalog] seeded root tenant").ConfigureAwait(false);
         }
     }
-    
+
     // ── Step 2 — per-tenant migrations + (optional) seeds ────────────────
     // `seed-demo` short-circuits this: it provisions its own demo tenants inline (Step 3 below).
     if (!cli.CatalogOnly && cli.Command != "seed-demo")
@@ -222,7 +224,7 @@ try
         var tenants = string.IsNullOrEmpty(cli.Tenant)
             ? allTenants
             : allTenants.Where(t => string.Equals(t.Id, cli.Tenant, StringComparison.OrdinalIgnoreCase)).ToList();
-        
+
         if (tenants.Count == 0)
         {
             await Console.Out.WriteLineAsync($"[migrator] no tenants matched {cli.Tenant ?? "(all)"}")
@@ -255,7 +257,7 @@ try
             }
         }
     }
-    
+
     // ── Step 3 — demo seed (verb: `seed-demo`) ───────────────────────────
     // Dev-only: provisions acme + globex with rich demo content; hard-fails outside Development.
     if (cli.Command == "seed-demo")

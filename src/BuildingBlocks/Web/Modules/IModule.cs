@@ -7,8 +7,8 @@ namespace Web.Modules;
 public interface IModule
 {
     void ConfigureServices(IHostApplicationBuilder builder);
-    
-    void ConfigureMiddleware(IApplicationBuilder app) {}
-    
+
+    void ConfigureMiddleware(IApplicationBuilder app) { }
+
     void MapEndpoints(IEndpointRouteBuilder endpoints);
 }
