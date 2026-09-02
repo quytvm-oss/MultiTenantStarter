@@ -9,9 +9,10 @@ public sealed record UserRegisteredIntegrationEvent(
     Guid Id,
     DateTime OccurredOnUtc,
     string? TenantId,
+    string Source,
+    string CorrelationId,
     string UserId,
     string Email,
-    string Source,
     string FirstName,
     string LastName)
     : IIntegrationEvent;

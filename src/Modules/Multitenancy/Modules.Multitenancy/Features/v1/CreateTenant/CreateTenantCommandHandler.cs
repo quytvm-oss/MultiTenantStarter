@@ -83,8 +83,11 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         // }
 
         await _bus.Send(new TenantSubscribedIntegrationEvent(
+            Id: Guid.CreateVersion7(),
+            OccurredOnUtc: periodStart,
             TenantId: tenantId,
             CorrelationId: provisioning.CorrelationId,
+            Source: "Multitenancy",
             PeriodStartUtc: periodStart,
             PeriodEndUtc: periodEnd));
 

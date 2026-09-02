@@ -47,7 +47,7 @@ public class GenerateTokenCommandHandler(
 
         var ip = requestContext.IpAddress ?? "unknown";
         var ua = requestContext.UserAgent ?? "unknown";
-        var clientId = requestContext.ClientId ;
+        var clientId = requestContext.ClientId;
 
         var identityResult = await identityService
             .ValidateCredentialsAsync(command.Email, command.Password, command.TwoFactorCode, cancellationToken);
@@ -60,10 +60,10 @@ public class GenerateTokenCommandHandler(
                 reason: "Invalid credentials",
                 ip: ip,
                 ct: cancellationToken);
-            
+
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
-        
+
         var (subject, claims) = identityResult.Value;
 
         await securityAudit.LoginSucceededAsync(
@@ -73,29 +73,29 @@ public class GenerateTokenCommandHandler(
             ip: ip,
             userAgent: ua,
             ct: cancellationToken);
-        
+
         // Issue token
         var token = await tokenService.IssueAsync(subject, claims, null, cancellationToken);
-        
+
         await identityService.StoreRefreshTokenAsync(subject, token.RefreshToken, token.RefreshTokenExpiresAt, cancellationToken);
-        
+
         // Create user session for session management (non-blocking, fail gracefully)
         try
         {
             var refreshTokenHash = Sha256Short(token.RefreshToken);
             await sessionService.CreateSessionAsync(
                 subject,
-                refreshTokenHash, 
+                refreshTokenHash,
                 ip,
                 ua,
-                token.RefreshTokenExpiresAt, 
+                token.RefreshTokenExpiresAt,
                 cancellationToken);
         }
         catch (Exception e)
         {
             logger.LogWarning(e, "Failed to create user session for user {UserId}. Login will continue without session tracking.", subject);
         }
-        
+
         // 3) Audit token issuance with a fingerprint (never raw token)
         var fingerprint = Sha256Short(token.AccessToken);
         await securityAudit.TokenIssuedAsync(
@@ -105,15 +105,17 @@ public class GenerateTokenCommandHandler(
             tokenFingerprint: fingerprint,
             expiresUtc: token.AccessTokenExpiresAt,
             ct: cancellationToken);
-        
+
         // 4) Enqueue integration event for token generation (sample event for testing eventing)
         var tenantId = tenantContextAccessor.MultiTenantContext?.TenantInfo?.Id;
         var correlationId = Guid.CreateVersion7().ToString();
-        
+
         var integrationEvent = new TokenGeneratedIntegrationEvent(
             Id: Guid.NewGuid(),
             OccurredOnUtc: TimeProvider.System.GetUtcNow().UtcDateTime,
             TenantId: tenantId,
+            Source: "Identity",
+            CorrelationId: correlationId,
             UserId: subject,
             Email: command.Email,
             ClientId: clientId!,
@@ -121,7 +123,7 @@ public class GenerateTokenCommandHandler(
             UserAgent: ua,
             TokenFingerprint: fingerprint,
             AccessTokenExpiresAtUtc: token.AccessTokenExpiresAt);
-        
+
         // await eventBus.PublishAsync(integrationEvent,x =>
         // {
         //     x.Name = "token.generated";
@@ -129,7 +131,7 @@ public class GenerateTokenCommandHandler(
         //     x.TenantId = tenantId;
         //     x.CorrelationId = correlationId;
         // }  , cancellationToken);
-        
+
         return token;
     }
 

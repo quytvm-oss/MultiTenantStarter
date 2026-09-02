@@ -10,6 +10,8 @@ public sealed record TokenGeneratedIntegrationEvent(
     Guid Id,
     DateTime OccurredOnUtc,
     string? TenantId,
+    string Source,
+    string CorrelationId,
     string UserId,
     string Email,
     string ClientId,
