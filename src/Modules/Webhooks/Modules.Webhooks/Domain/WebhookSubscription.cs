@@ -11,4 +11,12 @@ public class WebhookSubscription : AggregateRoot<Guid>
     public DateTime CreatedAtUtc { get; private set; }
 
     private WebhookSubscription() { }
+
+    public string[] GetEvents() =>
+        EventsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    public bool MatchesEvent(string eventType) =>
+        GetEvents().Contains(eventType, StringComparer.OrdinalIgnoreCase) ||
+        GetEvents().Contains("*");
+
+    public void Deactivate() => IsActive = false;
 }

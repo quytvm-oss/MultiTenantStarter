@@ -44,7 +44,7 @@ public static class Extensions
 
         return builder;
     }
-    
+
     public static IServiceCollection AddHeroMessaging(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -61,13 +61,9 @@ public static class Extensions
             .Transport(t => t.UseRabbitMq(
                 connectionString: options.RabbitMq.ConnectionString,
                 inputQueueName: options.QueueName))
-            // .Subscriptions(s => s.StoreInPostgres(
-            //     connectionString: dbSettings?.ConnectionString,
-            //     tableName: options.Storage.SubscriptionsTableName,
-            //     isCentralized: true))
             .Outbox(o => o.StoreInPostgreSql(
                 connectionString: dbSettings?.ConnectionString,
-                tableName:  options.Storage.OutboxTableName))
+                tableName: options.Storage.OutboxTableName))
             .Routing(r => r.TypeBased().MapFallback(options.QueueName))
             .Options(o =>
             {
@@ -80,7 +76,7 @@ public static class Extensions
 
         return services;
     }
-    
+
     public static IServiceCollection AddHeroMessagingModules(
         this IServiceCollection services,
         IEnumerable<Assembly> assemblies)

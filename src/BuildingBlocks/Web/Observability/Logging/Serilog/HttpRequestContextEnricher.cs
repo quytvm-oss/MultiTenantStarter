@@ -20,7 +20,7 @@ public class HttpRequestContextEnricher : ILogEventEnricher
     {
         ArgumentNullException.ThrowIfNull(logEvent);
         ArgumentNullException.ThrowIfNull(propertyFactory);
-        
+
         var httpContext = _httpContextAccessor.HttpContext;
 
         if (httpContext != null)
@@ -34,7 +34,7 @@ public class HttpRequestContextEnricher : ILogEventEnricher
                 var userId = httpContext.User.GetUserId();
                 var tenant = httpContext.User.GetTenant();
                 var userEmailId = httpContext.User.GetEmail();
-                
+
                 logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("UserId", userId));
                 logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("Tenant", tenant));
                 logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("UserEmail", userEmailId));

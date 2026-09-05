@@ -73,6 +73,7 @@ using Shared.Identity;
 
 using Storage;
 
+using Web.MessageBus;
 using Web.Modules;
 
 namespace Modules.Identity;
@@ -84,9 +85,9 @@ public class IdentityModule : IModule
         ArgumentNullException.ThrowIfNull(builder);
         PermissionConstants.Register(
             IdentityPermissions.All);
-        
+
         var services = builder.Services;
-        
+
         services.AddScoped<RolePermissionSyncer>();
         services.AddHostedService<RolePermissionSyncHostedService>();
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, PathAwareAuthorizationHandler>();
@@ -97,7 +98,7 @@ public class IdentityModule : IModule
         services.AddScoped<IRequestContext>(sp => sp.GetRequiredService<IRequestContextService>());
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IImpersonationGrantService, ImpersonationGrantService>();
-        
+
         // User services - focused single-responsibility services
         services.AddTransient<IUserRegistrationService, UserRegistrationService>();
         services.AddTransient<IUserProfileService, UserProfileService>();
@@ -105,10 +106,10 @@ public class IdentityModule : IModule
         services.AddTransient<IUserRoleService, UserRoleService>();
         services.AddTransient<IUserPasswordService, UserPasswordService>();
         services.AddTransient<IUserPermissionService, UserPermissionService>();
-        
+
         // Facade for backward compatibility
         services.AddTransient<IUserService, UserService>();
-        
+
         services.AddTransient<IRoleService, RoleService>();
         services.AddCustomDbContext<IdentityDbContext>();
         services.AddScoped<IIdentityService, IdentityService>();
@@ -143,7 +144,7 @@ public class IdentityModule : IModule
             options.Password.RequireNonAlphanumeric = true;
             options.Password.RequireUppercase = true;
             options.User.RequireUniqueEmail = true;
-            
+
             // Account lockout: 5 consecutive failed logins → 15-minute lockout (applies to new users by default).
             // IdentityService's login flow drives AccessFailedAsync / IsLockedOutAsync.
             options.Lockout.AllowedForNewUsers = true;
@@ -168,11 +169,11 @@ public class IdentityModule : IModule
             .MapGroup("api/v{version:apiVersion}/identity")
             .WithTags("Identity")
             .WithApiVersionSet(apiVersionSet);
-        
+
         // tokens
         group.MapGenerateTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
         group.MapRefreshTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
-        
+
         // permission catalog — every permission registered with the host,
         // filtered to the caller's tenant context (root vs admin set)
         group.MapGetPermissionCatalogEndpoint();
@@ -196,7 +197,7 @@ public class IdentityModule : IModule
         group.MapSetProfileImageEndpoint();
         group.MapGetUserGroupsEndpoint();
         group.MapSearchUsersEndpoint();
-        
+
         // sessions - user endpoints
         group.MapGetMySessionsEndpoint();
         group.MapGetUserSessionsEndpoint();
@@ -205,7 +206,7 @@ public class IdentityModule : IModule
         group.MapGetTenantSessionsEndpoint();
         group.MapAdminRevokeAllSessionsEndpoint();
         group.MapAdminRevokeSessionEndpoint();
-        
+
         //roles
         group.MapGetRolesQuery();
         group.MapGetRoleByIdEndpoint();
@@ -213,7 +214,7 @@ public class IdentityModule : IModule
         group.MapUpdateRolePermissionsEndpoint();
         group.MapCreateOrUpdateRoleEndpoint();
         group.MapDeleteRoleEndpoint();
-        
+
         // groups
         group.MapCreateGroupEndpoint();
         group.MapAddUsersToGroupEndpoint();
@@ -222,13 +223,13 @@ public class IdentityModule : IModule
         group.MapGetGroupsEndpoint();
         group.MapRemoveUserFromGroupEndpoint();
         group.MapUpdateGroupEndpoint();
-        
+
         // impersonal grant
         group.MapStartImpersonationEndpoint();
         group.MapEndImpersonationEndpoint();
         group.MapRevokeImpersonationGrantEndpoint();
         group.MapGetImpersonationGrantsEndpoint();
-        
+
         // two factor
         group.MapEnrollTwoFactorEndpoint();
         group.MapVerifyEnrollTwoFactorEndpoint();

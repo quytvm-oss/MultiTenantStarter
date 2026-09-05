@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 using Core.Context;
 
@@ -18,7 +19,10 @@ using Modules.Identity.Contracts.Events;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
 
+using Rebus.Bus;
+
 using Shared.Multitenancy;
+using Shared.Webhooks;
 
 namespace Modules.Identity.Features.v1.Tokens.TokenGeneration;
 
@@ -30,6 +34,7 @@ public class GenerateTokenCommandHandler(
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
     //IBusPublisher eventBus,
+    IBus bus,
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {
@@ -131,6 +136,18 @@ public class GenerateTokenCommandHandler(
         //     x.TenantId = tenantId;
         //     x.CorrelationId = correlationId;
         // }  , cancellationToken);
+
+        var webhookEvent = new WebhookEvent(
+            Id: Guid.CreateVersion7(),
+            OccurredOnUtc: TimeProvider.System.GetUtcNow().UtcDateTime,
+            TenantId: tenantId,
+            CorrelationId: correlationId,
+            Source: "Identity",
+            EventType: "identity.token.generated",
+            FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
+            Payload: JsonSerializer.Serialize(integrationEvent));
+
+        await bus.Publish(webhookEvent);
 
         return token;
     }
