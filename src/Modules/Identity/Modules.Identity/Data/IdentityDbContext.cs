@@ -40,7 +40,7 @@ public class IdentityDbContext : MultiTenantIdentityDbContext<User,
     public DbSet<UserGroup> UserGroups => Set<UserGroup>();
 
     public DbSet<ImpersonationGrant> ImpersonationGrants => Set<ImpersonationGrant>();
-    
+
     public IdentityDbContext(
         IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
         DbContextOptions<IdentityDbContext> options,
@@ -49,7 +49,7 @@ public class IdentityDbContext : MultiTenantIdentityDbContext<User,
     {
         ArgumentNullException.ThrowIfNull(multiTenantContextAccessor);
         ArgumentNullException.ThrowIfNull(options);
-        
+
         _environment = environment;
         _settings = settings.Value;
         TenantInfo = multiTenantContextAccessor.MultiTenantContext?.TenantInfo!;
@@ -58,11 +58,10 @@ public class IdentityDbContext : MultiTenantIdentityDbContext<User,
     protected override void OnModelCreating(ModelBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        
+
         base.OnModelCreating(builder);
-        
+
         builder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
-        
         // Default-on tenant isolation: non-IGlobalEntity entities get IsMultiTenant() automatically (Outbox/Inbox/ImpersonationGrant opt out).
         // Identity tables are already IsMultiTenant in IdentityConfigurations.cs; auto-apply detects that annotation and skips them.
         builder.ApplyTenantIsolationByDefault();

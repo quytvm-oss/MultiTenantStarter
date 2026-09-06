@@ -8,6 +8,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Npgsql;
+
+using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Config.Outbox;
 using Rebus.Routing.TypeBased;
@@ -56,6 +59,10 @@ public static class Extensions
         var options = configuration
             .GetSection(nameof(RebusOptions))
             .Get<RebusOptions>() ?? new RebusOptions();
+        
+        // QUAN TRỌNG: OutboxBus cần cái này
+        services.AddSingleton<NpgsqlDataSource>(_ =>
+            NpgsqlDataSource.Create(dbSettings!.ConnectionString));
 
         services.AddRebus(config => config
             .Transport(t => t.UseRabbitMq(
@@ -72,7 +79,7 @@ public static class Extensions
             })
             .Logging(l => l.Serilog()));
 
-        //services.AutoRegisterHandlersFromAssemblyOf<TMarker>();
+        services.Decorate<IBus, OutboxBus>();
 
         return services;
     }

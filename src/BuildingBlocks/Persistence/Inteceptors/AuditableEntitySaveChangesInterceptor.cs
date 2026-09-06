@@ -11,7 +11,7 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
 {
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
-    
+
     private static readonly AsyncLocal<bool> _isSaving = new();
 
     public AuditableEntitySaveChangesInterceptor(ICurrentUser currentUser, TimeProvider timeProvider)
@@ -37,7 +37,7 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
         finally
         {
             _isSaving.Value = false;
-        } 
+        }
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result,
@@ -64,7 +64,7 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
     private void UpdateAuditEntities(DbContext? context)
     {
         if (context == null) return;
-        
+
         var userId = _currentUser.IsAuthenticated() ? _currentUser.GetUserId().ToString() : null;
         var now = _timeProvider.GetUtcNow();
 
@@ -75,7 +75,7 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
                 if (entry.State == EntityState.Added)
                 {
                     entry.Property(nameof(IAuditableEntity.CreatedOnUtc)).CurrentValue = now;
-                    entry.Property(nameof(IAuditableEntity.CreatedBy)).CurrentValue = userId;   
+                    entry.Property(nameof(IAuditableEntity.CreatedBy)).CurrentValue = userId;
                 }
                 else if (entry.State == EntityState.Modified || entry.HasChangedOwnedEntities())
                 {
@@ -90,7 +90,7 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
                 entry.Property(nameof(ISoftDeletable.IsDeleted)).CurrentValue = true;
                 entry.Property(nameof(ISoftDeletable.DeletedOnUtc)).CurrentValue = now;
                 entry.Property(nameof(ISoftDeletable.DeletedBy)).CurrentValue = userId;
-                
+
                 // A soft-delete cascades Deleted onto owned references; restore them to Unchanged or the
                 // generated UPDATE NULLs their columns (broke Product.Price/Money with a NOT NULL violation).
                 foreach (var reference in entry.References)

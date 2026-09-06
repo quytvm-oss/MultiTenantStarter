@@ -55,7 +55,7 @@ public class DomainEventsInterceptor : SaveChangesInterceptor
                 _logger.LogError(e, "Failed to publish domain event {EventType}", domainEvent.GetType().Name);
             }
         }
-        
+
         return await base.SavedChangesAsync(eventData, result, cancellationToken).ConfigureAwait(false);
     }
 }

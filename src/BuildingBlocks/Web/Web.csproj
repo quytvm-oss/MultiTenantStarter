@@ -29,6 +29,7 @@
     <PackageReference Include="Rebus.Serilog" />
     <PackageReference Include="Rebus.ServiceProvider" />
     <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Scrutor" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Enrichers.CorrelationId" />
