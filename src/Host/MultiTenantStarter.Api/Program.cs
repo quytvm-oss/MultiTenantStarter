@@ -92,7 +92,7 @@ builder.AddPlatform(o =>
 
 builder.AddModules(true, moduleAssemblies);
 //builder.Services.AddHeroMessaging(builder.Configuration);
-builder.Services.AddHeroMessagingModules(moduleAssemblies);
+//builder.Services.AddHeroMessagingModules(moduleAssemblies);
 builder.Services.AddHostedService<RebusSubscriptionHostedService>();
 //builder.AddCustomMessageBus(moduleAssemblies);
 

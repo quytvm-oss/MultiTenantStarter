@@ -12,6 +12,22 @@ public class WebhookSubscription : AggregateRoot<Guid>
 
     private WebhookSubscription() { }
 
+    public static WebhookSubscription Create(string url, string[] events, string? protectedSecret)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+        ArgumentNullException.ThrowIfNull(events);
+
+        return new WebhookSubscription
+        {
+            Id = Guid.CreateVersion7(),
+            Url = url,
+            EventsCsv = string.Join(',', events),
+            ProtectedSecret = protectedSecret,
+            IsActive = true,
+            CreatedAtUtc = TimeProvider.System.GetUtcNow().UtcDateTime
+        };
+    }
+
     public string[] GetEvents() =>
         EventsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     public bool MatchesEvent(string eventType) =>
