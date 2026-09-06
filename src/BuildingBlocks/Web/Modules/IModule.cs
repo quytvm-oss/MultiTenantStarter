@@ -6,7 +6,7 @@ namespace Web.Modules;
 
 public interface IModule
 {
-    void ConfigureServices(IHostApplicationBuilder builder);
+    void ConfigureServices(IHostApplicationBuilder builder, bool IsWebHost = true);
 
     void ConfigureMiddleware(IApplicationBuilder app) { }
 

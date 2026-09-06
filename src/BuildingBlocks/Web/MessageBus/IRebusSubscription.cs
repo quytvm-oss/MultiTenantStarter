@@ -1,8 +1,9 @@
 using Rebus.Bus;
+using Rebus.ServiceProvider;
 
 namespace Web.MessageBus;
 
 public interface IRebusSubscription
 {
-    Task SubscribeAsync(IBus bus, CancellationToken cancellationToken);
+    Task SubscribeAsync(IBusRegistry bus, CancellationToken cancellationToken);
 }

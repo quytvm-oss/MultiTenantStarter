@@ -33,13 +33,13 @@ namespace Modules.Auditing;
 
 public class AuditingModule : IModule
 {
-    public void ConfigureServices(IHostApplicationBuilder builder)
+    public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
         PermissionConstants.Register(
             Contracts.Authorization.AuditingPermissions.All);
-        
+
         var httpOpts = builder.Configuration.GetSection("Auditing").Get<AuditHttpOptions>() ?? new AuditHttpOptions();
         builder.Services.AddSingleton(httpOpts);
 

@@ -19,7 +19,7 @@ namespace Modules.Webhooks;
 
 public class WebhooksModule : IModule
 {
-    public void ConfigureServices(IHostApplicationBuilder builder)
+    public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
@@ -47,6 +47,9 @@ public class WebhooksModule : IModule
             .AddDbContextCheck<WebhookDbContext>(
                 name: "db:webhooks",
                 failureStatus: HealthStatus.Unhealthy);
+
+        if (isWebHost)
+            builder.Services.AddHeroMessaging(builder.Configuration, moduleKey: "webhooks");
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

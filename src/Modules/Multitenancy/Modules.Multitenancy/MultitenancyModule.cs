@@ -9,7 +9,9 @@ using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 using Finbuckle.MultiTenant.Extensions;
 using Finbuckle.MultiTenant.Stores;
+
 using Persistence;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -35,12 +37,13 @@ using Shared.Identity;
 using Shared.Multitenancy;
 
 using Web.Modules;
+using Web.MessageBus;
 
 namespace Modules.Multitenancy;
 
 public class MultitenancyModule : IModule
 {
-    public void ConfigureServices(IHostApplicationBuilder builder)
+    public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.AddScoped<ITenantService, TenantService>();
@@ -50,13 +53,13 @@ public class MultitenancyModule : IModule
         builder.Services.AddScoped<ITenantProvisioningStateWriter, TenantProvisioningService>();
         builder.Services.AddTransient<IConnectionStringValidator, ConnectionStringValidator>();
         builder.Services.AddTransient<TenantProvisioningJob>();
-        
+
         // Singleton — the buffer survives the request scope that calls Store(...)
         // so the background Hangfire-scheduled seed scope can still TryConsume(...).
         builder.Services.AddSingleton<ITenantInitialPasswordBuffer, TenantInitialPasswordBuffer>();
-        
+
         builder.Services.AddCustomDbContext<TenantDbContext>();
-        
+
         builder.Services
             .AddMultiTenant<AppTenantInfo>(options =>
             {
@@ -101,6 +104,8 @@ public class MultitenancyModule : IModule
         // .AddCheck<TenantMigrationsHealthCheck>(
         //     name: "db:tenants-migrations",
         //     failureStatus: HealthStatus.Unhealthy);
+        if (isWebHost)
+            builder.Services.AddHeroMessaging(builder.Configuration, moduleKey: "multitenancy", isPrimary: true);
     }
 
     public void ConfigureMiddleware(IApplicationBuilder app)
@@ -202,7 +207,7 @@ public class MultitenancyModule : IModule
         var group = endpoints.MapGroup("api/v{version:apiVersion}/tenants")
             .WithTags("Tenants")
             .WithApiVersionSet(versionSet);
-        
+
         CreateTenantEndpoint.Map(group);
         GetTenantStatusEndpoint.Map(group);
         GetTenantsEndpoint.Map(group);

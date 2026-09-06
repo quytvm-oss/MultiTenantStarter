@@ -1,16 +1,17 @@
 using Microsoft.Extensions.Hosting;
 
 using Rebus.Bus;
+using Rebus.ServiceProvider;
 
 namespace Web.MessageBus;
 
-public sealed class RebusSubscriptionHostedService(IBus bus, IEnumerable<IRebusSubscription> subscriptions) : IHostedService
+public sealed class RebusSubscriptionHostedService(IBusRegistry busRegistry, IEnumerable<IRebusSubscription> subscriptions) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         foreach (var subscription in subscriptions)
         {
-            await subscription.SubscribeAsync(bus, cancellationToken);
+            await subscription.SubscribeAsync(busRegistry, cancellationToken);
         }
     }
 

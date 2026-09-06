@@ -44,7 +44,7 @@ namespace Modules.Files;
 /// </summary>
 public class FilesModule : IModule
 {
-    public void ConfigureServices(IHostApplicationBuilder builder)
+    public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
 

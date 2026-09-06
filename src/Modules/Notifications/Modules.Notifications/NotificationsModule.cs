@@ -15,14 +15,14 @@ namespace Modules.Notifications;
 
 public class NotificationsModule : IModule
 {
-    public void ConfigureServices(IHostApplicationBuilder builder)
+    public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        
+
         builder.Services.AddCustomDbContext<NotificationsDbContext>();
         builder.Services.AddScoped<IDbInitializer, NotificationsDbInitializer>();
         builder.Services.AddValidatorsFromAssembly(typeof(NotificationsModule).Assembly);
-        
+
         builder.Services.AddHealthChecks().AddDbContextCheck<NotificationsDbContext>(
             name: "db:notifications",
             failureStatus: HealthStatus.Unhealthy);

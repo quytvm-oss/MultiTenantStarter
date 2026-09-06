@@ -80,7 +80,7 @@ namespace Modules.Identity;
 
 public class IdentityModule : IModule
 {
-    public void ConfigureServices(IHostApplicationBuilder builder)
+    public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
         PermissionConstants.Register(
@@ -154,6 +154,9 @@ public class IdentityModule : IModule
         .AddDefaultTokenProviders();
 
         services.ConfigureJwtAuth();
+
+        if (isWebHost)
+            services.AddHeroMessaging(builder.Configuration, moduleKey: "identity");
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

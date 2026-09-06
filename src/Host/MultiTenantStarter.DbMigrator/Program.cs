@@ -115,7 +115,7 @@ builder.AddPlatform(o =>
 });
 
 // chỉ add module hiện có
-builder.AddModules(moduleAssemblies);
+builder.AddModules(false, moduleAssemblies);
 
 // TenantProvisioningService needs IJobService, but Hangfire's is gated behind EnableJobs (off here).
 // Provide a throwing no-op so the DI graph resolves; the migration code paths don't enqueue jobs.
