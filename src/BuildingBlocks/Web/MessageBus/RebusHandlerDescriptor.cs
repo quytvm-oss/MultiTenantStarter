@@ -5,3 +5,7 @@ public sealed record RebusHandlerDescriptor(
     Type MessageType,
     Type HandlerType,
     string HandlerKey);
+
+public sealed record MessageRouteDescriptor(
+    Type MessageType,
+    string QueueName);

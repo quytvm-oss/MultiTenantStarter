@@ -123,7 +123,20 @@ public static class Extensions
                 .Outbox(o => o.StoreInPostgreSql(
                     connectionString: dbSettings?.ConnectionString,
                     tableName: options!.Storage.OutboxTableName))
-                .Routing(r => r.TypeBased().MapFallback(moduleKey))
+                .Timeouts(t => t.StoreInPostgres(
+                    connectionString: dbSettings?.ConnectionString,
+                    tableName: options!.Storage.TimeoutsTableName))
+                // .Routing(r => r.TypeBased().MapFallback(moduleKey))
+                .Routing(r =>
+                {
+                    var routes = provider.GetServices<MessageRouteDescriptor>();
+                    var typeBased = r.TypeBased();
+                    foreach (var route in routes)
+                    {
+                        typeBased.Map(route.MessageType, route.QueueName);
+                    }
+                    typeBased.MapFallback(moduleKey);
+                })
                 .Options(o =>
                 {
                     o.SetNumberOfWorkers(options!.NumberOfWorkers);
@@ -196,5 +209,17 @@ public static class Extensions
 
             return new PipelineStepInjector(withoutDefault).OnReceive(queueStep, PipelineRelativePosition.Before, typeof(LoadSagaDataStep));
         });
+    }
+    
+    public static IServiceCollection AddMessageRoute<TMessage>(this IServiceCollection services, string queueName)
+    {
+        if (string.IsNullOrWhiteSpace(queueName))
+        {
+            throw new ArgumentException("Queue name must not be empty.", nameof(queueName));
+        }
+
+        services.AddSingleton(new MessageRouteDescriptor(typeof(TMessage), queueName));
+
+        return services;
     }
 }

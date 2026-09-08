@@ -9,8 +9,6 @@ using Finbuckle.MultiTenant.Abstractions;
 
 using Mediator;
 
-using MessageBus;
-
 using Microsoft.Extensions.Logging;
 
 using Modules.Auditing.Contracts;
@@ -146,7 +144,7 @@ public class GenerateTokenCommandHandler(
             FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
             Payload: JsonSerializer.Serialize(integrationEvent));
 
-        await bus.Publish(webhookEvent);
+        await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
 
         return token;
     }

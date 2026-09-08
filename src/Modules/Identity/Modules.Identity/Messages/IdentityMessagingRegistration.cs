@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Modules.Identity.Events;
 
+using Shared.Webhooks;
+
 using Web.MessageBus;
 
 namespace Modules.Identity.Messages;
@@ -16,6 +18,8 @@ public static class IdentityMessagingRegistration
         services.AddQueueHandler<WebhookEventHandler>(
             queueName: "identity",
             handlerKey: "identity.webhook-event.v1");
+        
+        services.AddMessageRoute<WebhookEvent>("identity");
 
         return services;
     }

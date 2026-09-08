@@ -31,6 +31,6 @@ public class RebusStorageOptions
 {
     public string SubscriptionsTableName { get; set; } = "rebus_subscriptions";
     public string OutboxTableName { get; set; } = "rebus_outbox";
-    // MessagesTableName bỏ vì không dùng khi transport là RabbitMQ
-    // (table đó chỉ có ý nghĩa khi dùng Postgres làm transport)
+    
+    public string TimeoutsTableName { get; set; } = "rebus_timeout";
 }
