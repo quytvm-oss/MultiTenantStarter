@@ -17,6 +17,7 @@ using Modules.Identity.Contracts.Authorization;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
+using Modules.Identity.Events;
 using Modules.Identity.Features.v1.Groups.AddUsersToGroup;
 using Modules.Identity.Features.v1.Groups.CreateGroup;
 using Modules.Identity.Features.v1.Groups.DeleteGroup;
@@ -65,6 +66,7 @@ using Modules.Identity.Features.v1.Users.SearchUsers;
 using Modules.Identity.Features.v1.Users.SelfRegistration;
 using Modules.Identity.Features.v1.Users.SetProfileImage;
 using Modules.Identity.Features.v1.Users.UpdateUser;
+using Modules.Identity.Messages;
 using Modules.Identity.Services;
 
 using Persistence;
@@ -156,7 +158,7 @@ public class IdentityModule : IModule
         services.ConfigureJwtAuth();
 
         if (isWebHost)
-            services.AddHeroMessaging(builder.Configuration, moduleKey: "identity");
+            services.AddIdentityMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

@@ -51,7 +51,7 @@ public class WebhookFanoutHandler : IHandleMessages<WebhookEvent>
 
         _logger.LogInformation(
             "Webhook fan-out for event {EventType} (tenant {TenantId}, correlation {CorrelationId})",
-            typeof(WebhookEvent).Name,
+            nameof(WebhookEvent),
             message.TenantId,
             message.CorrelationId);
 

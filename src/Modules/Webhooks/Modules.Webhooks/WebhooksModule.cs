@@ -27,7 +27,6 @@ public class WebhooksModule : IModule
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-
         builder.Services.AddCustomDbContext<WebhookDbContext>();
         builder.Services.AddScoped<IDbInitializer, WebhookDbInitializer>();
         builder.Services.AddSingleton<IWebhookSecretProtector, WebhookSecretProtector>();
@@ -53,11 +52,7 @@ public class WebhooksModule : IModule
                 failureStatus: HealthStatus.Unhealthy);
 
         if (isWebHost)
-        {
-            builder.Services.AddHeroMessaging(builder.Configuration, moduleKey: "webhooks");
-            builder.Services.AddHeroMessagingModules(typeof(WebhooksModule).Assembly);
-
-        }
+            builder.Services.AddWebhooksMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
