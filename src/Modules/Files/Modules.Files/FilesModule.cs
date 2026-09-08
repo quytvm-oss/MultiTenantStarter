@@ -50,20 +50,22 @@ public class FilesModule : IModule
 
         PermissionConstants.Register(FilesPermissions.All);
 
-        builder.Services.Configure<FilesOptions>(builder.Configuration.GetSection("Files"));
-        builder.Services.AddCustomDbContext<FilesDbContext>();
-        builder.Services.AddScoped<IDbInitializer, FilesDbInitializer>();
+        var services = builder.Services;
 
-        builder.Services.AddScoped<FileAccessPolicyRegistry>();
-        builder.Services.AddSingleton<IFileScanner, NoOpFileScanner>();
-        builder.Services.AddValidatorsFromAssembly(typeof(FilesModule).Assembly);
+        services.Configure<FilesOptions>(builder.Configuration.GetSection("Files"));
+        services.AddCustomDbContext<FilesDbContext>();
+        services.AddScoped<IDbInitializer, FilesDbInitializer>();
+
+        services.AddScoped<FileAccessPolicyRegistry>();
+        services.AddSingleton<IFileScanner, NoOpFileScanner>();
+        services.AddValidatorsFromAssembly(typeof(FilesModule).Assembly);
 
         // Default uploader-only policies for the built-in OwnerTypes. Owning modules register their
         // own policies for additional OwnerTypes via services.AddFileAccessPolicy<TPolicy>().
-        builder.Services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("MyFiles"));
-        builder.Services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("User"));
+        services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("MyFiles"));
+        services.AddScoped<IFileAccessPolicy>(_ => new DefaultUploaderOnlyPolicy("User"));
 
-        builder.Services.AddHealthChecks().AddDbContextCheck<FilesDbContext>(
+        services.AddHealthChecks().AddDbContextCheck<FilesDbContext>(
             name: "db:files",
             failureStatus: HealthStatus.Unhealthy);
     }

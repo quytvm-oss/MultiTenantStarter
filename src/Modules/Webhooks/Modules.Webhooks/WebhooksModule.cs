@@ -27,15 +27,17 @@ public class WebhooksModule : IModule
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.Services.AddCustomDbContext<WebhookDbContext>();
-        builder.Services.AddScoped<IDbInitializer, WebhookDbInitializer>();
-        builder.Services.AddSingleton<IWebhookSecretProtector, WebhookSecretProtector>();
-        builder.Services.AddScoped<IWebhookDeliveryService, WebhookDeliveryService>();
-        builder.Services.AddScoped<IWebhookDispatcher, WebhookDispatcher>();
-        builder.Services.AddScoped<WebhookDispatchJob>();
-        builder.Services.AddSingleton<IRebusSubscription, WebhookSubscribe>();
+        var services = builder.Services;
 
-        builder.Services.AddHttpClient("Webhooks")
+        services.AddCustomDbContext<WebhookDbContext>();
+        services.AddScoped<IDbInitializer, WebhookDbInitializer>();
+        services.AddSingleton<IWebhookSecretProtector, WebhookSecretProtector>();
+        services.AddScoped<IWebhookDeliveryService, WebhookDeliveryService>();
+        services.AddScoped<IWebhookDispatcher, WebhookDispatcher>();
+        services.AddScoped<WebhookDispatchJob>();
+        services.AddSingleton<IRebusSubscription, WebhookSubscribe>();
+
+        services.AddHttpClient("Webhooks")
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
                 // Untrusted tenant-supplied destination: never follow redirects (a 302 could bounce
@@ -46,13 +48,13 @@ public class WebhooksModule : IModule
             })
             .AddResilientHttpClient(builder.Configuration);
 
-        builder.Services.AddHealthChecks()
+        services.AddHealthChecks()
             .AddDbContextCheck<WebhookDbContext>(
                 name: "db:webhooks",
                 failureStatus: HealthStatus.Unhealthy);
 
         if (isWebHost)
-            builder.Services.AddWebhooksMessaging(builder.Configuration);
+            services.AddWebhooksMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

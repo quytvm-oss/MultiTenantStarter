@@ -19,11 +19,13 @@ public class NotificationsModule : IModule
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.Services.AddCustomDbContext<NotificationsDbContext>();
-        builder.Services.AddScoped<IDbInitializer, NotificationsDbInitializer>();
-        builder.Services.AddValidatorsFromAssembly(typeof(NotificationsModule).Assembly);
+        var services = builder.Services;
 
-        builder.Services.AddHealthChecks().AddDbContextCheck<NotificationsDbContext>(
+        services.AddCustomDbContext<NotificationsDbContext>();
+        services.AddScoped<IDbInitializer, NotificationsDbInitializer>();
+        services.AddValidatorsFromAssembly(typeof(NotificationsModule).Assembly);
+
+        services.AddHealthChecks().AddDbContextCheck<NotificationsDbContext>(
             name: "db:notifications",
             failureStatus: HealthStatus.Unhealthy);
     }

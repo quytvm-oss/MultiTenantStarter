@@ -46,21 +46,22 @@ public class MultitenancyModule : IModule
     public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        builder.Services.AddScoped<ITenantService, TenantService>();
-        builder.Services.AddScoped<ITenantThemeService, TenantThemeService>();
-        builder.Services.AddScoped<ITenantProvisioningStarter, TenantProvisioningService>();
-        builder.Services.AddScoped<ITenantProvisioningReader, TenantProvisioningService>();
-        builder.Services.AddScoped<ITenantProvisioningStateWriter, TenantProvisioningService>();
-        builder.Services.AddTransient<IConnectionStringValidator, ConnectionStringValidator>();
-        builder.Services.AddTransient<TenantProvisioningJob>();
+        var services = builder.Services;
+        services.AddScoped<ITenantService, TenantService>();
+        services.AddScoped<ITenantThemeService, TenantThemeService>();
+        services.AddScoped<ITenantProvisioningStarter, TenantProvisioningService>();
+        services.AddScoped<ITenantProvisioningReader, TenantProvisioningService>();
+        services.AddScoped<ITenantProvisioningStateWriter, TenantProvisioningService>();
+        services.AddTransient<IConnectionStringValidator, ConnectionStringValidator>();
+        services.AddTransient<TenantProvisioningJob>();
 
         // Singleton — the buffer survives the request scope that calls Store(...)
         // so the background Hangfire-scheduled seed scope can still TryConsume(...).
-        builder.Services.AddSingleton<ITenantInitialPasswordBuffer, TenantInitialPasswordBuffer>();
+        services.AddSingleton<ITenantInitialPasswordBuffer, TenantInitialPasswordBuffer>();
 
-        builder.Services.AddCustomDbContext<TenantDbContext>();
+        services.AddCustomDbContext<TenantDbContext>();
 
-        builder.Services
+        services
             .AddMultiTenant<AppTenantInfo>(options =>
             {
                 options.Events.OnTenantResolveCompleted = async context =>
@@ -97,7 +98,7 @@ public class MultitenancyModule : IModule
             .WithDistributedCacheStore(TimeSpan.FromMinutes(60))
             .WithStore<EFCoreStore<TenantDbContext, AppTenantInfo>>(ServiceLifetime.Scoped);
 
-        builder.Services.AddHealthChecks()
+        services.AddHealthChecks()
             .AddDbContextCheck<TenantDbContext>(
                 name: "db:multitenancy",
                 failureStatus: HealthStatus.Unhealthy);
@@ -105,7 +106,7 @@ public class MultitenancyModule : IModule
         //     name: "db:tenants-migrations",
         //     failureStatus: HealthStatus.Unhealthy);
         if (isWebHost)
-            builder.Services.AddHeroMessaging(builder.Configuration, moduleKey: "multitenancy", isPrimary: true);
+            services.AddHeroMessaging(builder.Configuration, moduleKey: "multitenancy", isPrimary: true);
     }
 
     public void ConfigureMiddleware(IApplicationBuilder app)
