@@ -10,6 +10,10 @@ using Microsoft.Extensions.Hosting;
 using Modules.Webhooks.Data;
 using Modules.Webhooks.Data.Configurations;
 using Modules.Webhooks.Features.v1.CreateWebhookSubscription;
+using Modules.Webhooks.Features.v1.DeleteWebhookSubscription;
+using Modules.Webhooks.Features.v1.GetWebhookDeliveries;
+using Modules.Webhooks.Features.v1.GetWebhookSubscriptions;
+using Modules.Webhooks.Features.v1.TestWebhookSubscription;
 using Modules.Webhooks.Messaging;
 using Modules.Webhooks.Services;
 
@@ -73,5 +77,9 @@ public class WebhooksModule : IModule
             .RequireAuthorization();
 
         group.MapCreateWebhookSubscriptionEndpoint();
+        group.MapDeleteWebhookSubscriptionEndpoint();
+        group.MapGetWebhookSubscriptionsEndpoint();
+        group.MapGetWebhookDeliveriesEndpoint();
+        group.MapTestWebhookSubscriptionEndpoint();
     }
 }

@@ -4,7 +4,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
+using Modules.Webhooks.Contracts.Authorization;
+
 using Modules.Webhooks.Contracts.v1;
+
+using Shared.Identity.Authorization;
 
 using Web.Idempotency;
 
@@ -22,7 +26,7 @@ public static class CreateWebhookSubscriptionEndpoint
         })
         .WithName("CreateWebhookSubscription")
         .WithSummary("Create a webhook subscription")
-        //.RequirePermission(WebhooksPermissions.Subscriptions.Create)
+        .RequirePermission(WebhooksPermissions.Subscriptions.Create)
         .WithIdempotency()
         .Produces<Guid>(StatusCodes.Status201Created);
     }
