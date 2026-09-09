@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
+using Modules.Webhooks.Contracts.Authorization;
 using Modules.Webhooks.Data;
 using Modules.Webhooks.Data.Configurations;
 using Modules.Webhooks.Features.v1.CreateWebhookSubscription;
@@ -19,6 +20,8 @@ using Modules.Webhooks.Services;
 
 using Persistence;
 
+using Shared.Identity;
+
 using Web.HttpResilience;
 using Web.MessageBus;
 using Web.Modules;
@@ -30,6 +33,8 @@ public class WebhooksModule : IModule
     public void ConfigureServices(IHostApplicationBuilder builder, bool isWebHost = true)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        PermissionConstants.Register(WebhooksPermissions.All);
 
         var services = builder.Services;
 

@@ -10,8 +10,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 using Npgsql;
-
-using Rebus.Activation;
 using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Config.Outbox;
@@ -126,7 +124,6 @@ public static class Extensions
                 .Timeouts(t => t.StoreInPostgres(
                     connectionString: dbSettings?.ConnectionString,
                     tableName: options!.Storage.TimeoutsTableName))
-                // .Routing(r => r.TypeBased().MapFallback(moduleKey))
                 .Routing(r =>
                 {
                     var routes = provider.GetServices<MessageRouteDescriptor>();

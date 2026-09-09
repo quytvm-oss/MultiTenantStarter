@@ -75,10 +75,11 @@ public class WebhookFanoutHandler : IHandleMessages<WebhookEvent>
             // Pull active subscriptions, then match event type in memory: EventsCsv is a CSV blob (no join
             // table), and there are typically 0–20 subscriptions per tenant so in-memory matching is fine.
             var subscriptions = await _db.WebhookSubscriptions
-                                .IgnoreQueryFilters()
-                                .AsNoTracking()
-                                .Where(s => s.IsActive)
-                                .ToListAsync();
+                    .IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .Where(s => s.IsActive && 
+                                s.TenantId == message.TenantId)
+                    .ToListAsync();
 
             var matching = subscriptions.Where(s => s.MatchesEvent(eventType)).ToList();
             if (matching.Count == 0)
