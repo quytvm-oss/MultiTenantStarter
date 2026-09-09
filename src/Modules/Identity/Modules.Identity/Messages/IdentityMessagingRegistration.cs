@@ -11,14 +11,14 @@ namespace Modules.Identity.Messages;
 
 public static class IdentityMessagingRegistration
 {
-    public static IServiceCollection AddIdentityMessaging(this IServiceCollection services, IConfiguration  configuration)
+    public static IServiceCollection AddIdentityMessaging(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHeroMessaging(configuration, moduleKey: "identity");
-        
+
         services.AddQueueHandler<WebhookEventHandler>(
             queueName: "identity",
             handlerKey: "identity.webhook-event.v1");
-        
+
         services.AddMessageRoute<WebhookEvent>("identity");
 
         return services;

@@ -156,7 +156,7 @@ public class IdentityModule : IModule
         .AddDefaultTokenProviders();
 
         services.ConfigureJwtAuth();
-
+        services.AddSingleton<IRebusSubscription, IdentitySubscribe>();
         if (isWebHost)
             services.AddIdentityMessaging(builder.Configuration);
     }

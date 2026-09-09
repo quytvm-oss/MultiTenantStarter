@@ -144,7 +144,8 @@ public class GenerateTokenCommandHandler(
             FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
             Payload: JsonSerializer.Serialize(integrationEvent));
 
-        await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
+        await bus.Publish(webhookEvent);
+        //await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
 
         return token;
     }
