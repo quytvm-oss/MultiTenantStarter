@@ -151,6 +151,7 @@ public static class Extensions
         {
             services.Decorate<IBus, OutboxBus>();
         }
+        //services.TryDecorate<IBus, OutboxBus>();
 
         services.TryAddSingleton<IRebusHandlerRegistry, RebusHandlerRegistry>();
 

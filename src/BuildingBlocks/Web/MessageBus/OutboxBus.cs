@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 using Npgsql;
 
 using Rebus.Bus;
@@ -11,40 +9,24 @@ using Rebus.Transport;
 
 namespace Web.MessageBus;
 
-public sealed class OutboxBus(
-    IBus inner,
-    NpgsqlDataSource dataSource) : IBus
+public sealed class OutboxBus(IBus inner, NpgsqlDataSource dataSource) : IBus
 {
-    public Task Send(
-        object message,
-        IDictionary<string, string>? headers = null)
+    public Task Send(object message, IDictionary<string, string>? headers = null)
         => WithOutbox(() => inner.Send(message, headers));
 
-    public Task Publish(
-        object message,
-        IDictionary<string, string>? headers = null)
+    public Task Publish(object message, IDictionary<string, string>? headers = null)
         => WithOutbox(() => inner.Publish(message, headers));
 
-    public Task SendLocal(
-        object message,
-        IDictionary<string, string>? headers = null)
+    public Task SendLocal(object message, IDictionary<string, string>? headers = null)
         => WithOutbox(() => inner.SendLocal(message, headers));
 
-    public Task Defer(
-        TimeSpan delay,
-        object message,
-        IDictionary<string, string>? headers = null)
+    public Task Defer(TimeSpan delay, object message, IDictionary<string, string>? headers = null)
         => WithOutbox(() => inner.Defer(delay, message, headers));
 
-    public Task DeferLocal(
-        TimeSpan delay,
-        object message,
-        IDictionary<string, string>? headers = null)
+    public Task DeferLocal(TimeSpan delay, object message, IDictionary<string, string>? headers = null)
         => WithOutbox(() => inner.DeferLocal(delay, message, headers));
 
-    public Task Reply(
-        object message,
-        IDictionary<string, string>? headers = null)
+    public Task Reply(object message, IDictionary<string, string>? headers = null)
         => inner.Reply(message, headers);
 
     public Task Subscribe<TEvent>()
@@ -71,11 +53,9 @@ public sealed class OutboxBus(
             return;
         }
 
-        await using var connection =
-            await dataSource.OpenConnectionAsync().ConfigureAwait(false);
+        await using var connection = await dataSource.OpenConnectionAsync().ConfigureAwait(false);
 
-        await using var transaction =
-            await connection.BeginTransactionAsync().ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync().ConfigureAwait(false);
 
         using var scope = new RebusTransactionScope();
 
