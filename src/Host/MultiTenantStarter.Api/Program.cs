@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 using Modules.Auditing;
 using Modules.Auditing.Contracts;
+using Modules.Billing;
 using Modules.Files;
 using Modules.Files.Contracts;
 using Modules.Identity;
@@ -11,6 +12,7 @@ using Modules.Multitenancy;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Features.v1.CreateTenant;
 using Modules.Notifications;
+using Modules.Notifications.Contracts;
 using Modules.Webhooks;
 using Modules.Webhooks.Contracts;
 
@@ -68,6 +70,8 @@ builder.Services.AddMediator(o =>
         typeof(CreateTenantCommandHandler),
         typeof(WebhooksModule),
         typeof(WebhooksContractsMarker),
+        typeof(NotificationsModule),
+        typeof(NotificationContractsMarker),
     ];
 });
 
@@ -79,6 +83,7 @@ var moduleAssemblies = new Assembly[]
     typeof(NotificationsModule).Assembly,
     typeof(FilesModule).Assembly,
     typeof(WebhooksModule).Assembly,
+    typeof(BillingModule).Assembly,
 };
 
 builder.AddPlatform(o =>
