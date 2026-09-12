@@ -10,8 +10,8 @@ public class NotificationTemplate : AggregateRoot<Guid>
 
     public string Body { get; set; }
 
-    public string Subject  { get; set; }
-    
+    public string Subject { get; set; }
+
     public Platform Platform { get; set; }
 }
 

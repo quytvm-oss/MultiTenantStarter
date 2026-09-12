@@ -9,7 +9,7 @@ public class WebhookSubscription : AggregateRoot<Guid>
     public string? ProtectedSecret { get; private set; }
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAtUtc { get; private set; }
-    
+
     public string TenantId { get; private set; }
 
     private WebhookSubscription() { }

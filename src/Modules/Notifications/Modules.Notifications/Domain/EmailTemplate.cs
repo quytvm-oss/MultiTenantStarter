@@ -5,7 +5,7 @@ namespace Modules.Notifications.Domain;
 public class EmailTemplate : AggregateRoot<Guid>
 {
     public string? Title { get; set; }
-    
+
     public EmailTemplateType Type { get; set; }
 
     public string? Subject { get; set; }
@@ -15,5 +15,5 @@ public class EmailTemplate : AggregateRoot<Guid>
 
 public enum EmailTemplateType
 {
-    
+
 }

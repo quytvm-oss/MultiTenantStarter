@@ -1,5 +1,5 @@
 ﻿namespace Modules.Billing;
 
-public class Class1
+public class BillingModule
 {
 }

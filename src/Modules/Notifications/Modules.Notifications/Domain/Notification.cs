@@ -5,18 +5,18 @@ namespace Modules.Notifications.Domain;
 public class Notification : AggregateRoot<Guid>
 {
     public string UserId { get; private set; } = default!;
-    
+
     /// <summary>Logical event type, e.g. <c>chat.mention</c>. Used by the UI to pick an icon.</summary>
     public string Type { get; private set; }
 
     public string Title { get; private set; } = default!;
 
     public Platform Platform { get; set; }
-    
+
     public string? Body { get; private set; }
-    
+
     public string? Link { get; private set; }
-    
+
     /// <summary>Originating module name (e.g. <c>Chat</c>) — for grouping + filtering.</summary>
     public string Source { get; private set; } = default!;
 
@@ -24,10 +24,13 @@ public class Notification : AggregateRoot<Guid>
     public string MetadataJson { get; private set; } = "{}";
 
     public DateTime? ReadAtUtc { get; private set; }
-    
+
     public DateTime CreatedAtUtc { get; private set; }
-    
-    
+
+    public void MarkRead()
+    {
+        ReadAtUtc ??= DateTime.UtcNow;
+    }
 }
 
 public enum Type
@@ -37,6 +40,6 @@ public enum Type
 public enum Platform
 {
     Web,
-    
+
     Mobile
 }

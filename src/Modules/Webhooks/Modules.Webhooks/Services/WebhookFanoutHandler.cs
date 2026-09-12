@@ -77,7 +77,7 @@ public class WebhookFanoutHandler : IHandleMessages<WebhookEvent>
             var subscriptions = await _db.WebhookSubscriptions
                     .IgnoreQueryFilters()
                     .AsNoTracking()
-                    .Where(s => s.IsActive && 
+                    .Where(s => s.IsActive &&
                                 s.TenantId == message.TenantId)
                     .ToListAsync();
 
