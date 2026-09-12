@@ -10,7 +10,7 @@ using Modules.Notifications.Contracts.v1.Commands;
 
 using Shared.Identity.Authorization;
 
-namespace Modules.Notifications.Features.v1.MarkNotificationRead;
+namespace Modules.Notifications.Features.v1.Notifications.MarkNotificationRead;
 
 public static class MarkNotificationReadEndpoint
 {

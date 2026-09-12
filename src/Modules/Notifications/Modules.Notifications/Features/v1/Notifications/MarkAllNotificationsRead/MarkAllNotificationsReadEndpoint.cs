@@ -9,7 +9,7 @@ using Modules.Notifications.Contracts.v1.Commands;
 
 using Shared.Identity.Authorization;
 
-namespace Modules.Notifications.Features.v1.MarkAllNotificationsRead;
+namespace Modules.Notifications.Features.v1.Notifications.MarkAllNotificationsRead;
 
 public static class MarkAllNotificationsReadEndpoint
 {

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Modules.Notifications.Contracts.v1.Commands;
 using Modules.Notifications.Data;
 
-namespace Modules.Notifications.Features.v1.MarkAllNotificationsRead;
+namespace Modules.Notifications.Features.v1.Notifications.MarkAllNotificationsRead;
 
 public class MarkAllNotificationsReadCommandHandler : ICommandHandler<MarkAllNotificationsReadCommand, int>
 {

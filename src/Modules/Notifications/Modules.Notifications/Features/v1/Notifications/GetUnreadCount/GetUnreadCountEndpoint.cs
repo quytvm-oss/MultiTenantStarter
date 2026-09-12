@@ -9,7 +9,7 @@ using Modules.Notifications.Contracts.v1.Queries;
 
 using Shared.Identity.Authorization;
 
-namespace Modules.Notifications.Features.v1.GetUnreadCount;
+namespace Modules.Notifications.Features.v1.Notifications.GetUnreadCount;
 
 public static class GetUnreadCountEndpoint
 {

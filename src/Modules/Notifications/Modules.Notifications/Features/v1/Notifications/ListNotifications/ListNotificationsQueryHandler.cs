@@ -12,7 +12,7 @@ using Modules.Notifications.Contracts.Dtos;
 using Modules.Notifications.Contracts.v1.Queries;
 using Modules.Notifications.Data;
 
-namespace Modules.Notifications.Features.v1.ListNotifications;
+namespace Modules.Notifications.Features.v1.Notifications.ListNotifications;
 
 public class ListNotificationsQueryHandler : IQueryHandler<ListNotificationsQuery, ReadOnlyCollection<NotificationDto>>
 {

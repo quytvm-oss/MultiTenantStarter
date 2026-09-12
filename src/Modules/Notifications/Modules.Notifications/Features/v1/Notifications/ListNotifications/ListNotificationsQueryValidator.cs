@@ -2,7 +2,7 @@ using FluentValidation;
 
 using Modules.Notifications.Contracts.v1.Queries;
 
-namespace Modules.Notifications.Features.v1.ListNotifications;
+namespace Modules.Notifications.Features.v1.Notifications.ListNotifications;
 
 public class ListNotificationsQueryValidator : AbstractValidator<ListNotificationsQuery>
 {

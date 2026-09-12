@@ -10,10 +10,10 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
 using Modules.Notifications.Data;
-using Modules.Notifications.Features.v1.GetUnreadCount;
-using Modules.Notifications.Features.v1.ListNotifications;
-using Modules.Notifications.Features.v1.MarkAllNotificationsRead;
-using Modules.Notifications.Features.v1.MarkNotificationRead;
+using Modules.Notifications.Features.v1.Notifications.GetUnreadCount;
+using Modules.Notifications.Features.v1.Notifications.ListNotifications;
+using Modules.Notifications.Features.v1.Notifications.MarkAllNotificationsRead;
+using Modules.Notifications.Features.v1.Notifications.MarkNotificationRead;
 
 using Persistence;
 

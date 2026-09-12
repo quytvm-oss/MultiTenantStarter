@@ -10,7 +10,7 @@ using Modules.Notifications.Contracts.v1.Queries;
 
 using Shared.Identity.Authorization;
 
-namespace Modules.Notifications.Features.v1.ListNotifications;
+namespace Modules.Notifications.Features.v1.Notifications.ListNotifications;
 
 public static class ListNotificationsEndpoint
 {
