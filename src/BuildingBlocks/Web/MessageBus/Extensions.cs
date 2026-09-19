@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 using Npgsql;
+
 using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Config.Outbox;
@@ -104,7 +105,7 @@ public static class Extensions
         string moduleKey, bool isPrimary = false)
     {
         var dbSettings = configuration.GetSection(nameof(DatabaseOptions)).Get<DatabaseOptions>();
-        
+
         var options = configuration.GetSection(nameof(RebusOptions)).Get<RebusOptions>();
 
         services.TryAddSingleton<IRebusHandlerRegistry, RebusHandlerRegistry>();
@@ -154,7 +155,7 @@ public static class Extensions
 
         return services;
     }
-    
+
     public static IServiceCollection AddQueueHandler<THandler>(this IServiceCollection services, string queueName, string handlerKey)
         where THandler : class, IHandleMessages
     {
@@ -192,7 +193,7 @@ public static class Extensions
 
         return services;
     }
-    
+
     private static void UseQueueHandlers(this OptionsConfigurer options, IServiceProvider serviceProvider, string queueName)
     {
         options.Decorate<IPipeline>(context =>
@@ -208,7 +209,7 @@ public static class Extensions
             return new PipelineStepInjector(withoutDefault).OnReceive(queueStep, PipelineRelativePosition.Before, typeof(LoadSagaDataStep));
         });
     }
-    
+
     public static IServiceCollection AddMessageRoute<TMessage>(this IServiceCollection services, string queueName)
     {
         if (string.IsNullOrWhiteSpace(queueName))
