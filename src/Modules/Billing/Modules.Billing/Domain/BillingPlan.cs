@@ -1,7 +1,12 @@
 using Core.Domain;
 using Core.Domain.ValueObjects;
 
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.FeatureManagement.Telemetry;
+
 using Modules.Billing.Contracts;
+
+using Shared.Quota;
 
 namespace Modules.Billing.Domain;
 
@@ -15,6 +20,7 @@ namespace Modules.Billing.Domain;
 /// </summary>
 public class BillingPlan : BaseEntity<Guid>, IGlobalEntity
 {
+    private readonly Dictionary<QuotaResource, decimal> _overageRates = new();
     public string Key { get; private set; } = default!;
 
     public string Name { get; private set; } = default!;
@@ -36,5 +42,80 @@ public class BillingPlan : BaseEntity<Guid>, IGlobalEntity
 
     public DateTime CreatedAtUtc { get; private set; }
 
+    public DateTime? UpdatedAtUtc { get; private set; }
 
+    public IReadOnlyDictionary<QuotaResource, decimal> OverageRates => _overageRates;
+
+    private BillingPlan() { }
+
+    public static BillingPlan Create(
+        string key,
+        string name,
+        string currency,
+        decimal monthlyBasePrice,
+        IReadOnlyDictionary<QuotaResource, decimal>? overageRates = null,
+        PlanInterval interval = PlanInterval.Monthly,
+        decimal? annualPrice = null
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currency);
+        if (monthlyBasePrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(monthlyBasePrice), "Price cannot be negative.");
+        }
+        if (annualPrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(annualPrice), "Annual price cannot be negative.");
+        }
+
+        var plan = new BillingPlan()
+        {
+            Id = Guid.CreateVersion7(),
+            Key = key.ToLowerInvariant(),
+            Name = name,
+            MonthlyBasePrice = new Money(monthlyBasePrice, currency),
+            Interval = interval,
+            AnnualPrice = annualPrice is { } a ? new Money(a, currency) : null,
+            IsActive = true,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        if (overageRates is not null)
+        {
+            foreach (var (res, rate) in overageRates)
+            {
+                plan._overageRates[res] = rate;
+            }
+        }
+        return plan;
+    }
+
+    public void Update(
+        string name,
+        decimal monthlyBasePrice,
+        IReadOnlyDictionary<QuotaResource, decimal>? overageRates,
+        PlanInterval interval = PlanInterval.Monthly,
+        decimal? annualPrice = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (monthlyBasePrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(monthlyBasePrice), "Price cannot be negative.");
+        }
+        Name = name;
+        MonthlyBasePrice = new Money(monthlyBasePrice, Currency);
+        Interval = interval;
+        AnnualPrice = annualPrice is { } a ? new Money(a, Currency) : null;
+        _overageRates.Clear();
+        if (overageRates is not null)
+        {
+            foreach (var (res, rate) in overageRates)
+            {
+                _overageRates[res] = rate;
+            }
+        }
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
 }

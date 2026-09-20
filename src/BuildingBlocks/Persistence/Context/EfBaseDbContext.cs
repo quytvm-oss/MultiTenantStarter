@@ -54,7 +54,7 @@ public class EfBaseDbContext(IMultiTenantContextAccessor<AppTenantInfo> multiTen
                 _settings.MigrationsAssembly,
                 environment.IsDevelopment());
         }
-        
+
         //base.OnConfiguring(optionsBuilder);
     }
 
@@ -68,7 +68,7 @@ public class EfBaseDbContext(IMultiTenantContextAccessor<AppTenantInfo> multiTen
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
     {
         TenantNotSetMode = TenantNotSetMode.Overwrite;
-        int result = await  base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        int result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return result;
     }
 }
