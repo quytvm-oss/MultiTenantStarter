@@ -8,6 +8,7 @@ using Jobs.Services;
 using Microsoft.EntityFrameworkCore;
 
 using Modules.Auditing;
+using Modules.Billing;
 using Modules.Files;
 using Modules.Identity;
 using Modules.Identity.Contracts;
@@ -99,6 +100,7 @@ var moduleAssemblies = new Assembly[]
     typeof(NotificationsModule).Assembly,
     typeof(FilesModule).Assembly,
     typeof(WebhooksModule).Assembly,
+    typeof(BillingModule).Assembly,
 };
 
 // chỉ add platform phần cần thiết

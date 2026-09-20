@@ -31,7 +31,7 @@ public class WalletTransactionConfiguration : IEntityTypeConfiguration<WalletTra
         // A concurrent second MarkInvoicePaid on the same invoice fails this constraint and rolls back.
         builder.HasIndex(x => x.ReferenceId)
             .IsUnique()
-            .HasFilter($"\"Kind\" = {(int)Contracts.WalletTransactionKind.Topup}")
+            .HasFilter($"\"Kind\" = '{Contracts.WalletTransactionKind.Topup}'")
             .HasDatabaseName("ux_wallet_transactions_topup_reference");
     }
 
