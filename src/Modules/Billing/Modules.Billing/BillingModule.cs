@@ -9,6 +9,9 @@ using Microsoft.Extensions.Hosting;
 
 using Modules.Billing.Contracts.Authorization;
 using Modules.Billing.Data;
+using Modules.Billing.Features.v1.Plans.CreatePlan;
+using Modules.Billing.Features.v1.Plans.GetPlans;
+using Modules.Billing.Features.v1.Plans.UpdatePlan;
 
 using Persistence;
 
@@ -51,5 +54,9 @@ public class BillingModule : IModule
             .WithTags("Billing")
             .WithApiVersionSet(versionSet)
             .RequireAuthorization();
+
+        group.MapGetPlansEndpoint();
+        group.MapCreatePlanEndpoint();
+        group.MapUpdatePlanEndpoint();
     }
 }

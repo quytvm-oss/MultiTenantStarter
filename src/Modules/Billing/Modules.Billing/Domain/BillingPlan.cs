@@ -118,4 +118,16 @@ public class BillingPlan : BaseEntity<Guid>, IGlobalEntity
         }
         UpdatedAtUtc = DateTime.UtcNow;
     }
+
+    /// <summary>Number of months the plan's billing interval covers (1 monthly, 12 yearly).</summary>
+    public int TermMonths => Interval == PlanInterval.Yearly ? 12 : 1;
+
+    /// <summary>
+    /// Price charged for a single billing term: the monthly base price for monthly plans, or the
+    /// annual price (falling back to twelve months) for yearly plans.
+    /// </summary>
+    public Money TermPrice =>
+        Interval == PlanInterval.Yearly
+            ? AnnualPrice ?? MonthlyBasePrice.Multiply(12m)
+            : MonthlyBasePrice;
 }
