@@ -56,4 +56,129 @@ public sealed class Invoice : AggregateRoot<Guid>
     public IReadOnlyList<InvoiceLineItem> LineItems => _lineItems;
 
     private Invoice() { }
+
+
+    /// <summary>
+    /// Convenience factory for top-up invoices: creates a Draft with <c>InvoicePurpose.Topup</c>
+    /// and immediately adds a single <see cref="InvoiceLineItemKind.Adjustment"/> line item so that
+    /// <see cref="SubtotalAmount"/> is set before the invoice is issued.
+    /// </summary>
+    public static Invoice CreateInvoiceDraft(
+        string tenantId, 
+        string invoiceNumber, 
+        int periodYear, 
+        int periodMonth, 
+        string currency, 
+        decimal amount, 
+        string lineItemDescription)
+    {
+        var invoice = CreateDraft(tenantId, invoiceNumber, periodYear, periodMonth, currency,
+            InvoicePurpose.Topup, periodStartUtc: null, periodEndUtc: null);
+        invoice.AddLineItem(InvoiceLineItemKind.Adjustment, lineItemDescription, 1m, amount);
+        return invoice;
+    }
+
+    public static Invoice CreateDraft(
+        string tenantId, 
+        string invoiceNumber, 
+        int periodYear, 
+        int periodMonth, 
+        string currency, 
+        InvoicePurpose purpose, 
+        DateTime? periodStartUtc, 
+        DateTime? periodEndUtc)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(invoiceNumber);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currency);
+
+        if (periodYear is < 2000 or > 2100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(periodYear));
+        }
+
+        if (periodMonth is < 1 or > 12 )
+        {
+            throw new ArgumentOutOfRangeException(nameof(periodMonth));
+        }
+
+        return new Invoice()
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            InvoiceNumber = invoiceNumber,
+            PeriodYear = periodYear,
+            PeriodMonth = periodMonth,
+            Purpose = purpose,
+            PeriodStartUtc = periodStartUtc is { } s ? DateTime.SpecifyKind(s, DateTimeKind.Utc) : null,
+            PeriodEndUtc = periodEndUtc is { } e ? DateTime.SpecifyKind(e, DateTimeKind.Utc) : null,
+            SubtotalAmount = Money.Zero(currency.ToUpperInvariant()),
+            Status = InvoiceStatus.Draft,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public InvoiceLineItem AddLineItem(InvoiceLineItemKind kind, string description, decimal quantity, decimal unitPrice)
+    {
+        RequireStatus(InvoiceStatus.Draft);
+        var line = InvoiceLineItem.Create(Id, kind, description, quantity, unitPrice, Currency);
+        _lineItems.Add(line);
+        RecalculateTotals();
+        return line;
+    }
+
+    public void Issue(DateTime? dueAtUtc = null)
+    {
+        RequireStatus(InvoiceStatus.Draft);
+        Status = InvoiceStatus.Issued;
+        IssuedAtUtc = DateTime.UtcNow;
+        DueAtUtc = dueAtUtc is null ? 
+            IssuedAtUtc.Value.AddDays(14) : DateTime.SpecifyKind(dueAtUtc.Value, DateTimeKind.Utc);
+    }
+
+    public void MarkPaid()
+    {
+        if(Status is InvoiceStatus.Paid)
+        {
+            return;
+        }
+        if (Status is not InvoiceStatus.Issued)
+        {
+            throw new InvalidOperationException($"Cannot mark invoice as paid from status {Status}.");
+        }
+        Status = InvoiceStatus.Paid;
+        PaidAtUtc = DateTime.UtcNow;
+    }
+
+    public void Void(string? reason = null)
+    {
+        if (Status is InvoiceStatus.Void)
+        {
+            return;
+        }
+        if (Status is InvoiceStatus.Paid)
+        {
+            throw new InvalidOperationException("Paid invoices cannot be voided.");
+        }
+        Status = InvoiceStatus.Void;
+        VoidedAtUtc = DateTime.UtcNow;
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            Notes = string.IsNullOrWhiteSpace(Notes) ? reason : $"{Notes}; Voided: {reason}";
+        }
+    }
+
+    private void RequireStatus(InvoiceStatus expected)
+    {
+        if (Status != expected)
+        {
+            throw new InvalidOperationException($"Operation requires invoice status {expected} but was {Status}.");
+        }
+    }
+
+    private void RecalculateTotals()
+    {
+        SubtotalAmount = _lineItems.Aggregate(Money.Zero(SubtotalAmount.Currency), (ac, l) => ac.Add(l.Amount));
+    }
 }
+

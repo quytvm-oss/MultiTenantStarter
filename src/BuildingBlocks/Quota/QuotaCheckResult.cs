@@ -7,14 +7,13 @@ namespace Quota;
 /// push current usage past <see cref="Limit"/>. <see cref="ResetAtUtc"/> indicates when the
 /// counter resets (null for gauge-based resources that have no period boundary).
 /// </summary>
-public record QuotaCheckResult(
+public sealed record QuotaCheckResult(
     bool Allowed,
-    QuotaResource  Resource,
+    QuotaResource Resource,
     long CurrentUsage,
     long Limit,
     DateTimeOffset? ResetAtUtc)
 {
     public static QuotaCheckResult Unlimited(QuotaResource resource, long currentUsage)
-      => new (false, resource, currentUsage, long.MaxValue, null);
-    
+        => new(true, resource, currentUsage, long.MaxValue, null);
 }

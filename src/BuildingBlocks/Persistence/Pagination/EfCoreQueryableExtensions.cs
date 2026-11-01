@@ -109,5 +109,26 @@ public static class EfCoreQueryableExtensions
 
         return (IQueryable<T>)method.Invoke(null, [source, lambda])!;
     }
-    
+
+
+    private static PagedResponse<T> EmptyPage<T>(int pageNumber, int pageSize, long totalCount, int totalPages)
+        => new()
+        {
+            Items = Array.Empty<T>(),
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages
+        };
+
+    public static int GetOffset(int pageNumber, int pageSize)
+    {
+        if (pageNumber <= 1 || pageSize <= 0)
+        {
+            return 0;
+        }
+
+        long offset = (pageNumber - 1L) * pageSize;
+        return offset > int.MaxValue ? int.MaxValue : (int)offset;
+    }
 }

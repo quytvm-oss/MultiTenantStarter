@@ -28,4 +28,42 @@ public sealed class TopupRequest : AggregateRoot<Guid>
     public DateTime? CompletedAtUtc { get; private set; }
 
     private TopupRequest() { }
+
+    public static TopupRequest Create(string tenantId, decimal amount, string currency, string? note, string? requestBy)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(amount, 0m);
+
+        return new TopupRequest()
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            Amount = new Money(amount, string.IsNullOrWhiteSpace(currency) ? "USD" : currency),
+            Note = note,
+            RequestedBy = requestBy,
+            Status = TopupRequestStatus.Pending,
+            CreatedAtUtc = DateTime.UtcNow,
+        };
+    }
+
+    public void Reject(string? reason)
+    {
+        Require(TopupRequestStatus.Rejected);
+        DecisionNote = reason;
+        Status = TopupRequestStatus.Rejected;
+        DecidedAtUtc = DateTime.UtcNow;
+    }
+
+    public void MarkCompleted()
+    {
+        Require(TopupRequestStatus.Invoiced);
+        Status = TopupRequestStatus.Completed;
+        CompletedAtUtc = DateTime.UtcNow;
+    }
+
+    private void Require(TopupRequestStatus expected)
+    {
+        if (Status != expected)
+            throw new InvalidOperationException($"Top-up request must be {expected} (was {Status}).");
+    }
 }

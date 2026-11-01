@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Modules.Auditing;
 using Modules.Auditing.Contracts;
 using Modules.Billing;
+using Modules.Billing.Contracts;
 using Modules.Files;
 using Modules.Files.Contracts;
 using Modules.Identity;
@@ -72,6 +73,8 @@ builder.Services.AddMediator(o =>
         typeof(WebhooksContractsMarker),
         typeof(NotificationsModule),
         typeof(NotificationContractsMarker),
+        typeof(BillingModule),
+        typeof(BillingContractsMarker)
     ];
 });
 
@@ -91,6 +94,7 @@ builder.AddPlatform(o =>
     o.EnableCaching = true;
     o.EnableMailing = true;
     o.EnableJobs = true;
+    o.EnableQuotas = true;
     o.EnableSse = true;
     o.EnableRealtime = true;
 });

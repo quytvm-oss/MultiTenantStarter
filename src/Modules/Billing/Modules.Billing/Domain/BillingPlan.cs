@@ -130,4 +130,7 @@ public class BillingPlan : BaseEntity<Guid>, IGlobalEntity
         Interval == PlanInterval.Yearly
             ? AnnualPrice ?? MonthlyBasePrice.Multiply(12m)
             : MonthlyBasePrice;
+
+    public decimal GetOverageRate(QuotaResource resource) =>
+        _overageRates.TryGetValue(resource, out var rate) ? rate : 0m;
 }

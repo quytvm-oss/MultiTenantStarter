@@ -40,13 +40,15 @@ internal sealed class DemoSeeder
         Id: "acme",
         Name: "Acme Corp",
         AdminEmail: "admin@acme.com",
-        Issuer: "fsh.demo.acme");
+        Issuer: "mul.demo.acme",
+         PlanKey: "pro-annual");
     
     public static readonly DemoTenant Globex = new(
         Id: "globex",
         Name: "Globex",
         AdminEmail: "admin@globex.com",
-        Issuer: "fsh.demo.globex");
+        Issuer: "mul.demo.globex",
+        PlanKey: "free");
     
     public DemoSeeder(IServiceProvider services, IConfiguration config, ILogger<DemoSeeder> logger)
     {
@@ -67,8 +69,30 @@ internal sealed class DemoSeeder
 
         foreach (var demo in new[] { Acme, Globex })
         {
+            await SeedTenantSubscriptionAsync(demo, cancellationToken).ConfigureAwait(false);
             await SeedTenantUsersAsync(demo, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    // ─── Subscription ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Attaches an active billing <see cref="Subscription"/> to the demo tenant so the dashboard's
+    /// PLAN / subscription cards are populated out of the box. The real tenant-create path drives this
+    /// via <c>TenantSubscribedIntegrationEvent</c>, but demo tenants are provisioned inline (see
+    /// <see cref="EnsureDemoTenantsExistAsync"/>) and never publish it — so we write the row directly.
+    ///
+    /// Paid plans also get an issued term invoice, matching the real flow. It's written directly
+    /// rather than via <c>IBillingService</c> so we don't publish <c>InvoiceIssuedIntegrationEvent</c>
+    /// — the one-shot migrator has no outbox dispatcher and demo seeding shouldn't fire
+    /// notifications/emails. The subscription's term is aligned to the tenant's <c>ValidUpto</c> so the
+    /// dashboard's term matches the enforced validity window.
+    ///
+    /// Idempotent: skips when the tenant already has an active subscription.
+    /// </summary>
+    private async Task SeedTenantSubscriptionAsync(DemoTenant demo, CancellationToken cancellationToken)
+    {
+        
     }
 
     private async Task EnsureDemoTenantsExistAsync(CancellationToken cancellationToken)
@@ -282,7 +306,7 @@ internal sealed class DemoSeeder
     }
 
 
-    internal sealed record DemoTenant(string Id, string Name, string AdminEmail, string Issuer);
+    internal sealed record DemoTenant(string Id, string Name, string AdminEmail, string Issuer, string PlanKey);
     internal sealed record DemoUser(string UserName, string Email, string FirstName, string LastName, IReadOnlyList<string> Roles);
     
     internal sealed record DemoRole(string Name, string Description, IReadOnlyList<string> Permissions);

@@ -9,9 +9,27 @@ using Microsoft.Extensions.Hosting;
 
 using Modules.Billing.Contracts.Authorization;
 using Modules.Billing.Data;
+using Modules.Billing.Features.v1.Invoices.GenerateInvoices;
+using Modules.Billing.Features.v1.Invoices.GetInvoiceById;
+using Modules.Billing.Features.v1.Invoices.GetInvoices;
+using Modules.Billing.Features.v1.Invoices.GetMyInvoices;
+using Modules.Billing.Features.v1.Invoices.IssueInvoice;
+using Modules.Billing.Features.v1.Invoices.MarkInvoicePaid;
+using Modules.Billing.Features.v1.Invoices.VoidInvoice;
 using Modules.Billing.Features.v1.Plans.CreatePlan;
 using Modules.Billing.Features.v1.Plans.GetPlans;
 using Modules.Billing.Features.v1.Plans.UpdatePlan;
+using Modules.Billing.Features.v1.Subscriptions.AssignSubscription;
+using Modules.Billing.Features.v1.Subscriptions.GetSubscription;
+using Modules.Billing.Features.v1.Usage.CaptureUsageSnapshots;
+using Modules.Billing.Features.v1.Usage.GetUsageSnapshots;
+using Modules.Billing.Features.v1.Wallets.ApproveTopupRequest;
+using Modules.Billing.Features.v1.Wallets.CreateTopupRequest;
+using Modules.Billing.Features.v1.Wallets.GetMyTopupRequests;
+using Modules.Billing.Features.v1.Wallets.GetMyWallet;
+using Modules.Billing.Features.v1.Wallets.GetTopupRequests;
+using Modules.Billing.Features.v1.Wallets.RejectTopupRequest;
+using Modules.Billing.Services;
 
 using Persistence;
 
@@ -33,6 +51,8 @@ public class BillingModule : IModule
 
         services.AddCustomDbContext<BillingDbContext>();
         services.AddScoped<IDbInitializer, BillingDbInitializer>();
+        services.AddScoped<IUsageReporter, UsageReporter>();
+        services.AddScoped<IBillingService, BillingService>();
 
         builder.Services.AddHealthChecks()
             .AddDbContextCheck<BillingDbContext>(
@@ -58,5 +78,28 @@ public class BillingModule : IModule
         group.MapGetPlansEndpoint();
         group.MapCreatePlanEndpoint();
         group.MapUpdatePlanEndpoint();
+
+        group.MapAssignSubscriptionEndpoint();
+        group.MapGetSubscriptionEndpoint();
+        group.MapGetMySubscriptionEndpoint();
+
+        group.MapGetUsageSnapshotsEndpoint();
+        group.MapCaptureUsageSnapshotsEndpoint();
+
+        group.MapGetMyWalletEndpoint();
+        group.MapCreateTopupRequestEndpoint();
+        group.MapGetMyTopupRequestsEndpoint();
+
+        group.MapGetTopupRequestsEndpoint();
+        group.MapApproveTopupRequestEndpoint();
+        group.MapRejectTopupRequestEndpoint();
+
+        group.MapGetInvoicesEndpoint();
+        group.MapGetMyInvoicesEndpoint();
+        group.MapGetInvoiceByIdEndpoint();
+        group.MapIssueInvoiceEndpoint();
+        group.MapMarkInvoicePaidEndpoint();
+        group.MapVoidInvoiceEndpoint();
+        group.MapGenerateInvoicesEndpoint();
     }
 }

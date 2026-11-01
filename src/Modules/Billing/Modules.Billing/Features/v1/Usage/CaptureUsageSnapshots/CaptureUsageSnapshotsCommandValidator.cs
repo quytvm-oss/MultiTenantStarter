@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+using FluentValidation;
+
+using Modules.Billing.Contracts.v1.Usage;
+
+namespace Modules.Billing.Features.v1.Usage.CaptureUsageSnapshots;
+
+internal class CaptureUsageSnapshotsCommandValidator : AbstractValidator<CaptureUsageSnapshotsCommand>
+{
+    public CaptureUsageSnapshotsCommandValidator()
+    {
+        RuleFor(x => x.TenantId).NotEmpty().MaximumLength(64);
+        RuleFor(x => x.PeriodYear).InclusiveBetween(2000, 2100);
+        RuleFor(x => x.PeriodMonth).InclusiveBetween(1, 12);
+    }
+}

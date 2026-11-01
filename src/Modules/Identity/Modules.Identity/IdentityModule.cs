@@ -17,7 +17,6 @@ using Modules.Identity.Contracts.Authorization;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
-using Modules.Identity.Events;
 using Modules.Identity.Features.v1.Groups.AddUsersToGroup;
 using Modules.Identity.Features.v1.Groups.CreateGroup;
 using Modules.Identity.Features.v1.Groups.DeleteGroup;

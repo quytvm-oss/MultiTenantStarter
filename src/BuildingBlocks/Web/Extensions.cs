@@ -15,6 +15,8 @@ using Microsoft.Extensions.Hosting;
 
 using Persistence;
 
+using Quota;
+
 using Shared.Identity;
 
 using Web.Auth;
@@ -131,10 +133,10 @@ public static class Extensions
             builder.Services.AddRealtime(builder.Configuration);
         }
 
-        // if (options.EnableQuotas)
-        // {
-        //     builder.Services.AddHeroQuotas(builder.Configuration);
-        // }
+        if (options.EnableQuotas)
+        {
+            builder.Services.AddHeroQuotas(builder.Configuration);
+        }
 
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
@@ -199,10 +201,10 @@ public static class Extensions
 
         app.UseRateLimiting();
 
-        // if (options.UseQuotas)
-        // {
-        //     app.UseHeroQuotas();
-        // }
+        if (options.UseQuotas)
+        {
+            app.UseHeroQuotas();
+        }
         app.UseAuthorization();
 
         if (options.MapModules)

@@ -22,4 +22,18 @@ public sealed class WalletTransaction : BaseEntity<Guid>
     public DateTime CreatedAtUtc { get; private set; }
 
     private WalletTransaction() { }
+
+    public static WalletTransaction Create(Guid walletId, string tenantId, Money amount,
+        WalletTransactionKind kind, string description, string? referenceId)
+        => new()
+        {
+            Id = Guid.CreateVersion7(),
+            WalletId = walletId,
+            TenantId = tenantId,
+            Amount = amount,
+            Kind = kind,
+            Description = description,
+            ReferenceId = referenceId,
+            CreatedAtUtc = DateTime.UtcNow
+        };
 }
