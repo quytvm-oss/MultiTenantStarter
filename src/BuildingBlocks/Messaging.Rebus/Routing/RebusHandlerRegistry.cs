@@ -11,7 +11,7 @@ public sealed class RebusHandlerRegistry(IEnumerable<RebusHandlerDescriptor> des
     public IReadOnlyList<RebusHandlerDescriptor> GetHandlers(string queueName, Type messageType)
     {
         return _descriptors.Where(x => string.Equals(x.QueueName, queueName, StringComparison.OrdinalIgnoreCase)
-                        && x.MessageType.IsAssignableFrom(messageType))
+                        && x.MessageType == messageType)
             .DistinctBy(x => x.HandlerType)
             .ToArray();
     }

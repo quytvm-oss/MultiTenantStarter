@@ -22,6 +22,8 @@ using Rebus.Bus;
 using Shared.Multitenancy;
 using Shared.Webhooks;
 
+using Web.MessageBus;
+
 namespace Modules.Identity.Features.v1.Tokens.TokenGeneration;
 
 public class GenerateTokenCommandHandler(
@@ -31,7 +33,7 @@ public class GenerateTokenCommandHandler(
     IRequestContext requestContext,
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
-    IBus bus,
+    IModuleBus<IdentityModule> bus,
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {

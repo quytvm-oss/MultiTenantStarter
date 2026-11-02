@@ -19,6 +19,7 @@ using Rebus.Pipeline;
 using Rebus.Pipeline.Receive;
 using Rebus.Routing.TypeBased;
 using Rebus.Sagas;
+using Rebus.ServiceProvider;
 
 using Shared.Persistence;
 
@@ -145,13 +146,29 @@ public static class Extensions
                 .Logging(l => l.Serilog()));
 
 
-        if (isPrimary)
-        {
-            services.Decorate<IBus, OutboxBus>();
-        }
+        //if (isPrimary)
+        //{
+        //    services.TryDecorate<IBus, OutboxBus>();
+        //}
         //services.TryDecorate<IBus, OutboxBus>();
 
-        services.TryAddSingleton<IRebusHandlerRegistry, RebusHandlerRegistry>();
+        return services;
+    }
+
+    public static IServiceCollection AddModuleBus<TModule>(
+        this IServiceCollection services,
+        string moduleKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(moduleKey);
+
+        services.TryAddSingleton<IModuleBus<TModule>>(sp =>
+        {
+            var registry = sp.GetRequiredService<IBusRegistry>();
+            var bus = registry.GetBus(moduleKey);
+            var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
+
+            return new ModuleBus<TModule>(new OutboxBus(bus, dataSource));
+        });
 
         return services;
     }

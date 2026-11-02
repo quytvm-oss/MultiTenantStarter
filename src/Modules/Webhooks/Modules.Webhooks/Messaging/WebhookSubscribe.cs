@@ -12,7 +12,7 @@ public class WebhookSubscribe : IRebusSubscription
     public Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken)
     {
         var bus = busRegistry.GetBus("webhooks");
-        //bus.Unsubscribe<WebhookEvent>();
+        bus.Subscribe<WebhookEvent>();
         return Task.CompletedTask;
     }
 

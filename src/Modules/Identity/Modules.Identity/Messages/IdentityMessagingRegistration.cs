@@ -14,6 +14,7 @@ public static class IdentityMessagingRegistration
     public static IServiceCollection AddIdentityMessaging(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHeroMessaging(configuration, moduleKey: "identity");
+        services.AddModuleBus<IdentityModule>("identity");
 
         services.AddQueueHandler<WebhookEventHandler>(
             queueName: "identity",
