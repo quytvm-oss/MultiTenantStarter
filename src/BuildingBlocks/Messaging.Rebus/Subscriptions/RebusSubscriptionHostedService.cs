@@ -1,9 +1,12 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 using Microsoft.Extensions.Hosting;
 
-using Rebus.Bus;
 using Rebus.ServiceProvider;
 
-namespace Web.MessageBus;
+namespace Messaging.Rebus;
 
 public sealed class RebusSubscriptionHostedService(IBusRegistry busRegistry, IEnumerable<IRebusSubscription> subscriptions) : IHostedService
 {

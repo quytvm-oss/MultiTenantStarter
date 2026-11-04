@@ -1,7 +1,10 @@
-using Rebus.Bus;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 using Rebus.ServiceProvider;
 
-namespace Web.MessageBus;
+namespace Messaging.Rebus;
 
 public interface IRebusSubscription
 {

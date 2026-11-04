@@ -1,9 +1,8 @@
-using Rebus.Bus;
+using Messaging.Rebus;
+
 using Rebus.ServiceProvider;
 
 using Shared.Webhooks;
-
-using Web.MessageBus;
 
 namespace Modules.Webhooks.Messaging;
 
@@ -12,7 +11,7 @@ public class WebhookSubscribe : IRebusSubscription
     public Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken)
     {
         var bus = busRegistry.GetBus("webhooks");
-        //bus.Unsubscribe<WebhookEvent>();
+        bus.Unsubscribe<WebhookEvent>();
         return Task.CompletedTask;
     }
 

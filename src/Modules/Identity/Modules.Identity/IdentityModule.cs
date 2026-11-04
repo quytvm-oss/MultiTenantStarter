@@ -2,6 +2,8 @@
 
 using Core.Context;
 
+using Messaging.Rebus;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -73,8 +75,6 @@ using Persistence;
 using Shared.Identity;
 
 using Storage;
-
-using Web.MessageBus;
 using Web.Modules;
 
 namespace Modules.Identity;

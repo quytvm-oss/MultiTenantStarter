@@ -1,4 +1,8 @@
-namespace Web.MessageBus;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Messaging.Rebus;
 
 public interface IRebusHandlerRegistry
 {

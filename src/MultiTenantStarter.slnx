@@ -5,6 +5,7 @@
     <Project Path="BuildingBlocks/Jobs/Jobs.csproj" />
     <Project Path="BuildingBlocks/Mailling/Mailling.csproj" />
     <Project Path="BuildingBlocks/MessageBus/MessageBus.csproj" />
+    <Project Path="BuildingBlocks/Messaging.Rebus/Messaging.Rebus.csproj" Id="649b343f-7dba-4f5a-bab9-d3a7e380e2bb" />
     <Project Path="BuildingBlocks/Persistence/Persistence.csproj" />
     <Project Path="BuildingBlocks/Quota/Quota.csproj" />
     <Project Path="BuildingBlocks/Shared/Shared.csproj" />

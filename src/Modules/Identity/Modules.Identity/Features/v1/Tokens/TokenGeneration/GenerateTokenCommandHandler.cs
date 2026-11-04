@@ -9,6 +9,8 @@ using Finbuckle.MultiTenant.Abstractions;
 
 using Mediator;
 
+using Messaging.Rebus;
+
 using Microsoft.Extensions.Logging;
 
 using Modules.Auditing.Contracts;
@@ -31,7 +33,7 @@ public class GenerateTokenCommandHandler(
     IRequestContext requestContext,
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
-    IBus bus,
+    IModuleBus<IdentityModule> bus,
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {

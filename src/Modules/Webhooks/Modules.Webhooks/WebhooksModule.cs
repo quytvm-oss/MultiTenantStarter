@@ -1,5 +1,7 @@
 using Asp.Versioning;
 
+using Messaging.Rebus;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -23,7 +25,6 @@ using Persistence;
 using Shared.Identity;
 
 using Web.HttpResilience;
-using Web.MessageBus;
 using Web.Modules;
 
 namespace Modules.Webhooks;

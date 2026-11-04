@@ -1,13 +1,16 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 using Microsoft.Extensions.DependencyInjection;
 using Rebus.Activation;
 using Rebus.Handlers;
 using Rebus.Pipeline;
-using Rebus.Pipeline.Receive;
 using Rebus.Transport;
 
-namespace Web.MessageBus;
+namespace Messaging.Rebus;
 
-public sealed class QueueHandlerActivator : IHandlerActivator
+public class QueueHandlerActivator : IHandlerActivator
 {
     private readonly IServiceProvider _rootProvider;
     private readonly IRebusHandlerRegistry _registry;
@@ -40,8 +43,7 @@ public sealed class QueueHandlerActivator : IHandlerActivator
                         throw new InvalidOperationException(
                             $"Handler '{descriptor.HandlerType.FullName}' " +
                             $"cannot handle message '{typeof(TMessage).FullName}'. " +
-                            $"Queue: '{_queueName}', " +
-                            $"HandlerKey: '{descriptor.HandlerKey}'.");
+                            $"Queue: '{_queueName}'.");
                     }
 
                     return handler;
@@ -100,27 +102,3 @@ public sealed class QueueHandlerActivator : IHandlerActivator
         return scope.ServiceProvider;
     }
 }
-
-public sealed class QueueActivateHandlersStep : IIncomingStep
-{
-    private readonly ActivateHandlersStep _inner;
-    private readonly string _queueName;
-
-    public QueueActivateHandlersStep(IServiceProvider serviceProvider, IRebusHandlerRegistry registry, string queueName)
-    {
-        _queueName = queueName;
-
-        var activator = new QueueHandlerActivator(serviceProvider, registry, queueName);
-
-        _inner = new ActivateHandlersStep(activator);
-    }
-
-    public Task Process(IncomingStepContext context, Func<Task> next)
-    {
-        // Console.WriteLine(
-        //     $"### QueueActivateHandlersStep RUN queue={_queueName}");
-
-        return _inner.Process(context, next);
-    }
-}
-

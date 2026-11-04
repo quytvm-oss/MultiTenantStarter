@@ -1,13 +1,16 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 using Npgsql;
 
 using Rebus.Bus;
 using Rebus.Bus.Advanced;
 using Rebus.Config.Outbox;
-
 using Rebus.Pipeline;
 using Rebus.Transport;
 
-namespace Web.MessageBus;
+namespace Messaging.Rebus;
 
 public sealed class OutboxBus(IBus inner, NpgsqlDataSource dataSource) : IBus
 {

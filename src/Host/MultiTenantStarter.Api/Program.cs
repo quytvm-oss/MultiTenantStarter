@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 
+using Messaging.Rebus;
+
 using Modules.Auditing;
 using Modules.Auditing.Contracts;
 using Modules.Billing;
@@ -18,7 +20,6 @@ using Modules.Webhooks;
 using Modules.Webhooks.Contracts;
 
 using Web;
-using Web.MessageBus;
 using Web.Modules;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -102,7 +103,7 @@ builder.AddPlatform(o =>
 builder.AddModules(true, moduleAssemblies);
 //builder.Services.AddHeroMessaging(builder.Configuration);
 builder.Services.AddHostedService<RebusSubscriptionHostedService>();
-builder.Services.AddQueueHandlerRegistry();
+//builder.Services.AddQueueHandlerRegistry();
 //builder.AddCustomMessageBus(moduleAssemblies);
 
 
