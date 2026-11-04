@@ -3,8 +3,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 using Npgsql;
+
 using Rebus.Config;
 using Rebus.Config.Outbox;
 using Rebus.Handlers;
@@ -99,7 +101,9 @@ public static class Extensions
             var withoutDefault = new PipelineStepRemover(pipeline)
                         .RemoveIncomingStep(step => step is ActivateHandlersStep);
 
-            var queueStep = new QueueActivateHandlersStep(serviceProvider, registry, queueName);
+            var logger = serviceProvider.GetRequiredService<ILogger<QueueActivateHandlersStep>>();
+
+            var queueStep = new QueueActivateHandlersStep(serviceProvider, registry, queueName, logger);
 
             return new PipelineStepInjector(withoutDefault)
                     .OnReceive(queueStep, PipelineRelativePosition.Before, typeof(LoadSagaDataStep));
