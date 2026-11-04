@@ -4,14 +4,22 @@ using System.Text;
 
 using Rebus.Bus;
 using Rebus.Bus.Advanced;
+using Npgsql;
 
 namespace Messaging.Rebus;
 
-public interface IModuleBus<TModule> : IBus { }
-
-
-internal sealed class ModuleBus<TModule>(IBus inner) : IModuleBus<TModule>
+public interface IModuleBus<TModule> : IBus
 {
+    /// <summary>Enlists outgoing messages in a caller-owned PostgreSQL transaction.</summary>
+    ModuleBusTransactionScope UseTransaction(NpgsqlConnection connection, NpgsqlTransaction transaction);
+}
+
+
+internal sealed class ModuleBus<TModule>(OutboxBus inner) : IModuleBus<TModule>
+{
+    public ModuleBusTransactionScope UseTransaction(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        => inner.UseTransaction(connection, transaction);
+
     public Task Send(object message, IDictionary<string, string>? headers = null)
         => inner.Send(message, headers);
 
@@ -44,5 +52,6 @@ internal sealed class ModuleBus<TModule>(IBus inner) : IModuleBus<TModule>
 
     public IAdvancedApi Advanced => inner.Advanced;
 
+    // The underlying bus is owned by Rebus, not by this wrapper.
     public void Dispose() { }
 }

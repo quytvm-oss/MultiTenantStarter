@@ -44,8 +44,7 @@ public class QueueHandlerActivator : IHandlerActivator
                         throw new InvalidOperationException(
                             $"Handler '{descriptor.HandlerType.FullName}' " +
                             $"cannot handle message '{typeof(TMessage).FullName}'. " +
-                            $"Queue: '{_queueName}', " +
-                            $"HandlerKey: '{descriptor.HandlerKey}'.");
+                            $"Queue: '{_queueName}'.");
                     }
 
                     return handler;
@@ -68,7 +67,9 @@ public class QueueHandlerActivator : IHandlerActivator
         // gần như chỉ xảy ra trong test.
         if (stepContext == null)
         {
-            return _rootProvider.CreateAsyncScope().ServiceProvider;
+            var fallbackScope = _rootProvider.CreateAsyncScope();
+            transactionContext.OnDisposed(_ => fallbackScope.DisposeAsync().AsTask().GetAwaiter().GetResult());
+            return fallbackScope.ServiceProvider;
         }
 
         // Có scope do pipeline/user cung cấp trước rồi

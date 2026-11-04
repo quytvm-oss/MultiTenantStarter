@@ -19,7 +19,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
     private readonly ITenantProvisioningStarter provisioningService;
     private readonly ITenantInitialPasswordBuffer passwordBuffer;
     private readonly IMediator mediator;
-    private readonly IBus _bus;
+    private readonly Messaging.Rebus.IModuleBus<MultitenancyModule> _bus;
 
     private readonly TimeProvider _timeProvider;
 
@@ -27,7 +27,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         ITenantProvisioningStarter provisioningService,
         ITenantInitialPasswordBuffer passwordBuffer,
         IMediator mediator,
-        IBus bus,
+        Messaging.Rebus.IModuleBus<MultitenancyModule> bus,
         TimeProvider timeProvider)
     {
         _tenantService = tenantService;

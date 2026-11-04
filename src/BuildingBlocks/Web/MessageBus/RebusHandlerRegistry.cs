@@ -1,14 +1,34 @@
 namespace Web.MessageBus;
 
-public sealed class RebusHandlerRegistry(IEnumerable<RebusHandlerDescriptor> descriptors) : IRebusHandlerRegistry
+public sealed class RebusHandlerRegistry : IRebusHandlerRegistry
 {
-    private readonly RebusHandlerDescriptor[] _descriptors = descriptors.ToArray();
+    private readonly Dictionary<(string Queue, Type Message), RebusHandlerDescriptor> _map;
+
+    public RebusHandlerRegistry(IEnumerable<RebusHandlerDescriptor> descriptors)
+    {
+        var all = descriptors.ToArray();
+
+        var duplicates = all
+            .GroupBy(d => (Queue: d.QueueName.ToUpperInvariant(), d.MessageType))
+            .Where(g => g.Count() > 1)
+            .ToArray();
+
+        if (duplicates.Length > 0)
+        {
+            var details = string.Join(Environment.NewLine, duplicates.Select(g =>
+                $" - {g.Key.Queue} / {g.Key.MessageType.Name}: " +
+                string.Join(", ", g.Select(d => $"{d.HandlerType.Name}"))));
+
+            throw new InvalidOperationException(
+                "Only one handler is allowed per (queue, message type). Duplicates:" +
+                Environment.NewLine + details);
+        }
+
+        _map = all.ToDictionary(d => (d.QueueName.ToUpperInvariant(), d.MessageType));
+    }
 
     public IReadOnlyList<RebusHandlerDescriptor> GetHandlers(string queueName, Type messageType)
-    {
-        return _descriptors.Where(x => string.Equals(x.QueueName, queueName, StringComparison.OrdinalIgnoreCase)
-                        && x.MessageType == messageType)
-            .DistinctBy(x => x.HandlerType)
-            .ToArray();
-    }
+        => _map.TryGetValue((queueName.ToUpperInvariant(), messageType), out var descriptor)
+            ? [descriptor]
+            : [];
 }

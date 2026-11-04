@@ -1,5 +1,8 @@
 namespace Messaging.Rebus.Inbox;
 
-public class InboxAcquireResult
+public enum InboxAcquireResult
 {
+    Acquired,
+    Processed,
+    Busy
 }

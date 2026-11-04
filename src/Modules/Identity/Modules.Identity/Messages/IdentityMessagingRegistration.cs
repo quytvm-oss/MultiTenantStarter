@@ -5,7 +5,7 @@ using Modules.Identity.Events;
 
 using Shared.Webhooks;
 
-using Web.MessageBus;
+using Messaging.Rebus.Configuration;
 
 namespace Modules.Identity.Messages;
 
@@ -17,8 +17,7 @@ public static class IdentityMessagingRegistration
         services.AddModuleBus<IdentityModule>("identity");
 
         services.AddQueueHandler<WebhookEventHandler>(
-            queueName: "identity",
-            handlerKey: "identity.webhook-event.v1");
+            queueName: "identity");
 
         services.AddMessageRoute<WebhookEvent>("identity");
 

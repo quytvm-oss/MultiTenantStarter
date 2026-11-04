@@ -7,8 +7,7 @@ namespace Messaging.Rebus;
 public sealed record RebusHandlerDescriptor(
     string QueueName,
     Type MessageType,
-    Type HandlerType,
-    string HandlerKey);
+    Type HandlerType);
 
 public sealed record MessageRouteDescriptor(
     Type MessageType,

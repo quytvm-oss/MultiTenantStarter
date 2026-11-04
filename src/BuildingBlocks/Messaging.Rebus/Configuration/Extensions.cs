@@ -1,6 +1,9 @@
 ﻿using Messaging.Rebus.Routing;
 
 using Microsoft.Extensions.Configuration;
+using Messaging.Rebus.Inbox;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -26,27 +29,38 @@ public static class Extensions
         string moduleKey,
         bool isPrimary = false)
     {
-        var options = configuration.GetSection(nameof(RebusOptions)).Get<RebusOptions>();
-
-        var dbSettings = options?.Database;
+        ArgumentException.ThrowIfNullOrWhiteSpace(moduleKey);
+        var options = configuration.GetSection(nameof(RebusOptions)).Get<RebusOptions>() ?? new RebusOptions();
+        if (string.IsNullOrWhiteSpace(options.Database.ConnectionString))
+            options.Database.ConnectionString = configuration["DatabaseOptions:ConnectionString"] ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(options.Database.ConnectionString))
+            throw new InvalidOperationException("Configure RebusOptions:Database:ConnectionString or DatabaseOptions:ConnectionString.");
+        if (string.IsNullOrWhiteSpace(options.RabbitMq.ConnectionString))
+            throw new InvalidOperationException("Configure RebusOptions:RabbitMq:ConnectionString.");
+        options.Inbox.Validate();
+        var dbSettings = options.Database;
 
         services.TryAddSingleton<IRebusHandlerRegistry, RebusHandlerRegistry>();
 
-        services.TryAddSingleton(_ => NpgsqlDataSource.Create(dbSettings!.ConnectionString));
+        services.TryAddSingleton(_ => NpgsqlDataSource.Create(dbSettings.ConnectionString));
+        services.TryAddSingleton(options.Inbox);
+        services.TryAddSingleton<IInboxStore, PostgreSqlInboxStore>();
+        if (options.Inbox.Enabled)
+            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, InboxCleanupService>());
 
         services.AddRebus(
             isDefaultBus: isPrimary,
             key: moduleKey,
             configure: (config, provider) => config
                 .Transport(t => t.UseRabbitMq(
-                    connectionString: options!.RabbitMq.ConnectionString,
+                    connectionString: options.RabbitMq.ConnectionString,
                     inputQueueName: moduleKey))
                 .Outbox(o => o.StoreInPostgreSql(
-                    connectionString: dbSettings?.ConnectionString,
-                    tableName: options!.Storage.OutboxTableName))
+                    connectionString: dbSettings.ConnectionString,
+                    tableName: options.Storage.OutboxTableName))
                 .Timeouts(t => t.StoreInPostgres(
-                    connectionString: dbSettings?.ConnectionString,
-                    tableName: options!.Storage.TimeoutsTableName))
+                    connectionString: dbSettings.ConnectionString,
+                    tableName: options.Storage.TimeoutsTableName))
                 .Routing(r =>
                 {
                     var routes = provider.GetServices<MessageRouteDescriptor>();
@@ -59,12 +73,14 @@ public static class Extensions
                 })
                 .Options(o =>
                 {
-                    o.SetNumberOfWorkers(options!.NumberOfWorkers);
-                    o.SetMaxParallelism(options!.MaxParallelism);
-                    o.UseQueueHandlers(provider, moduleKey);
-                    //o.LogPipeline();
+                    o.SetNumberOfWorkers(options.NumberOfWorkers);
+                    o.SetMaxParallelism(options.MaxParallelism);
+                    o.UseQueueHandlers(provider, moduleKey, options.Inbox);
                 })
                 .Logging(l => l.Serilog()));
+
+        if (isPrimary)
+            services.Decorate<IBus, OutboxBus>();
 
         return services;
     }
@@ -87,10 +103,12 @@ public static class Extensions
         return services;
     }
 
-    private static void UseQueueHandlers(
+    internal static void UseQueueHandlers(
         this OptionsConfigurer options,
         IServiceProvider serviceProvider,
-        string queueName)
+        string queueName,
+        InboxOptions inboxOptions,
+        Func<IBus>? getBus = null)
     {
         options.Decorate<IPipeline>(context =>
         {
@@ -99,12 +117,28 @@ public static class Extensions
             var registry = serviceProvider.GetRequiredService<IRebusHandlerRegistry>();
 
             var withoutDefault = new PipelineStepRemover(pipeline)
-                        .RemoveIncomingStep(step => step is ActivateHandlersStep);
+                .RemoveIncomingStep(step => step is ActivateHandlersStep
+                    // Rebus.PostgreSql 9.1.1 registers its DB commit before flushing
+                    // outgoing messages; replace it with ordered explicit completion.
+                    || step.GetType().FullName == "Rebus.PostgreSql.Outbox.OutboxIncomingStep");
 
             var queueStep = new QueueActivateHandlersStep(serviceProvider, registry, queueName);
 
-            return new PipelineStepInjector(withoutDefault)
-                    .OnReceive(queueStep, PipelineRelativePosition.Before, typeof(LoadSagaDataStep));
+            IPipeline result = new PipelineStepInjector(withoutDefault)
+                .OnReceive(queueStep, PipelineRelativePosition.Before, typeof(LoadSagaDataStep));
+            result = new PipelineStepInjector(result).OnReceive(
+                new IncomingOutboxTransactionStep(serviceProvider.GetRequiredService<NpgsqlDataSource>()),
+                PipelineRelativePosition.Before, typeof(QueueActivateHandlersStep));
+            if (inboxOptions.Enabled)
+            {
+                result = new PipelineStepInjector(result).OnReceive(
+                    new InboxIncomingStep(serviceProvider.GetRequiredService<IInboxStore>(), inboxOptions,
+                        queueName, serviceProvider.GetRequiredService<ILogger<InboxIncomingStep>>(),
+                        delay => (getBus?.Invoke() ?? serviceProvider.GetRequiredService<IBusRegistry>().GetBus(queueName))
+                            .Advanced.TransportMessage.Defer(delay)),
+                    PipelineRelativePosition.Before, typeof(IncomingOutboxTransactionStep));
+            }
+            return result;
         });
     }
 
@@ -117,12 +151,10 @@ public static class Extensions
 
     public static IServiceCollection AddQueueHandler<THandler>(
         this IServiceCollection services,
-        string queueName,
-        string handlerKey)
+        string queueName)
         where THandler : class, IHandleMessages
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(handlerKey);
 
         var handlerType = typeof(THandler);
 
@@ -137,8 +169,28 @@ public static class Extensions
             throw new InvalidOperationException($"{handlerType.FullName} does not implement IHandleMessages<TMessage>.");
         }
 
-        // Quan trọng:
-        // Chỉ register concrete handler.
+        // Validate every message type before changing the service collection.
+        foreach (var messageType in messageTypes)
+        {
+            var existing = services
+                .Where(x => x.ServiceType == typeof(RebusHandlerDescriptor))
+                .Select(x => x.ImplementationInstance)
+                .OfType<RebusHandlerDescriptor>()
+                .FirstOrDefault(x =>
+                    string.Equals(x.QueueName, queueName, StringComparison.OrdinalIgnoreCase)
+                    && x.MessageType == messageType);
+
+            if (existing is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Queue '{queueName}' already has handler '{existing.HandlerType.FullName}' " +
+                    $"registered for message type '{messageType.FullName}'. " +
+                    $"Cannot register handler '{handlerType.FullName}'. " +
+                    "Only one handler is allowed per queue and message type.");
+            }
+        }
+
+        // Only register the concrete handler after validation succeeds.
         services.AddTransient<THandler>();
 
         foreach (var messageType in messageTypes)
@@ -146,8 +198,7 @@ public static class Extensions
             services.AddSingleton(new RebusHandlerDescriptor(
                 QueueName: queueName,
                 MessageType: messageType,
-                HandlerType: handlerType,
-                HandlerKey: handlerKey));
+                HandlerType: handlerType));
         }
 
         return services;

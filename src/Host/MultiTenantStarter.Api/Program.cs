@@ -18,7 +18,7 @@ using Modules.Webhooks;
 using Modules.Webhooks.Contracts;
 
 using Web;
-using Web.MessageBus;
+using Messaging.Rebus;
 using Web.Modules;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -74,7 +74,7 @@ using Shared.Identity;
 
 using Storage;
 
-using Web.MessageBus;
+using Messaging.Rebus;
 using Web.Modules;
 
 namespace Modules.Identity;

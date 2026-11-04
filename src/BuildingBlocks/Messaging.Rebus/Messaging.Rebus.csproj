@@ -14,4 +14,7 @@
     <PackageReference Include="Rebus.ServiceProvider" />
     <PackageReference Include="Scrutor" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Messaging.Rebus.Tests" />
+  </ItemGroup>
 </Project>

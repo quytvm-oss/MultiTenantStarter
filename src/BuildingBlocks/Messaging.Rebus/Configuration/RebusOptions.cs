@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Messaging.Rebus.Inbox;
 
 namespace Messaging.Rebus.Configuration;
 
@@ -12,6 +13,7 @@ public class RebusOptions
     public DatabaseSettings Database { get; set; } = new();
     public RabbitMqOptions RabbitMq { get; set; } = new();
     public RebusStorageOptions Storage { get; set; } = new();
+    public InboxOptions Inbox { get; set; } = new();
 }
 
 public class RabbitMqOptions

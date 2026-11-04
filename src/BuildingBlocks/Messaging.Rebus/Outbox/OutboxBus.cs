@@ -14,6 +14,19 @@ namespace Messaging.Rebus;
 
 public sealed class OutboxBus(IBus inner, NpgsqlDataSource dataSource) : IBus
 {
+    public ModuleBusTransactionScope UseTransaction(NpgsqlConnection connection, NpgsqlTransaction transaction)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        var configured = new NpgsqlConnectionStringBuilder(dataSource.ConnectionString);
+        var supplied = new NpgsqlConnectionStringBuilder(connection.ConnectionString);
+        if (!string.Equals(configured.Host, supplied.Host, StringComparison.OrdinalIgnoreCase)
+            || configured.Port != supplied.Port
+            || !string.Equals(configured.Database, supplied.Database, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "The business transaction must use the same PostgreSQL host, port and database as the messaging outbox dispatcher.");
+        return new ModuleBusTransactionScope(connection, transaction);
+    }
+
     public Task Send(object message, IDictionary<string, string>? headers = null)
         => WithOutbox(() => inner.Send(message, headers));
 
@@ -30,7 +43,7 @@ public sealed class OutboxBus(IBus inner, NpgsqlDataSource dataSource) : IBus
         => WithOutbox(() => inner.DeferLocal(delay, message, headers));
 
     public Task Reply(object message, IDictionary<string, string>? headers = null)
-        => inner.Reply(message, headers);
+        => WithOutbox(() => inner.Reply(message, headers));
 
     public Task Subscribe<TEvent>()
         => inner.Subscribe<TEvent>();
@@ -48,9 +61,8 @@ public sealed class OutboxBus(IBus inner, NpgsqlDataSource dataSource) : IBus
 
     private async Task WithOutbox(Func<Task> action)
     {
-        // Nếu đang ở trong Rebus handler thì Rebus đã có
-        // MessageContext + transaction context riêng.
-        if (MessageContext.Current is not null)
+        // Join an incoming or explicit caller-created Rebus transaction scope.
+        if (AmbientTransactionContext.Current is not null)
         {
             await action().ConfigureAwait(false);
             return;
@@ -81,6 +93,6 @@ public sealed class OutboxBus(IBus inner, NpgsqlDataSource dataSource) : IBus
 
     public void Dispose()
     {
-        inner.Dispose();
+        // The underlying bus belongs to the Rebus registry.
     }
 }

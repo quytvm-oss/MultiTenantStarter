@@ -40,8 +40,8 @@ public sealed class QueueHandlerActivator : IHandlerActivator
                         throw new InvalidOperationException(
                             $"Handler '{descriptor.HandlerType.FullName}' " +
                             $"cannot handle message '{typeof(TMessage).FullName}'. " +
-                            $"Queue: '{_queueName}', " +
-                            $"HandlerKey: '{descriptor.HandlerKey}'.");
+                            $"Queue: '{_queueName}'. "); 
+                           // + $"HandlerKey: '{descriptor.HandlerKey}'.");
                     }
 
                     return handler;

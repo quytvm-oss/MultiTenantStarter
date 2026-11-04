@@ -37,7 +37,8 @@ using Shared.Identity;
 using Shared.Multitenancy;
 
 using Web.Modules;
-using Web.MessageBus;
+using Messaging.Rebus;
+using Messaging.Rebus.Configuration;
 
 namespace Modules.Multitenancy;
 
@@ -106,7 +107,10 @@ public class MultitenancyModule : IModule
         //     name: "db:tenants-migrations",
         //     failureStatus: HealthStatus.Unhealthy);
         if (isWebHost)
+        {
             services.AddHeroMessaging(builder.Configuration, moduleKey: "multitenancy", isPrimary: true);
+            services.AddModuleBus<MultitenancyModule>("multitenancy");
+        }
     }
 
     public void ConfigureMiddleware(IApplicationBuilder app)

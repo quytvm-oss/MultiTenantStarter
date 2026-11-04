@@ -66,5 +66,6 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/Architecture.Tests/Architecture.Tests.csproj" />
+    <Project Path="Tests/Messaging.Rebus.Tests/Messaging.Rebus.Tests.csproj" />
   </Folder>
 </Solution>

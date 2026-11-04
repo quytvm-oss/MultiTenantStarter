@@ -23,7 +23,7 @@ using Persistence;
 using Shared.Identity;
 
 using Web.HttpResilience;
-using Web.MessageBus;
+using Messaging.Rebus;
 using Web.Modules;
 
 namespace Modules.Webhooks;

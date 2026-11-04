@@ -10,7 +10,7 @@ using Rebus.Bus;
 namespace Modules.Identity.Events;
 
 public sealed class UserRegisteredHandler(
-    IBus bus,
+    Messaging.Rebus.IModuleBus<IdentityModule> bus,
     ILogger<UserRegisteredHandler> logger)
     : INotificationHandler<UserRegisteredEvent>
 {

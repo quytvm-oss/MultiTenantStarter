@@ -22,7 +22,7 @@ using Rebus.Bus;
 using Shared.Multitenancy;
 using Shared.Webhooks;
 
-using Web.MessageBus;
+using Messaging.Rebus;
 
 namespace Modules.Identity.Features.v1.Tokens.TokenGeneration;
 

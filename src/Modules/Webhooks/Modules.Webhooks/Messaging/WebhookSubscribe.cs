@@ -3,7 +3,7 @@ using Rebus.ServiceProvider;
 
 using Shared.Webhooks;
 
-using Web.MessageBus;
+using Messaging.Rebus;
 
 namespace Modules.Webhooks.Messaging;
 
