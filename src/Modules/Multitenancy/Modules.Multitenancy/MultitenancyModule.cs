@@ -10,8 +10,6 @@ using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 using Finbuckle.MultiTenant.Extensions;
 using Finbuckle.MultiTenant.Stores;
 
-using Persistence;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -30,14 +28,16 @@ using Modules.Multitenancy.Features.v1.ResetTenantTheme;
 using Modules.Multitenancy.Features.v1.TenantProvisioning.GetTenantProvisioningStatus;
 using Modules.Multitenancy.Features.v1.TenantProvisioning.RetryTenantProvisioning;
 using Modules.Multitenancy.Features.v1.UpdateTenantTheme;
+using Modules.Multitenancy.Messaging;
 using Modules.Multitenancy.Provisioning;
 using Modules.Multitenancy.Services;
+
+using Persistence;
 
 using Shared.Identity;
 using Shared.Multitenancy;
 
 using Web.Modules;
-using Web.MessageBus;
 
 namespace Modules.Multitenancy;
 
@@ -106,7 +106,7 @@ public class MultitenancyModule : IModule
         //     name: "db:tenants-migrations",
         //     failureStatus: HealthStatus.Unhealthy);
         if (isWebHost)
-            services.AddHeroMessaging(builder.Configuration, moduleKey: "multitenancy", isPrimary: true);
+            services.AddMultitenancyMessaging(builder.Configuration);
     }
 
     public void ConfigureMiddleware(IApplicationBuilder app)

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 
 using Microsoft.Extensions.DependencyInjection;
-
 using Rebus.Activation;
 using Rebus.Handlers;
 using Rebus.Pipeline;
@@ -44,8 +43,7 @@ public class QueueHandlerActivator : IHandlerActivator
                         throw new InvalidOperationException(
                             $"Handler '{descriptor.HandlerType.FullName}' " +
                             $"cannot handle message '{typeof(TMessage).FullName}'. " +
-                            $"Queue: '{_queueName}', " +
-                            $"HandlerKey: '{descriptor.HandlerKey}'.");
+                            $"Queue: '{_queueName}'.");
                     }
 
                     return handler;

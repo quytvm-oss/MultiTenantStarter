@@ -1,8 +1,8 @@
+using Messaging.Rebus;
+
 using Rebus.ServiceProvider;
 
 using Shared.Webhooks;
-
-using Web.MessageBus;
 
 namespace Modules.Identity.Messages;
 

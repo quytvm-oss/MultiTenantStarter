@@ -9,6 +9,8 @@ using Finbuckle.MultiTenant.Abstractions;
 
 using Mediator;
 
+using Messaging.Rebus;
+
 using Microsoft.Extensions.Logging;
 
 using Modules.Auditing.Contracts;
@@ -21,8 +23,6 @@ using Rebus.Bus;
 
 using Shared.Multitenancy;
 using Shared.Webhooks;
-
-using Web.MessageBus;
 
 namespace Modules.Identity.Features.v1.Tokens.TokenGeneration;
 

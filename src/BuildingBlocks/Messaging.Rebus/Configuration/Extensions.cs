@@ -5,8 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Npgsql;
-
-using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Config.Outbox;
 using Rebus.Handlers;
@@ -117,12 +115,10 @@ public static class Extensions
 
     public static IServiceCollection AddQueueHandler<THandler>(
         this IServiceCollection services,
-        string queueName,
-        string handlerKey)
+        string queueName)
         where THandler : class, IHandleMessages
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(handlerKey);
 
         var handlerType = typeof(THandler);
 
@@ -137,6 +133,27 @@ public static class Extensions
             throw new InvalidOperationException($"{handlerType.FullName} does not implement IHandleMessages<TMessage>.");
         }
 
+        // Validate every message type before changing the service collection.
+        foreach (var messageType in messageTypes)
+        {
+            var existing = services
+                .Where(x => x.ServiceType == typeof(RebusHandlerDescriptor))
+                .Select(x => x.ImplementationInstance)
+                .OfType<RebusHandlerDescriptor>()
+                .FirstOrDefault(x =>
+                    string.Equals(x.QueueName, queueName, StringComparison.OrdinalIgnoreCase)
+                    && x.MessageType == messageType);
+
+            if (existing is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Queue '{queueName}' already has handler '{existing.HandlerType.FullName}' " +
+                    $"registered for message type '{messageType.FullName}'. " +
+                    $"Cannot register handler '{handlerType.FullName}'. " +
+                    "Only one handler is allowed per queue and message type.");
+            }
+        }
+
         // Quan trọng:
         // Chỉ register concrete handler.
         services.AddTransient<THandler>();
@@ -146,8 +163,7 @@ public static class Extensions
             services.AddSingleton(new RebusHandlerDescriptor(
                 QueueName: queueName,
                 MessageType: messageType,
-                HandlerType: handlerType,
-                HandlerKey: handlerKey));
+                HandlerType: handlerType));
         }
 
         return services;
