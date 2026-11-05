@@ -10,8 +10,10 @@ namespace Modules.Multitenancy.Messaging;
 
 internal class MultitenancySubscribe : IRebusSubscription
 {
-    public Task SubscribeAsync(IBusRegistry bus, CancellationToken cancellationToken)
+    public async Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        var bus = busRegistry.GetBus(MultitenancyModuleConstant.QueueName);
+        // Subscribe to integration events
+       
     }
 }

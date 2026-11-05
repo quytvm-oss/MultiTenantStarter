@@ -37,13 +37,6 @@ public class GenerateTokenCommandHandler(
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {
-    // private readonly IIdentityService _identityService = identityService;
-    // private readonly ITokenService _tokenService = tokenService;
-    // private readonly ISecurityAudit _securityAudit = securityAudit;
-    // private readonly IRequestContext _requestContext = requestContext;
-    // private readonly IMultiTenantContextAccessor<AppTenantInfo> _tenantContextAccessor = tenantContextAccessor;
-    // private readonly ISessionService _sessionService = sessionService;
-    // private readonly ILogger<GenerateTokenCommandHandler> _logger = logger;
 
     public async ValueTask<TokenResponse> Handle(GenerateTokenCommand command, CancellationToken cancellationToken)
     {

@@ -8,5 +8,5 @@ namespace Messaging.Rebus;
 
 public interface IRebusSubscription
 {
-    Task SubscribeAsync(IBusRegistry bus, CancellationToken cancellationToken);
+    Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken);
 }

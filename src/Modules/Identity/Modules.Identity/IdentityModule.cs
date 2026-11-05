@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
@@ -75,6 +76,7 @@ using Persistence;
 using Shared.Identity;
 
 using Storage;
+
 using Web.Modules;
 
 namespace Modules.Identity;
@@ -155,7 +157,8 @@ public class IdentityModule : IModule
         .AddDefaultTokenProviders();
 
         services.ConfigureJwtAuth();
-        services.AddSingleton<IRebusSubscription, IdentitySubscribe>();
+        //services.AddSingleton<IRebusSubscription, IdentitySubscribe>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, IdentitySubscribe>());
         if (isWebHost)
             services.AddIdentityMessaging(builder.Configuration);
     }

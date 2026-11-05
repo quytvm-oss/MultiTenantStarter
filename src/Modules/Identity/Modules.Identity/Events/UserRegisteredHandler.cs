@@ -1,16 +1,16 @@
 using Mediator;
 
+using Messaging.Rebus;
+
 using Microsoft.Extensions.Logging;
 
 using Modules.Identity.Contracts.Events;
 using Modules.Identity.Domain.Events;
 
-using Rebus.Bus;
-
 namespace Modules.Identity.Events;
 
 public sealed class UserRegisteredHandler(
-    IBus bus,
+    IModuleBus<IdentityModule> bus,
     ILogger<UserRegisteredHandler> logger)
     : INotificationHandler<UserRegisteredEvent>
 {

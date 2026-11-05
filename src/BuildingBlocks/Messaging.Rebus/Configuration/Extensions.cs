@@ -1,4 +1,5 @@
-﻿using Messaging.Rebus.Routing;
+﻿
+using Messaging.Rebus.Routing;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 
 using Rebus.Config;
-using Rebus.Config.Outbox;
 using Rebus.Handlers;
 using Rebus.Pipeline;
 using Rebus.Pipeline.Receive;
@@ -41,9 +41,9 @@ public static class Extensions
                 .Transport(t => t.UseRabbitMq(
                     connectionString: options!.RabbitMq.ConnectionString,
                     inputQueueName: moduleKey))
-                .Outbox(o => o.StoreInPostgreSql(
-                    connectionString: dbSettings?.ConnectionString,
-                    tableName: options!.Storage.OutboxTableName))
+                //.Outbox(o => o.StoreInPostgreSql(
+                //    connectionString: dbSettings?.ConnectionString,
+                //    tableName: options!.Storage.OutboxTableName))
                 .Timeouts(t => t.StoreInPostgres(
                     connectionString: dbSettings?.ConnectionString,
                     tableName: options!.Storage.TimeoutsTableName))
@@ -61,8 +61,9 @@ public static class Extensions
                 {
                     o.SetNumberOfWorkers(options!.NumberOfWorkers);
                     o.SetMaxParallelism(options!.MaxParallelism);
+
                     o.UseQueueHandlers(provider, moduleKey);
-                    //o.LogPipeline();
+                    o.LogPipeline();
                 })
                 .Logging(l => l.Serilog()));
 
@@ -75,13 +76,19 @@ public static class Extensions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(moduleKey);
 
-        services.TryAddSingleton<IModuleBus<TModule>>(sp =>
+        services.AddScoped<IModuleBus<TModule>>(sp =>
         {
             var registry = sp.GetRequiredService<IBusRegistry>();
             var bus = registry.GetBus(moduleKey);
             var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
 
-            return new ModuleBus<TModule>(new OutboxBus(bus, dataSource));
+            var outboxBus = new OutboxBus(bus, dataSource);
+
+            Console.WriteLine(
+                $"Registering {typeof(TModule).Name}: " +
+                $"{outboxBus.GetType().FullName}");
+
+            return new ModuleBus<TModule>(outboxBus);
         });
 
         return services;
@@ -158,7 +165,7 @@ public static class Extensions
             }
         }
 
-        // Quan trọng:
+        //Quan trọng:
         // Chỉ register concrete handler.
         services.AddTransient<THandler>();
 
@@ -172,6 +179,7 @@ public static class Extensions
 
         return services;
     }
+
 
     public static IServiceCollection AddMessageRoute<TMessage>(
         this IServiceCollection services,

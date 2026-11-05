@@ -3,8 +3,12 @@ using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+
+using Modules.Multitenancy.Contracts.Authorization;
 using Modules.Multitenancy.Contracts.Dtos;
 using Modules.Multitenancy.Contracts.v1.GetTenantStatus;
+
+using Shared.Identity.Authorization;
 
 namespace Modules.Multitenancy.Features.v1.GetTenantStatus;
 
@@ -21,6 +25,7 @@ public static class GetTenantStatusEndpoint
             .WithName("GetTenantStatus")
             .WithSummary("Get tenant status")
             .WithDescription("Retrieve status information for a tenant, including activation, validity, and basic metadata.")
+             .RequirePermission(MultitenancyPermissions.Tenants.View)
             .Produces<TenantStatusDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)

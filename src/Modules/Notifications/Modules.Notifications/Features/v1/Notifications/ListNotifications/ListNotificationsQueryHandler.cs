@@ -11,6 +11,7 @@ using Modules.Notifications.Contracts.Dtos;
 
 using Modules.Notifications.Contracts.v1.Queries;
 using Modules.Notifications.Data;
+using Modules.Notifications.Mappings;
 
 namespace Modules.Notifications.Features.v1.Notifications.ListNotifications;
 

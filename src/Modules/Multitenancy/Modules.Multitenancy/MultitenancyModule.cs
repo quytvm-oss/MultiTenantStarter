@@ -10,20 +10,27 @@ using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 using Finbuckle.MultiTenant.Extensions;
 using Finbuckle.MultiTenant.Stores;
 
+using Messaging.Rebus;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Data;
 using Modules.Multitenancy.Features.v1.AdjustTenantValidity;
+using Modules.Multitenancy.Features.v1.ChangeTenantActivation;
 using Modules.Multitenancy.Features.v1.CreateTenant;
 using Modules.Multitenancy.Features.v1.GetTenantMigrations;
 using Modules.Multitenancy.Features.v1.GetTenants;
 using Modules.Multitenancy.Features.v1.GetTenantStatus;
+using Modules.Multitenancy.Features.v1.GetTenantTheme;
+using Modules.Multitenancy.Features.v1.RenewTenant;
 using Modules.Multitenancy.Features.v1.ResetTenantTheme;
 using Modules.Multitenancy.Features.v1.TenantProvisioning.GetTenantProvisioningStatus;
 using Modules.Multitenancy.Features.v1.TenantProvisioning.RetryTenantProvisioning;
@@ -47,6 +54,10 @@ public class MultitenancyModule : IModule
     {
         ArgumentNullException.ThrowIfNull(builder);
         var services = builder.Services;
+        PermissionConstants.Register(Contracts.Authorization.MultitenancyPermissions.All);
+        builder.Services.Configure<TenantBillingOptions>(
+            builder.Configuration.GetSection(TenantBillingOptions.SectionName));
+
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<ITenantThemeService, TenantThemeService>();
         services.AddScoped<ITenantProvisioningStarter, TenantProvisioningService>();
@@ -105,6 +116,9 @@ public class MultitenancyModule : IModule
         // .AddCheck<TenantMigrationsHealthCheck>(
         //     name: "db:tenants-migrations",
         //     failureStatus: HealthStatus.Unhealthy);
+
+        //services.AddSingleton<IRebusSubscription, MultitenancySubscribe>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, MultitenancySubscribe>());
         if (isWebHost)
             services.AddMultitenancyMessaging(builder.Configuration);
     }
@@ -167,28 +181,28 @@ public class MultitenancyModule : IModule
 
                     // Expiry is enforced on every request (not just at login) with a grace window:
                     // a tenant past ValidUpto still works until ValidUpto + grace, then is hard-blocked.
-                    // var graceDays = ctx.RequestServices
-                    //     .GetRequiredService<IOptions<TenantBillingOptions>>().Value.GraceWindowDays;
-                    //var nowUtc = ctx.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
-                    // var graceEndsUtc = tenant.ValidUpto.AddDays(graceDays);
-                    // if (nowUtc > graceEndsUtc)
-                    // {
-                    //     throw new ForbiddenException("This tenant's subscription has expired. Please renew to continue.");
-                    // }
+                    var graceDays = ctx.RequestServices
+                        .GetRequiredService<IOptions<TenantBillingOptions>>().Value.GracePeriodDays;
+                    var nowUtc = ctx.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+                    var graceEndsUtc = tenant.ValidUpTo.AddDays(graceDays);
+                    if (nowUtc > graceEndsUtc)
+                    {
+                        throw new ForbiddenException("This tenant's subscription has expired. Please renew to continue.");
+                    }
 
-                    // Inside the grace window: surface days-left so clients can warn. Set via OnStarting so
+                    // Inside the grace period: surface days-left so clients can warn. Set via OnStarting so
                     // the header survives even when an exception handler rewrites the response.
-                    // if (nowUtc > tenant.ValidUpto)
-                    // {
-                    //     var daysLeft = (int)Math.Ceiling((graceEndsUtc - nowUtc).TotalDays);
-                    //     var headerValue = daysLeft.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    //     ctx.Response.OnStarting(static state =>
-                    //     {
-                    //         var (response, value) = ((HttpResponse, string))state;
-                    //         response.Headers["X-Subscription-Grace"] = value;
-                    //         return Task.CompletedTask;
-                    //     }, (ctx.Response, headerValue));
-                    // }
+                    if (nowUtc > tenant.ValidUpTo)
+                    {
+                        var daysLeft = (int)Math.Ceiling((graceEndsUtc - nowUtc).TotalDays);
+                        var headerValue = daysLeft.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        ctx.Response.OnStarting(static state =>
+                        {
+                            var (response, value) = ((HttpResponse, string))state;
+                            response.Headers["X-Subscription-Grace"] = value;
+                            return Task.CompletedTask;
+                        }, (ctx.Response, headerValue));
+                    }
                 }
             }
 
@@ -210,6 +224,7 @@ public class MultitenancyModule : IModule
             .WithApiVersionSet(versionSet);
 
         CreateTenantEndpoint.Map(group);
+        ChangeTenantActivationEndpoint.Map(group);
         GetTenantStatusEndpoint.Map(group);
         GetTenantsEndpoint.Map(group);
         AdjustTenantValidityEndpoint.Map(group);
@@ -218,5 +233,7 @@ public class MultitenancyModule : IModule
         UpdateTenantThemeEndpoint.Map(group);
         GetTenantProvisioningStatusEndpoint.Map(group);
         RetryTenantProvisioningEndpoint.Map(group);
+        GetTenantThemeEndpoint.Map(group);
+        RenewTenantEndpoint.Map(group);
     }
 }

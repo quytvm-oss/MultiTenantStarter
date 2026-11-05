@@ -1,7 +1,7 @@
 using Modules.Notifications.Contracts.Dtos;
 using Modules.Notifications.Domain;
 
-namespace Modules.Notifications;
+namespace Modules.Notifications.Mappings;
 
 internal static class NotificationMappers
 {

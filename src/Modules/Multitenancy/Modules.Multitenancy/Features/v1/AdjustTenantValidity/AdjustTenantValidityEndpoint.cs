@@ -4,7 +4,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
+
+using Modules.Multitenancy.Contracts.Authorization;
 using Modules.Multitenancy.Contracts.v1.AdjustTenantValidity;
+
+using Shared.Identity.Authorization;
 
 namespace Modules.Multitenancy.Features.v1.AdjustTenantValidity;
 
@@ -15,7 +19,7 @@ public static class AdjustTenantValidityEndpoint
         return endpoints.MapPost("/{id}/adjust-validity", Handler)
             .WithName("AdjustTenantValidity")
             .WithSummary("Adjust tenant validity (operator override)")
-            //.RequirePermission(MultitenancyPermissions.Tenants.UpgradeSubscription)
+            .RequirePermission(MultitenancyPermissions.Tenants.UpgradeSubscription)
             .WithDescription("Set a tenant's validity to an explicit date with no invoice or renewal event — for comps, support extensions, or immediate expiry.")
             .Produces<AdjustTenantValidityCommandResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)

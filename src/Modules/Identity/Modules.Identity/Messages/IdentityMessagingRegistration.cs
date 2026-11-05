@@ -13,12 +13,12 @@ public static class IdentityMessagingRegistration
 {
     public static IServiceCollection AddIdentityMessaging(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHeroMessaging(configuration, moduleKey: "identity");
-        services.AddModuleBus<IdentityModule>("identity");
+        services.AddHeroMessaging(configuration, moduleKey: IdentityModuleConstants.QueueName);
+        services.AddModuleBus<IdentityModule>(IdentityModuleConstants.QueueName);
 
-        services.AddQueueHandler<WebhookEventHandler>(queueName: "identity");
+        services.AddQueueHandler<WebhookEventHandler>(queueName: IdentityModuleConstants.QueueName);
 
-        //services.AddMessageRoute<WebhookEvent>("identity");
+        //services.AddMessageRoute<WebhookEvent>(IdentityModuleConstants.QueueName);
 
         return services;
     }

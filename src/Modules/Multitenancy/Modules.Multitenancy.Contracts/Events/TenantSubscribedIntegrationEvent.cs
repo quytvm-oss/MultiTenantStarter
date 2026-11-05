@@ -9,6 +9,8 @@ public sealed record TenantSubscribedIntegrationEvent(
     string CorrelationId,
     DateTime OccurredOnUtc,
     string Source,
+    Guid PlanId,
+    string PlanKey,
     DateTime PeriodStartUtc,
     DateTime PeriodEndUtc)
     : IIntegrationEvent;

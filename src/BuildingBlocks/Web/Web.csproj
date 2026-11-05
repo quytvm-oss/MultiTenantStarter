@@ -46,7 +46,6 @@
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Jobs\Jobs.csproj" />
     <ProjectReference Include="..\Mailling\Mailling.csproj" />
-    <ProjectReference Include="..\MessageBus\MessageBus.csproj" />
     <ProjectReference Include="..\Persistence\Persistence.csproj" />
     <ProjectReference Include="..\Quota\Quota.csproj" />
     <ProjectReference Include="..\Storage\Storage.csproj" />

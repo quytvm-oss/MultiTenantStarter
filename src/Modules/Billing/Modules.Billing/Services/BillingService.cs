@@ -8,6 +8,8 @@ using Core.Exceptions;
 
 using Finbuckle.MultiTenant.Abstractions;
 
+using Messaging.Rebus;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -17,6 +19,8 @@ using Modules.Billing.Data;
 using Modules.Billing.Domain;
 
 using Rebus.Bus;
+using Rebus.Pipeline;
+using Rebus.ServiceProvider;
 
 using Shared.Multitenancy;
 
@@ -61,8 +65,79 @@ public sealed class BillingService : IBillingService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
 
+        var plan = await _dbContext.Plans.FirstOrDefaultAsync(x => x.Id == planId && x.IsActive, cancellationToken)
+            .ConfigureAwait(false) ?? throw new NotFoundException($"Plan {planId} not found for tenant {tenantId}.");
 
-        throw new NotImplementedException();
+        var termPrice = plan.TermPrice;
+        if (termPrice.Amount <= 0)
+        {
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("[Billing] plan {PlanKey} term price is zero for tenant {TenantId}, no subscription invoice", plan.Key, tenantId);
+            }
+            return null;
+        }
+
+        var periodStart = DateTime.SpecifyKind(periodStartUtc, DateTimeKind.Utc);
+        var periodEnd = DateTime.SpecifyKind(periodEndUtc, DateTimeKind.Utc);
+        var invoiceNumber = BuildSubscriptionInvoiceNumber(tenantId, periodStart);
+
+        // Idempotency: redelivery of the subscribe/renew event must not double-invoice the term.
+        var existing = await _dbContext.Invoices
+            .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.InvoiceNumber == invoiceNumber, cancellationToken)
+            .ConfigureAwait(false);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var invoice = Invoice.CreateDraft(tenantId, invoiceNumber, periodStart.Year, periodStart.Month,
+            plan.Currency, InvoicePurpose.Subscription, periodStart, periodEnd);
+        invoice.AddLineItem(
+            InvoiceLineItemKind.BaseFee,
+            $"{plan.Name} — {plan.Interval} subscription ({periodStart:yyyy-MM-dd} to {periodEnd:yyyy-MM-dd})",
+            1m,
+            termPrice.Amount);
+        invoice.Issue();
+
+        await _dbContext.Invoices.AddAsync(invoice, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("[Billing] issued subscription invoice {InvoiceNumber} for tenant {TenantId} total={Total} {Currency}",
+                invoice.InvoiceNumber, tenantId, invoice.SubtotalAmount.Amount, invoice.Currency);
+        }
+
+        // Notify (e.g. email the tenant) that a real bill was issued. Only fires for newly-created
+        // invoices — the idempotent early-return above skips this on event redelivery.
+        //var eventBus = _bus.GetBus(BillingConstant.QueueName);
+        var context = MessageContext.Current;
+
+        _logger.LogInformation(
+            $"MessageContext: {context is not null}");
+
+        _logger.LogInformation(
+            $"TransactionContext: {context?.TransactionContext is not null}");
+
+        await _bus.Publish(new InvoiceIssuedIntegrationEvent(
+            Id: Guid.CreateVersion7(),
+            OccurredOnUtc: _timeProvider.GetUtcNow().UtcDateTime,
+            TenantId: tenantId,
+            CorrelationId: Guid.NewGuid().ToString(),
+            Source: "Billing",
+            InvoiceId: invoice.Id,
+            InvoiceNumber: invoice.InvoiceNumber,
+            Amount: invoice.SubtotalAmount.Amount,
+            Currency: invoice.Currency,
+            DueAtUtc: invoice.DueAtUtc,
+            PeriodYear: invoice.PeriodYear,
+            PeriodMonth: invoice.PeriodMonth));
+
+        _logger.LogInformation("Publish completed");
+
+        return invoice;
     }
 
     public async Task<Invoice> CreateTopupInvoiceAsync(string tenantId, Guid topupRequestId, CancellationToken cancellationToken = default)
@@ -97,6 +172,7 @@ public sealed class BillingService : IBillingService
                 invoice.InvoiceNumber, tenantId, invoice.SubtotalAmount.Amount, invoice.Currency);
         }
 
+        //var eventBus = _bus.GetBus(BillingConstant.QueueName);
         await _bus.Publish(new InvoiceIssuedIntegrationEvent(
             Id: Guid.CreateVersion7(),
             OccurredOnUtc: now,

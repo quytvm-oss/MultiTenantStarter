@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
+using Modules.Multitenancy.Contracts.Authorization;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
 
+using Shared.Identity.Authorization;
 
 using Web.Idempotency;
 
@@ -27,7 +29,7 @@ public static class CreateTenantEndpoint
             })
             .WithName("CreateTenant")
             .WithSummary("Create tenant")
-           // .RequirePermission(MultitenancyPermissions.Tenants.Create)
+            .RequirePermission(MultitenancyPermissions.Tenants.Create)
             .WithIdempotency()
             .WithDescription("Create a new tenant.")
             .Produces<CreateTenantCommandResponse>(StatusCodes.Status201Created)

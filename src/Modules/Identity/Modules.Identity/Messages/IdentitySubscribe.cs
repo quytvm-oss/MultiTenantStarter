@@ -8,11 +8,10 @@ namespace Modules.Identity.Messages;
 
 public class IdentitySubscribe : IRebusSubscription
 {
-    public Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken)
+    public async Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken)
     {
-        var bus = busRegistry.GetBus("identity");
-        bus.Subscribe<WebhookEvent>();
-        return Task.CompletedTask;
+        var bus = busRegistry.GetBus(IdentityModuleConstants.QueueName);
+        await bus.Subscribe<WebhookEvent>();
     }
 
 }

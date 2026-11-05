@@ -4,8 +4,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
+using Modules.Multitenancy.Contracts.Authorization;
 using Modules.Multitenancy.Contracts.Dtos;
 using Modules.Multitenancy.Contracts.v1.GetTenantMigrations;
+
+using Shared.Identity.Authorization;
 
 namespace Modules.Multitenancy.Features.v1.GetTenantMigrations;
 
@@ -21,6 +24,7 @@ public static class TenantMigrationsEndpoint
             return TypedResults.Ok(result);
         })
         .WithName("GetTenantMigrations")
+        .RequirePermission(MultitenancyPermissions.Tenants.View)
         .WithSummary("Get per-tenant migration status")
         .WithDescription("Retrieve migration status for each tenant, including pending migrations and provider information.")
         .Produces<IReadOnlyCollection<TenantMigrationStatusDto>>(StatusCodes.Status200OK)

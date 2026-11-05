@@ -45,7 +45,6 @@ public class WebhooksModule : IModule
         services.AddScoped<IWebhookDeliveryService, WebhookDeliveryService>();
         services.AddScoped<IWebhookDispatcher, WebhookDispatcher>();
         services.AddScoped<WebhookDispatchJob>();
-        services.AddSingleton<IRebusSubscription, WebhookSubscribe>();
 
         services.AddHttpClient("Webhooks")
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
@@ -63,6 +62,7 @@ public class WebhooksModule : IModule
                 name: "db:webhooks",
                 failureStatus: HealthStatus.Unhealthy);
 
+        services.AddSingleton<IRebusSubscription, WebhookSubscribe>();
         if (isWebHost)
             services.AddWebhooksMessaging(builder.Configuration);
     }

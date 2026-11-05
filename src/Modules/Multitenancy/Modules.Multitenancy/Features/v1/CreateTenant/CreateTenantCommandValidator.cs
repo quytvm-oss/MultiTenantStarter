@@ -35,7 +35,7 @@ public sealed class CreateTenantCommandValidator : AbstractValidator<CreateTenan
             .WithMessage("Password must be at least 8 characters and contain uppercase, lowercase, number and special character.");
         
         RuleFor(t => t.PlanKey)
-            .Matches("^[a-z0-9]a-z0-9-]{0,62}[a-z0-9]$")
+            .Matches("^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$")
             .When(t => !string.IsNullOrWhiteSpace(t.PlanKey))
             .WithMessage("Plan key must be a lowercase slug (a-z, 0-9, hyphen).");       
             
