@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 
+using MassTransit;
+
 using Microsoft.Extensions.Logging;
 
 using Modules.Billing.Contracts.Events;
 
-using Rebus.Handlers;
-
 namespace Modules.Notifications.Events;
 
-public sealed class InvoiceIssuedIntegrationEventHandler : IHandleMessages<InvoiceIssuedIntegrationEvent>
+public sealed class InvoiceIssuedIntegrationEventHandler : IConsumer<InvoiceIssuedIntegrationEvent>
 {
     private readonly ILogger<InvoiceIssuedIntegrationEventHandler> _logger;
 
@@ -19,9 +19,11 @@ public sealed class InvoiceIssuedIntegrationEventHandler : IHandleMessages<Invoi
         _logger = logger;
     }
 
-    public async Task Handle(InvoiceIssuedIntegrationEvent message)
+    public Task Consume(ConsumeContext<InvoiceIssuedIntegrationEvent> context)
     {
+        var message = context.Message;
         _logger.LogInformation("Received InvoiceIssuedIntegrationEvent: {InvoiceId}, {TenantId}, {Amount}, {IssuedAt}",
             message.InvoiceId, message.TenantId, message.Amount, message.OccurredOnUtc);
+        return Task.CompletedTask;
     }
 }

@@ -7,9 +7,9 @@ using Core.Context;
 
 using Finbuckle.MultiTenant.Abstractions;
 
-using Mediator;
+using MassTransit;
 
-using Messaging.Rebus;
+using Mediator;
 
 using Microsoft.Extensions.Logging;
 
@@ -18,8 +18,6 @@ using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Events;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
-
-using Rebus.Bus;
 
 using Shared.Multitenancy;
 using Shared.Webhooks;
@@ -33,7 +31,7 @@ public class GenerateTokenCommandHandler(
     IRequestContext requestContext,
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
-    IModuleBus<IdentityModule> bus,
+    IPublishEndpoint publishEndpoint,
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {
@@ -121,14 +119,6 @@ public class GenerateTokenCommandHandler(
             TokenFingerprint: fingerprint,
             AccessTokenExpiresAtUtc: token.AccessTokenExpiresAt);
 
-        // await eventBus.PublishAsync(integrationEvent,x =>
-        // {
-        //     x.Name = "token.generated";
-        //     x.Source = "Identity";
-        //     x.TenantId = tenantId;
-        //     x.CorrelationId = correlationId;
-        // }  , cancellationToken);
-
         var webhookEvent = new WebhookEvent(
             Id: Guid.CreateVersion7(),
             OccurredOnUtc: TimeProvider.System.GetUtcNow().UtcDateTime,
@@ -139,7 +129,7 @@ public class GenerateTokenCommandHandler(
             FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
             Payload: JsonSerializer.Serialize(integrationEvent));
 
-        await bus.Publish(webhookEvent);
+        await publishEndpoint.Publish(webhookEvent);
         //await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
 
         return token;

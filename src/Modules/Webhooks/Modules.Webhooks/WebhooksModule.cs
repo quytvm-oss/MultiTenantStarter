@@ -1,7 +1,5 @@
 using Asp.Versioning;
 
-using Messaging.Rebus;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -17,7 +15,6 @@ using Modules.Webhooks.Features.v1.DeleteWebhookSubscription;
 using Modules.Webhooks.Features.v1.GetWebhookDeliveries;
 using Modules.Webhooks.Features.v1.GetWebhookSubscriptions;
 using Modules.Webhooks.Features.v1.TestWebhookSubscription;
-using Modules.Webhooks.Messaging;
 using Modules.Webhooks.Services;
 
 using Persistence;
@@ -61,10 +58,6 @@ public class WebhooksModule : IModule
             .AddDbContextCheck<WebhookDbContext>(
                 name: "db:webhooks",
                 failureStatus: HealthStatus.Unhealthy);
-
-        services.AddSingleton<IRebusSubscription, WebhookSubscribe>();
-        if (isWebHost)
-            services.AddWebhooksMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

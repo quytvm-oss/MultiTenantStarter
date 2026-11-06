@@ -1,6 +1,7 @@
-using Mediator;
+using MassTransit;
+using MassTransit.Transports;
 
-using Messaging.Rebus;
+using Mediator;
 
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +11,7 @@ using Modules.Identity.Domain.Events;
 namespace Modules.Identity.Events;
 
 public sealed class UserRegisteredHandler(
-    IModuleBus<IdentityModule> bus,
+    ISendEndpointProvider sendEndpointProvider,
     ILogger<UserRegisteredHandler> logger)
     : INotificationHandler<UserRegisteredEvent>
 {
@@ -36,7 +37,7 @@ public sealed class UserRegisteredHandler(
             Email: notification.Email,
             FirstName: notification.FirstName ?? string.Empty,
             LastName: notification.LastName ?? string.Empty);
-
-        await bus.Send(integrationEvent);
+        var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:identity"));
+        await sendEndpointProvider.Send(integrationEvent);
     }
 }

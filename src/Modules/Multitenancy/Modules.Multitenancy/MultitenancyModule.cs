@@ -10,13 +10,10 @@ using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 using Finbuckle.MultiTenant.Extensions;
 using Finbuckle.MultiTenant.Stores;
 
-using Messaging.Rebus;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -116,11 +113,6 @@ public class MultitenancyModule : IModule
         // .AddCheck<TenantMigrationsHealthCheck>(
         //     name: "db:tenants-migrations",
         //     failureStatus: HealthStatus.Unhealthy);
-
-        //services.AddSingleton<IRebusSubscription, MultitenancySubscribe>();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, MultitenancySubscribe>());
-        if (isWebHost)
-            services.AddMultitenancyMessaging(builder.Configuration);
     }
 
     public void ConfigureMiddleware(IApplicationBuilder app)

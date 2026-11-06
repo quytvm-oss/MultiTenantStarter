@@ -2,15 +2,12 @@
 
 using Core.Context;
 
-using Messaging.Rebus;
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
@@ -68,7 +65,6 @@ using Modules.Identity.Features.v1.Users.SearchUsers;
 using Modules.Identity.Features.v1.Users.SelfRegistration;
 using Modules.Identity.Features.v1.Users.SetProfileImage;
 using Modules.Identity.Features.v1.Users.UpdateUser;
-using Modules.Identity.Messages;
 using Modules.Identity.Services;
 
 using Persistence;
@@ -157,10 +153,6 @@ public class IdentityModule : IModule
         .AddDefaultTokenProviders();
 
         services.ConfigureJwtAuth();
-        //services.AddSingleton<IRebusSubscription, IdentitySubscribe>();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, IdentitySubscribe>());
-        if (isWebHost)
-            services.AddIdentityMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

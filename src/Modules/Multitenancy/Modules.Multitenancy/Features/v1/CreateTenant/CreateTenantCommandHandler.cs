@@ -1,17 +1,14 @@
-using Mediator;
+using MassTransit;
 
-using Messaging.Rebus;
+using Mediator;
 
 using Microsoft.Extensions.Options;
 
-using Modules.Billing.Contracts.Events;
 using Modules.Billing.Contracts.v1.Plans;
 using Modules.Multitenancy.Contracts.Events;
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Provisioning;
-
-using Rebus.Bus;
 
 using Shared.Multitenancy;
 
@@ -24,7 +21,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
     private readonly ITenantInitialPasswordBuffer passwordBuffer;
     private readonly IOptions<TenantBillingOptions> _options;
     private readonly IMediator mediator;
-    private readonly IModuleBus<MultitenancyModule> _bus;
+    private readonly IPublishEndpoint _bus;
 
     private readonly TimeProvider _timeProvider;
 
@@ -32,7 +29,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         ITenantProvisioningStarter provisioningService,
         ITenantInitialPasswordBuffer passwordBuffer,
         IMediator mediator,
-        IModuleBus<MultitenancyModule> bus,
+        IPublishEndpoint bus,
         TimeProvider timeProvider,
         IOptions<TenantBillingOptions> options)
     {
@@ -87,20 +84,6 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
             PlanKey: term.Key,
             PeriodStartUtc: periodStart,
             PeriodEndUtc: periodEnd)).ConfigureAwait(false);
-
-        //await _bus.Publish(new InvoiceIssuedIntegrationEvent(
-        //Id: Guid.CreateVersion7(),
-        //OccurredOnUtc: _timeProvider.GetUtcNow().UtcDateTime,
-        //TenantId: tenantId,
-        //CorrelationId: Guid.NewGuid().ToString(),
-        //Source: "Billing",
-        //InvoiceId: Guid.CreateVersion7(),
-        //InvoiceNumber: "invoice.InvoiceNumber",
-        //Amount:24435,
-        //Currency: "invoice.Currenc",
-        //DueAtUtc: periodStart,
-        //PeriodYear: 2016,
-        //PeriodMonth: 12));
 
         return new CreateTenantCommandResponse(
             tenantId,
