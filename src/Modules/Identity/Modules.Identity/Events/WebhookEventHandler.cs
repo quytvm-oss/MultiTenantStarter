@@ -2,8 +2,6 @@ using MassTransit;
 
 using Microsoft.Extensions.Logging;
 
-using Rebus.Handlers;
-using Rebus.Messages;
 
 using Shared.Webhooks;
 

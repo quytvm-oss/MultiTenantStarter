@@ -7,9 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Modules.Webhooks.Data;
-
-using Rebus.Handlers;
-
 using Shared.Multitenancy;
 using Shared.Webhooks;
 

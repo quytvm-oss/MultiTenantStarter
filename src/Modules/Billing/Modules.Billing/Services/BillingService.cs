@@ -10,8 +10,6 @@ using Finbuckle.MultiTenant.Abstractions;
 
 using MassTransit;
 
-using Messaging.Rebus;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -19,10 +17,6 @@ using Modules.Billing.Contracts;
 using Modules.Billing.Contracts.Events;
 using Modules.Billing.Data;
 using Modules.Billing.Domain;
-
-using Rebus.Bus;
-using Rebus.Pipeline;
-using Rebus.ServiceProvider;
 
 using Shared.Multitenancy;
 

@@ -36,10 +36,6 @@ public class NotificationsModule : IModule
         services.AddHealthChecks().AddDbContextCheck<NotificationsDbContext>(
             name: "db:notifications",
             failureStatus: HealthStatus.Unhealthy);
-
-        //services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, NotificationSubscribe>());
-        //if (isWebHost)
-        //    services.AddNotificationMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

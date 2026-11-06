@@ -66,11 +66,6 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.1-beta.2" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
-    <PackageVersion Include="Rebus" Version="8.9.5" />
-    <PackageVersion Include="Rebus.PostgreSql" Version="9.1.1" />
-    <PackageVersion Include="Rebus.RabbitMq" Version="10.1.2" />
-    <PackageVersion Include="Rebus.Serilog" Version="8.1.0" />
-    <PackageVersion Include="Rebus.ServiceProvider" Version="10.7.2" />
     <PackageVersion Include="RedisRateLimiting.AspNetCore" Version="1.2.1" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.19.0" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />

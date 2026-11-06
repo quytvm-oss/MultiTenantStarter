@@ -2,18 +2,13 @@ using MassTransit;
 
 using Mediator;
 
-using Messaging.Rebus;
-
 using Microsoft.Extensions.Options;
 
-using Modules.Billing.Contracts.Events;
 using Modules.Billing.Contracts.v1.Plans;
 using Modules.Multitenancy.Contracts.Events;
 using Modules.Multitenancy.Contracts.v1;
 using Modules.Multitenancy.Contracts.v1.CreateTenant;
 using Modules.Multitenancy.Provisioning;
-
-using Rebus.Bus;
 
 using Shared.Multitenancy;
 
@@ -89,20 +84,6 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
             PlanKey: term.Key,
             PeriodStartUtc: periodStart,
             PeriodEndUtc: periodEnd)).ConfigureAwait(false);
-
-        //await _bus.Publish(new InvoiceIssuedIntegrationEvent(
-        //Id: Guid.CreateVersion7(),
-        //OccurredOnUtc: _timeProvider.GetUtcNow().UtcDateTime,
-        //TenantId: tenantId,
-        //CorrelationId: Guid.NewGuid().ToString(),
-        //Source: "Billing",
-        //InvoiceId: Guid.CreateVersion7(),
-        //InvoiceNumber: "invoice.InvoiceNumber",
-        //Amount:24435,
-        //Currency: "invoice.Currenc",
-        //DueAtUtc: periodStart,
-        //PeriodYear: 2016,
-        //PeriodMonth: 12));
 
         return new CreateTenantCommandResponse(
             tenantId,

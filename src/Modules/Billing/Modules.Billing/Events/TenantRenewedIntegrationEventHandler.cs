@@ -13,8 +13,6 @@ using Modules.Billing.Domain;
 using Modules.Billing.Services;
 using Modules.Multitenancy.Contracts.Events;
 
-using Rebus.Handlers;
-
 namespace Modules.Identity.Events;
 
 public sealed class TenantRenewedIntegrationEventHandler : IConsumer<TenantRenewedIntegrationEvent>

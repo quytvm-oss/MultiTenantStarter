@@ -11,8 +11,6 @@ using MassTransit;
 
 using Mediator;
 
-using Messaging.Rebus;
-
 using Microsoft.Extensions.Logging;
 
 using Modules.Auditing.Contracts;
@@ -20,8 +18,6 @@ using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Events;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
-
-using Rebus.Bus;
 
 using Shared.Multitenancy;
 using Shared.Webhooks;
@@ -122,14 +118,6 @@ public class GenerateTokenCommandHandler(
             UserAgent: ua,
             TokenFingerprint: fingerprint,
             AccessTokenExpiresAtUtc: token.AccessTokenExpiresAt);
-
-        // await eventBus.PublishAsync(integrationEvent,x =>
-        // {
-        //     x.Name = "token.generated";
-        //     x.Source = "Identity";
-        //     x.TenantId = tenantId;
-        //     x.CorrelationId = correlationId;
-        // }  , cancellationToken);
 
         var webhookEvent = new WebhookEvent(
             Id: Guid.CreateVersion7(),
