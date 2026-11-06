@@ -18,6 +18,7 @@ using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Events;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
+using Modules.Identity.Data;
 
 using Shared.Multitenancy;
 using Shared.Webhooks;
@@ -29,6 +30,7 @@ public class GenerateTokenCommandHandler(
     ITokenService tokenService,
     ISecurityAudit securityAudit,
     IRequestContext requestContext,
+    IdentityDbContext dbContext,
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
     IPublishEndpoint publishEndpoint,
@@ -106,7 +108,7 @@ public class GenerateTokenCommandHandler(
         var correlationId = Guid.CreateVersion7().ToString();
 
         var integrationEvent = new TokenGeneratedIntegrationEvent(
-            Id: Guid.NewGuid(),
+            Id: Guid.CreateVersion7(),
             OccurredOnUtc: TimeProvider.System.GetUtcNow().UtcDateTime,
             TenantId: tenantId,
             Source: "Identity",
@@ -129,9 +131,14 @@ public class GenerateTokenCommandHandler(
             FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
             Payload: JsonSerializer.Serialize(integrationEvent));
 
-        await publishEndpoint.Publish(webhookEvent);
-        //await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
+        await publishEndpoint.Publish(webhookEvent, context =>
+        {
+            context.Delay = TimeSpan.FromMinutes(1);
+        }, cancellationToken);
 
+        //await publishEndpoint.Publish(webhookEvent, cancellationToken);
+        //await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
+        await dbContext.SaveChangesAsync(cancellationToken);
         return token;
     }
 

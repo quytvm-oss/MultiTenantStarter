@@ -4,7 +4,7 @@
     <Project Path="BuildingBlocks/Core/Core.csproj" />
     <Project Path="BuildingBlocks/Jobs/Jobs.csproj" />
     <Project Path="BuildingBlocks/Mailling/Mailling.csproj" />
-    <Project Path="BuildingBlocks/Messaging.MassTransit/Messaging.csproj" Id="9d32b4ef-68c7-4209-a76b-9f43e4e762fd" />
+    <Project Path="BuildingBlocks/Messaging/Messaging.csproj" Id="9d32b4ef-68c7-4209-a76b-9f43e4e762fd" />
     <Project Path="BuildingBlocks/Persistence/Persistence.csproj" />
     <Project Path="BuildingBlocks/Quota/Quota.csproj" />
     <Project Path="BuildingBlocks/Shared/Shared.csproj" />
@@ -55,7 +55,6 @@
     <File Path="BuildingBlocks/Core/Core.csproj" />
     <File Path="BuildingBlocks/Jobs/Jobs.csproj" />
     <File Path="BuildingBlocks/Mailling/Mailling.csproj" />
-    <File Path="BuildingBlocks/MessageBus/MessageBus.csproj" />
     <File Path="BuildingBlocks/Persistence/Persistence.csproj" />
     <File Path="BuildingBlocks/Shared/Shared.csproj" />
     <File Path="BuildingBlocks/Storage/Storage.csproj" />

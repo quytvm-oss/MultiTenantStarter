@@ -40,7 +40,10 @@ public static class MassTransitExtensions
             foreach (var module in modules)
             {
                 module.RegisterConsumers(x);
+                module.RegisterOutbox(x);
             }
+            x.AddDelayedMessageScheduler();
+
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -50,6 +53,7 @@ public static class MassTransitExtensions
 
                 // Configure RabbitMQ connection
                 cfg.ConfigureRabbitMqHost(options);
+                cfg.UseDelayedMessageScheduler();
 
                 // Configure module endpoints
                 foreach (var module in modules)

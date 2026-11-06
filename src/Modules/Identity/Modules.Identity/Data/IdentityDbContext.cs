@@ -1,5 +1,9 @@
+using System.Reflection.Emit;
+
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.Identity.EntityFrameworkCore;
+
+using MassTransit;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -65,6 +69,8 @@ public class IdentityDbContext : MultiTenantIdentityDbContext<User,
         // Default-on tenant isolation: non-IGlobalEntity entities get IsMultiTenant() automatically (Outbox/Inbox/ImpersonationGrant opt out).
         // Identity tables are already IsMultiTenant in IdentityConfigurations.cs; auto-apply detects that annotation and skips them.
         builder.ApplyTenantIsolationByDefault();
+
+        builder.AddTransactionalOutboxEntities(entity => entity.ToTable(entity.Metadata.GetDefaultTableName()!,"identity"));
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
