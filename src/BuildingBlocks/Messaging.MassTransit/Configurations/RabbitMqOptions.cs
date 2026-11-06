@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Messaging.MassTransit.Configurations;
+namespace Messaging.Configurations;
 
 public sealed class RabbitMqOptions
 {

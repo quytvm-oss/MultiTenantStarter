@@ -95,7 +95,11 @@ services:
       HangfireOptions__Username: "root"
       HangfireOptions__Password: "root123456789"
       HangfireOptions__Route: "/jobs"
-      RebusOptions__RabbitMq__ConnectionString: "amqp://guest:guest@rabbitmq:5672"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Port: "5672"
+      RabbitMQ__VirtualHost: "/"
+      RabbitMQ__Username: "guest"
+      RabbitMQ__Password: "guest"
     depends_on:
       postgres:
         condition: service_healthy

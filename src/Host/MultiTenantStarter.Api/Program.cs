@@ -20,7 +20,7 @@ using Modules.Webhooks.Contracts;
 using Web;
 using Web.Modules;
 
-using Messaging.MassTransit.Configurations;
+using Messaging.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
 

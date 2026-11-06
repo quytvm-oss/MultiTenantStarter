@@ -20,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\BuildingBlocks\Messaging.MassTransit\Messaging.MassTransit.csproj" />
+      <ProjectReference Include="..\..\BuildingBlocks\Messaging.MassTransit\Messaging.csproj" />
       <ProjectReference Include="..\..\BuildingBlocks\Web\Web.csproj" />
       <ProjectReference Include="..\..\Modules\Auditing\Modules.Auditing.Contracts\Modules.Auditing.Contracts.csproj" />
       <ProjectReference Include="..\..\Modules\Auditing\Modules.Auditing\Modules.Auditing.csproj" />

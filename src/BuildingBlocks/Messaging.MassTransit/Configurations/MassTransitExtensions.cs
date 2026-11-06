@@ -2,13 +2,13 @@
 
 using MassTransit;
 
-using Messaging.MassTransit.Abstractions;
+using Messaging.Abstractions;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Messaging.MassTransit.Configurations;
+namespace Messaging.Configurations;
 
 public static class MassTransitExtensions
 {

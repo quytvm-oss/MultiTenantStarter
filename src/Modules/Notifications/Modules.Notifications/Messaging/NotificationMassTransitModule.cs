@@ -4,7 +4,7 @@ using System.Text;
 
 using MassTransit;
 
-using Messaging.MassTransit.Abstractions;
+using Messaging.Abstractions;
 
 using Modules.Notifications.Events;
 

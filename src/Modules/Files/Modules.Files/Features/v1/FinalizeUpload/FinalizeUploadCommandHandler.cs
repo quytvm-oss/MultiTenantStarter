@@ -4,6 +4,8 @@ using System.Net;
 using Core.Context;
 using Core.Exceptions;
 
+using MassTransit;
+
 using Mediator;
 
 using Microsoft.EntityFrameworkCore;
@@ -26,12 +28,15 @@ public class FinalizeUploadCommandHandler : ICommandHandler<FinalizeUploadComman
     private readonly IStorageService _storage;
     private readonly ICurrentUser _currentUser;
     private readonly IFileScanner _fileScanner;
-    public FinalizeUploadCommandHandler(FilesDbContext db, IStorageService storage, ICurrentUser currentUser, IFileScanner fileScanner)
+    private readonly IPublishEndpoint _bus;
+
+    public FinalizeUploadCommandHandler(FilesDbContext db, IStorageService storage, ICurrentUser currentUser, IFileScanner fileScanner, IPublishEndpoint bus)
     {
         _db = db;
         _storage = storage;
         _currentUser = currentUser;
         _fileScanner = fileScanner;
+        _bus = bus;
     }
     public async ValueTask<FileAssetDto> Handle(FinalizeUploadCommand command, CancellationToken cancellationToken)
     {
@@ -89,18 +94,18 @@ public class FinalizeUploadCommandHandler : ICommandHandler<FinalizeUploadComman
         await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         var correlationId = Activity.Current?.Id ?? Guid.CreateVersion7().ToString();
-        //await _bus.Send(new FileFinalizedIntegrationEvent(
-        //    Id: Guid.CreateVersion7(),
-        //    OccurredOnUtc: DateTime.UtcNow,
-        //    TenantId: tenantId,
-        //    CorrelationId: correlationId,
-        //    Source: "Files",
-        //    FileAssetId: asset.Id,
-        //    OwnerType: asset.OwnerType,
-        //    OwnerId: asset.OwnerId,
-        //    ContentType: asset.ContentType,
-        //    SizeBytes: asset.SizeBytes,
-        //    FinalStatus: (int)asset.Status)).ConfigureAwait(false);
+        await _bus.Publish(new FileFinalizedIntegrationEvent(
+            Id: Guid.CreateVersion7(),
+            OccurredOnUtc: DateTime.UtcNow,
+            TenantId: tenantId,
+            CorrelationId: correlationId,
+            Source: "Files",
+            FileAssetId: asset.Id,
+            OwnerType: asset.OwnerType,
+            OwnerId: asset.OwnerId,
+            ContentType: asset.ContentType,
+            SizeBytes: asset.SizeBytes,
+            FinalStatus: (int)asset.Status)).ConfigureAwait(false);
 
         return FileAssetMapper.ToDto(asset);
     }

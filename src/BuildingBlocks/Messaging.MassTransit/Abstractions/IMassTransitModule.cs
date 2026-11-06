@@ -4,7 +4,7 @@ using System.Text;
 
 using MassTransit;
 
-namespace Messaging.MassTransit.Abstractions;
+namespace Messaging.Abstractions;
 
 public interface IMassTransitModule
 {
