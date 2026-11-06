@@ -8,6 +8,8 @@ using Core.Exceptions;
 
 using Finbuckle.MultiTenant.Abstractions;
 
+using MassTransit;
+
 using Messaging.Rebus;
 
 using Microsoft.EntityFrameworkCore;
@@ -30,14 +32,13 @@ public sealed class BillingService : IBillingService
 {
     private readonly BillingDbContext _dbContext;
 
-
     private readonly IUsageReporter _usageReporter;
 
     private readonly IMultiTenantStore<AppTenantInfo> _tenantStore;
 
     private readonly IMultiTenantContextAccessor<AppTenantInfo> _tenantAccessor;
 
-    private readonly IBus _bus;
+    private readonly IPublishEndpoint _bus;
 
     private readonly TimeProvider _timeProvider;
 
@@ -47,7 +48,7 @@ public sealed class BillingService : IBillingService
         BillingDbContext dbContext,
         IUsageReporter usageReporter,
         IMultiTenantStore<AppTenantInfo> tenantStore,
-        IBus bus,
+        IPublishEndpoint bus,
         TimeProvider timeProvider,
         ILogger<BillingService> logger,
         IMultiTenantContextAccessor<AppTenantInfo> tenantAccessor)
@@ -112,20 +113,11 @@ public sealed class BillingService : IBillingService
 
         // Notify (e.g. email the tenant) that a real bill was issued. Only fires for newly-created
         // invoices — the idempotent early-return above skips this on event redelivery.
-        //var eventBus = _bus.GetBus(BillingConstant.QueueName);
-        var context = MessageContext.Current;
-
-        _logger.LogInformation(
-            $"MessageContext: {context is not null}");
-
-        _logger.LogInformation(
-            $"TransactionContext: {context?.TransactionContext is not null}");
-
         await _bus.Publish(new InvoiceIssuedIntegrationEvent(
             Id: Guid.CreateVersion7(),
             OccurredOnUtc: _timeProvider.GetUtcNow().UtcDateTime,
             TenantId: tenantId,
-            CorrelationId: Guid.NewGuid().ToString(),
+            CorrelationId: Guid.CreateVersion7().ToString(),
             Source: "Billing",
             InvoiceId: invoice.Id,
             InvoiceNumber: invoice.InvoiceNumber,
@@ -134,8 +126,6 @@ public sealed class BillingService : IBillingService
             DueAtUtc: invoice.DueAtUtc,
             PeriodYear: invoice.PeriodYear,
             PeriodMonth: invoice.PeriodMonth));
-
-        _logger.LogInformation("Publish completed");
 
         return invoice;
     }
@@ -172,7 +162,6 @@ public sealed class BillingService : IBillingService
                 invoice.InvoiceNumber, tenantId, invoice.SubtotalAmount.Amount, invoice.Currency);
         }
 
-        //var eventBus = _bus.GetBus(BillingConstant.QueueName);
         await _bus.Publish(new InvoiceIssuedIntegrationEvent(
             Id: Guid.CreateVersion7(),
             OccurredOnUtc: now,

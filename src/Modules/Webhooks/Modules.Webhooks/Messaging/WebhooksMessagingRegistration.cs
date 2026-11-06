@@ -9,7 +9,7 @@ public static class WebhooksMessagingRegistration
 {
     public static IServiceCollection AddWebhooksMessaging(this IServiceCollection services, IConfiguration  configuration)
     {
-        services.AddHeroMessaging(configuration, moduleKey: WebhooksModuleConstant.QueueName);
+        //services.AddHeroMessaging(configuration, moduleKey: WebhooksModuleConstant.QueueName);
         //services.AddQueueHandler<WebhookFanoutHandler>(queueName: "webhooks");
 
         return services;

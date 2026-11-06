@@ -1,3 +1,5 @@
+using MassTransit;
+
 using Mediator;
 
 using Messaging.Rebus;
@@ -24,7 +26,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
     private readonly ITenantInitialPasswordBuffer passwordBuffer;
     private readonly IOptions<TenantBillingOptions> _options;
     private readonly IMediator mediator;
-    private readonly IModuleBus<MultitenancyModule> _bus;
+    private readonly IPublishEndpoint _bus;
 
     private readonly TimeProvider _timeProvider;
 
@@ -32,7 +34,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         ITenantProvisioningStarter provisioningService,
         ITenantInitialPasswordBuffer passwordBuffer,
         IMediator mediator,
-        IModuleBus<MultitenancyModule> bus,
+        IPublishEndpoint bus,
         TimeProvider timeProvider,
         IOptions<TenantBillingOptions> options)
     {

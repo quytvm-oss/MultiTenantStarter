@@ -10,11 +10,11 @@ using Rebus.ServiceProvider;
 
 namespace Modules.Notifications.Messaging;
 
-public class NotificationSubscribe : IRebusSubscription
-{
-    public async Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken)
-    {
-        var bus = busRegistry.GetBus(NotificationModuleConstant.QueueName);
-        await bus.Subscribe<InvoiceIssuedIntegrationEvent>();
-    }
-}
+//public class NotificationSubscribe : IRebusSubscription
+//{
+//    public async Task SubscribeAsync(IBusRegistry busRegistry, CancellationToken cancellationToken)
+//    {
+//        var bus = busRegistry.GetBus(NotificationModuleConstant.QueueName);
+//        await bus.Subscribe<InvoiceIssuedIntegrationEvent>();
+//    }
+//}

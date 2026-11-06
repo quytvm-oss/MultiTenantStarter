@@ -13,8 +13,8 @@ internal static class MultitenancyMessagingRegistration
 {
     public static IServiceCollection AddMultitenancyMessaging(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHeroMessaging(configuration, moduleKey: MultitenancyModuleConstant.QueueName, isPrimary: false);
-        services.AddModuleBus<MultitenancyModule>(MultitenancyModuleConstant.QueueName);
+        //services.AddHeroMessaging(configuration, moduleKey: MultitenancyModuleConstant.QueueName, isPrimary: false);
+        //services.AddModuleBus<MultitenancyModule>(MultitenancyModuleConstant.QueueName);
 
         return services;
     }

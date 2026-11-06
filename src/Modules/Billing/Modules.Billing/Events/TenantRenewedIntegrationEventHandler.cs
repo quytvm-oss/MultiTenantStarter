@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
+using MassTransit;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +17,7 @@ using Rebus.Handlers;
 
 namespace Modules.Identity.Events;
 
-public sealed class TenantRenewedIntegrationEventHandler : IHandleMessages<TenantRenewedIntegrationEvent>
+public sealed class TenantRenewedIntegrationEventHandler : IConsumer<TenantRenewedIntegrationEvent>
 {
     private readonly BillingDbContext _db;
     private readonly IBillingService _billing;
@@ -31,8 +33,9 @@ public sealed class TenantRenewedIntegrationEventHandler : IHandleMessages<Tenan
         _logger = logger;
     }
 
-    public async Task Handle(TenantRenewedIntegrationEvent message)
+    public async Task Consume(ConsumeContext<TenantRenewedIntegrationEvent> context)
     {
+        var message = context.Message;
         ArgumentNullException.ThrowIfNull(message);
         var tenantId = message.TenantId
             ?? throw new InvalidOperationException("TenantRenewedIntegrationEvent is missing TenantId.");

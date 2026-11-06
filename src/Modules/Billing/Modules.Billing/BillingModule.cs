@@ -63,9 +63,9 @@ public class BillingModule : IModule
                 name: "db:billing",
                 failureStatus: HealthStatus.Unhealthy);
 
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, BillingSubscribe>());
-        if (IsWebHost)
-            services.AddBillingMessaging(builder.Configuration);
+        //services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, BillingSubscribe>());
+        //if (IsWebHost)
+        //    services.AddBillingMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

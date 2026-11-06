@@ -4,9 +4,9 @@ using System.Text;
 
 using Amazon.Util.Internal;
 
-using Mediator;
+using MassTransit;
 
-using Messaging.Rebus;
+using Mediator;
 
 using Microsoft.Extensions.Options;
 
@@ -22,10 +22,15 @@ public sealed class RenewTenantCommandHandler : ICommandHandler<RenewTenantComma
     private readonly ITenantService _tenantService;
     private readonly IMediator _mediator;
     private readonly IOptions<TenantBillingOptions> _options;
-    private readonly IModuleBus<MultitenancyModule> _bus;
+    private readonly IPublishEndpoint _bus;
     private readonly TimeProvider _provider;
 
-    public RenewTenantCommandHandler(ITenantService tenantService, IMediator mediator, IOptions<TenantBillingOptions> options, IModuleBus<MultitenancyModule> bus, TimeProvider provider)
+    public RenewTenantCommandHandler(
+        ITenantService tenantService, 
+        IMediator mediator, 
+        IOptions<TenantBillingOptions> options, 
+        IPublishEndpoint bus, 
+        TimeProvider provider)
     {
         _tenantService = tenantService;
         _mediator = mediator;
@@ -52,10 +57,10 @@ public sealed class RenewTenantCommandHandler : ICommandHandler<RenewTenantComma
             .ConfigureAwait(false);
 
         await _bus.Publish(new TenantRenewedIntegrationEvent(
-            Id: Guid.NewGuid(),
+            Id: Guid.CreateVersion7(),
             OccurredOnUtc: _provider.GetUtcNow().UtcDateTime,
             TenantId: command.TenantId,
-            CorrelationId: Guid.NewGuid().ToString(),
+            CorrelationId: Guid.CreateVersion7().ToString(),
             Source: "Multitenancy",
             PlanId: term.PlanId,
             PlanKey: term.Key,

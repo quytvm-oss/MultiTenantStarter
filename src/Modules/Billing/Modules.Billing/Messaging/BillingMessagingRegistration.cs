@@ -15,14 +15,14 @@ namespace Modules.Billing.Messaging;
 internal static class BillingMessagingRegistration
 {
 
-    public static IServiceCollection AddBillingMessaging(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddHeroMessaging(configuration, moduleKey: BillingConstant.QueueName, isPrimary: true);
-        services.AddModuleBus<BillingModule>(BillingConstant.QueueName);
+    //public static IServiceCollection AddBillingMessaging(this IServiceCollection services, IConfiguration configuration)
+    //{
+    //    services.AddHeroMessaging(configuration, moduleKey: BillingConstant.QueueName, isPrimary: true);
+    //    services.AddModuleBus<BillingModule>(BillingConstant.QueueName);
 
-        //register handler
-        services.AddQueueHandler<TenantRenewedIntegrationEventHandler>(queueName: BillingConstant.QueueName);
-        services.AddQueueHandler<TenantSubscribedIntegrationEventHandler>(queueName: BillingConstant.QueueName);
-        return services;
-    }
+    //    //register handler
+    //    services.AddQueueHandler<TenantRenewedIntegrationEventHandler>(queueName: BillingConstant.QueueName);
+    //    services.AddQueueHandler<TenantSubscribedIntegrationEventHandler>(queueName: BillingConstant.QueueName);
+    //    return services;
+    //}
 }

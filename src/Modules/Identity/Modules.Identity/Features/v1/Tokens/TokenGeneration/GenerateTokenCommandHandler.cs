@@ -7,6 +7,8 @@ using Core.Context;
 
 using Finbuckle.MultiTenant.Abstractions;
 
+using MassTransit;
+
 using Mediator;
 
 using Messaging.Rebus;
@@ -33,7 +35,7 @@ public class GenerateTokenCommandHandler(
     IRequestContext requestContext,
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
-    IModuleBus<IdentityModule> bus,
+    IPublishEndpoint publishEndpoint,
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {
@@ -139,7 +141,7 @@ public class GenerateTokenCommandHandler(
             FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
             Payload: JsonSerializer.Serialize(integrationEvent));
 
-        await bus.Publish(webhookEvent);
+        await publishEndpoint.Publish(webhookEvent);
         //await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
 
         return token;

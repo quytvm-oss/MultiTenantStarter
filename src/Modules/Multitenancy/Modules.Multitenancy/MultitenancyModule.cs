@@ -117,10 +117,9 @@ public class MultitenancyModule : IModule
         //     name: "db:tenants-migrations",
         //     failureStatus: HealthStatus.Unhealthy);
 
-        //services.AddSingleton<IRebusSubscription, MultitenancySubscribe>();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, MultitenancySubscribe>());
-        if (isWebHost)
-            services.AddMultitenancyMessaging(builder.Configuration);
+        //services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, MultitenancySubscribe>());
+        //if (isWebHost)
+        //    services.AddMultitenancyMessaging(builder.Configuration);
     }
 
     public void ConfigureMiddleware(IApplicationBuilder app)

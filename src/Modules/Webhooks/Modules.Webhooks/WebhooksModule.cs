@@ -62,9 +62,9 @@ public class WebhooksModule : IModule
                 name: "db:webhooks",
                 failureStatus: HealthStatus.Unhealthy);
 
-        services.AddSingleton<IRebusSubscription, WebhookSubscribe>();
-        if (isWebHost)
-            services.AddWebhooksMessaging(builder.Configuration);
+        //services.AddSingleton<IRebusSubscription, WebhookSubscribe>();
+        //if (isWebHost)
+        //    services.AddWebhooksMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

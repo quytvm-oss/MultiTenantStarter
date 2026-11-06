@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
+using MassTransit;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,11 +13,9 @@ using Modules.Billing.Domain;
 using Modules.Billing.Services;
 using Modules.Multitenancy.Contracts.Events;
 
-using Rebus.Handlers;
-
 namespace Modules.Billing.Events;
 
-public sealed class TenantSubscribedIntegrationEventHandler : IHandleMessages<TenantSubscribedIntegrationEvent>
+public sealed class TenantSubscribedIntegrationEventHandler : IConsumer<TenantSubscribedIntegrationEvent>
 {
     private readonly BillingDbContext _db;
     private readonly IBillingService _billing;
@@ -31,9 +31,10 @@ public sealed class TenantSubscribedIntegrationEventHandler : IHandleMessages<Te
         _billing = billing;
     }
 
-    public async Task Handle(TenantSubscribedIntegrationEvent message)
+    public async Task Consume(ConsumeContext<TenantSubscribedIntegrationEvent> context)
     {
-        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(context);
+        var message = context.Message;
         var tenantId = message.TenantId
             ?? throw new InvalidOperationException("TenantSubscribedIntegrationEvent is missing TenantId.");
 

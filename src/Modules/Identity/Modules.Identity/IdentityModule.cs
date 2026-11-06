@@ -157,10 +157,10 @@ public class IdentityModule : IModule
         .AddDefaultTokenProviders();
 
         services.ConfigureJwtAuth();
-        //services.AddSingleton<IRebusSubscription, IdentitySubscribe>();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, IdentitySubscribe>());
-        if (isWebHost)
-            services.AddIdentityMessaging(builder.Configuration);
+
+        //services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, IdentitySubscribe>());
+        //if (isWebHost)
+        //    services.AddIdentityMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

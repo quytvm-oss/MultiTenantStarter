@@ -2,13 +2,10 @@ using Asp.Versioning;
 
 using FluentValidation;
 
-using Messaging.Rebus;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
@@ -17,7 +14,6 @@ using Modules.Notifications.Features.v1.Notifications.GetUnreadCount;
 using Modules.Notifications.Features.v1.Notifications.ListNotifications;
 using Modules.Notifications.Features.v1.Notifications.MarkAllNotificationsRead;
 using Modules.Notifications.Features.v1.Notifications.MarkNotificationRead;
-using Modules.Notifications.Messaging;
 
 using Persistence;
 
@@ -41,9 +37,9 @@ public class NotificationsModule : IModule
             name: "db:notifications",
             failureStatus: HealthStatus.Unhealthy);
 
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, NotificationSubscribe>());
-        if (isWebHost)
-            services.AddNotificationMessaging(builder.Configuration);
+        //services.TryAddEnumerable(ServiceDescriptor.Singleton<IRebusSubscription, NotificationSubscribe>());
+        //if (isWebHost)
+        //    services.AddNotificationMessaging(builder.Configuration);
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

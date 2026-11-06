@@ -1,5 +1,7 @@
 using Finbuckle.MultiTenant.Abstractions;
 
+using MassTransit;
+
 using Microsoft.EntityFrameworkCore;
 
 using Microsoft.Extensions.Logging;
@@ -27,7 +29,7 @@ namespace Modules.Webhooks.Services;
 /// subscription read to that tenant. Events with a null <c>TenantId</c> are
 /// skipped — webhook subscriptions are tenant-only by design.
 /// </summary>
-public class WebhookFanoutHandler : IHandleMessages<WebhookEvent>
+public class WebhookFanoutHandler : IConsumer<WebhookEvent>
 
 {
     private readonly WebhookDbContext _db;
@@ -45,9 +47,11 @@ public class WebhookFanoutHandler : IHandleMessages<WebhookEvent>
 
     }
 
-    public async Task Handle(WebhookEvent message)
+    public async Task Consume(ConsumeContext<WebhookEvent> context)
     {
-        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var message = context.Message;
 
         _logger.LogInformation(
             "Webhook fan-out for event {EventType} (tenant {TenantId}, correlation {CorrelationId})",
