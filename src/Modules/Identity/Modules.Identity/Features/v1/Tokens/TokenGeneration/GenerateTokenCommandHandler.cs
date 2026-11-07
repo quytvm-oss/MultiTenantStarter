@@ -8,7 +8,6 @@ using Core.Context;
 using Finbuckle.MultiTenant.Abstractions;
 
 using MassTransit;
-using MassTransit.DependencyInjection;
 
 using Mediator;
 
@@ -21,10 +20,9 @@ using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Events;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
-using Modules.Identity.Data;
+using Modules.Webhooks.Contracts.Events;
 
 using Shared.Multitenancy;
-using Shared.Webhooks;
 
 namespace Modules.Identity.Features.v1.Tokens.TokenGeneration;
 
@@ -132,12 +130,9 @@ public class GenerateTokenCommandHandler(
             Source: "Identity",
             EventType: "identity.token.generated",
             FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
-            Payload: JsonSerializer.Serialize(integrationEvent));
+            Payload: JsonSerializer.Serialize(integrationEvent),
+            UserId: subject);
 
-        //await publishEndpoint.Publish(webhookEvent, context =>
-        //{
-        //    context.Delay = TimeSpan.FromMinutes(1);
-        //}, cancellationToken);
         await publishEndpoint.Publish(webhookEvent, cancellationToken);
         await messagingDb.SaveChangesAsync(cancellationToken);
         return token;

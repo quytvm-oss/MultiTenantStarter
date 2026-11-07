@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 using Microsoft.Extensions.Logging;
 
+using Modules.Webhooks.Contracts.Events;
 using Modules.Webhooks.Data;
 using Shared.Multitenancy;
-using Shared.Webhooks;
 
 namespace Modules.Webhooks.Services;
 
@@ -76,7 +76,6 @@ public class WebhookFanoutHandler : IConsumer<WebhookEvent>
             // Pull active subscriptions, then match event type in memory: EventsCsv is a CSV blob (no join
             // table), and there are typically 0–20 subscriptions per tenant so in-memory matching is fine.
             var subscriptions = await _db.WebhookSubscriptions
-                    .IgnoreQueryFilters()
                     .AsNoTracking()
                     .Where(s => s.IsActive &&
                                 s.TenantId == message.TenantId)

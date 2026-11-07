@@ -30,3 +30,11 @@ public class TenantExpiryNotice
         };
     }
 }
+
+/// <summary>Stable string keys for <see cref="TenantExpiryNotice.NoticeType"/>.</summary>
+public static class TenantExpiryNoticeTypes
+{
+    public const string NearingExpiry = "NearingExpiry";
+    public const string EnteredGrace = "EnteredGrace";
+    public const string Expired = "Expired";
+}

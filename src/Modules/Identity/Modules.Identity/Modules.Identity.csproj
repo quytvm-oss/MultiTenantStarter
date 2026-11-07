@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Storage\Storage.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Web\Web.csproj" />
     <ProjectReference Include="..\..\Auditing\Modules.Auditing.Contracts\Modules.Auditing.Contracts.csproj" />
+    <ProjectReference Include="..\..\Webhooks\Modules.Webhooks.Contracts\Modules.Webhooks.Contracts.csproj" />
     <ProjectReference Include="..\Modules.Identity.Contracts\Modules.Identity.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>

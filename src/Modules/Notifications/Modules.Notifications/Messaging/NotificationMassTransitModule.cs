@@ -7,6 +7,8 @@ using MassTransit;
 using Messaging.Abstractions;
 using Messaging.Persistence;
 
+using Microsoft.Extensions.DependencyInjection;
+
 using Modules.Notifications.Events;
 
 namespace Modules.Notifications.Messaging;
@@ -15,6 +17,7 @@ public class NotificationMassTransitModule : IMassTransitModule
 {
     public void ConfigureEndpoints(IRabbitMqBusFactoryConfigurator cfg, IBusRegistrationContext context)
     {
+        var tenantPipeline = context.GetRequiredService<ITenantConsumePipeline>();
         cfg.ReceiveEndpoint(
             NotificationModuleConstant.QueueName,
             e =>
@@ -24,6 +27,7 @@ public class NotificationMassTransitModule : IMassTransitModule
                 e.UseMessageRetry(r =>
                     r.Interval(3, TimeSpan.FromSeconds(2)));
                 e.UseEntityFrameworkOutbox<MessagingDbContext>(context);
+                tenantPipeline.Configure(e, context);
                 e.ConfigureConsumer<InvoiceIssuedIntegrationEventHandler>(context);
             });
     }

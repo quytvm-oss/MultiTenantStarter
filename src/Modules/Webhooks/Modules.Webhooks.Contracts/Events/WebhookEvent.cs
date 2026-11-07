@@ -1,6 +1,10 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 using Core.Messaging;
 
-namespace Shared.Webhooks;
+namespace Modules.Webhooks.Contracts.Events;
 
 public sealed record WebhookEvent(
     Guid Id,
@@ -10,4 +14,5 @@ public sealed record WebhookEvent(
     string Source,
     string EventType,
     string FullName,
-    string Payload) : IIntegrationEvent;
+    string Payload,
+    string UserId) : IIntegrationEvent;

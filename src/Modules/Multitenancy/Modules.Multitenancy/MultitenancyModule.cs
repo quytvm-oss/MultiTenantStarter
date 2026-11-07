@@ -10,6 +10,11 @@ using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 using Finbuckle.MultiTenant.Extensions;
 using Finbuckle.MultiTenant.Stores;
 
+using Hangfire;
+using Hangfire.Common;
+
+using Messaging.Abstractions;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -32,7 +37,6 @@ using Modules.Multitenancy.Features.v1.ResetTenantTheme;
 using Modules.Multitenancy.Features.v1.TenantProvisioning.GetTenantProvisioningStatus;
 using Modules.Multitenancy.Features.v1.TenantProvisioning.RetryTenantProvisioning;
 using Modules.Multitenancy.Features.v1.UpdateTenantTheme;
-using Modules.Multitenancy.Messaging;
 using Modules.Multitenancy.Provisioning;
 using Modules.Multitenancy.Services;
 
@@ -62,10 +66,12 @@ public class MultitenancyModule : IModule
         services.AddScoped<ITenantProvisioningStateWriter, TenantProvisioningService>();
         services.AddTransient<IConnectionStringValidator, ConnectionStringValidator>();
         services.AddTransient<TenantProvisioningJob>();
+        services.AddTransient<TenantExpiryScanJob>();
 
         // Singleton — the buffer survives the request scope that calls Store(...)
         // so the background Hangfire-scheduled seed scope can still TryConsume(...).
         services.AddSingleton<ITenantInitialPasswordBuffer, TenantInitialPasswordBuffer>();
+        services.AddSingleton<ITenantConsumePipeline, TenantConsumePipeline>();
 
         services.AddCustomDbContext<TenantDbContext>();
 
@@ -221,11 +227,24 @@ public class MultitenancyModule : IModule
         GetTenantsEndpoint.Map(group);
         AdjustTenantValidityEndpoint.Map(group);
         TenantMigrationsEndpoint.Map(group);
-        ResetTenantThemeEndpoint.Map(group);
-        UpdateTenantThemeEndpoint.Map(group);
         GetTenantProvisioningStatusEndpoint.Map(group);
         RetryTenantProvisioningEndpoint.Map(group);
-        GetTenantThemeEndpoint.Map(group);
         RenewTenantEndpoint.Map(group);
+
+        // Theme endpoints
+        GetTenantThemeEndpoint.Map(group);
+        UpdateTenantThemeEndpoint.Map(group);
+        ResetTenantThemeEndpoint.Map(group);
+
+        var jobManager = endpoints.ServiceProvider.GetService<IRecurringJobManager>();
+        if (jobManager is not null)
+        {
+            // Scan tenants daily at 02:00 UTC; publishes nearing-expiry / entered-grace / expired notices.
+            jobManager.AddOrUpdate(
+                "tenant-expire-scan",
+                Job.FromExpression<TenantExpiryScanJob>(j => j.RunAsync(CancellationToken.None)),
+                "0 2 * * *",
+                new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+        }
     }
 }

@@ -2,18 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-using Finbuckle.MultiTenant.Abstractions;
-
 using MassTransit;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-
-using Persistence.Context;
-
-using Shared.Multitenancy;
-using Shared.Persistence;
 
 namespace Messaging.Persistence;
 
