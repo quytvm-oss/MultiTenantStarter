@@ -1,7 +1,8 @@
 using MassTransit;
-using MassTransit.Transports;
 
 using Mediator;
+
+using Messaging.Persistence;
 
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +13,7 @@ namespace Modules.Identity.Events;
 
 public sealed class UserRegisteredHandler(
     ISendEndpointProvider sendEndpointProvider,
+    MessagingDbContext messagingDbContext,
     ILogger<UserRegisteredHandler> logger)
     : INotificationHandler<UserRegisteredEvent>
 {
@@ -22,9 +24,7 @@ public sealed class UserRegisteredHandler(
         if (logger.IsEnabled(LogLevel.Information))
         {
             // PII minimization: log the pseudonymous UserId only, not the email address.
-            logger.LogInformation(
-                "User registered: {UserId}",
-                notification.UserId);
+            logger.LogInformation("User registered: {UserId}", notification.UserId);
         }
 
         var integrationEvent = new UserRegisteredIntegrationEvent(
@@ -37,7 +37,8 @@ public sealed class UserRegisteredHandler(
             Email: notification.Email,
             FirstName: notification.FirstName ?? string.Empty,
             LastName: notification.LastName ?? string.Empty);
-        var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:identity"));
+        var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:notification"));
         await sendEndpointProvider.Send(integrationEvent);
+        await messagingDbContext.SaveChangesAsync(cancellationToken);
     }
 }
