@@ -2,6 +2,8 @@ using MassTransit;
 
 using Mediator;
 
+using Messaging.Persistence;
+
 using Microsoft.Extensions.Options;
 
 using Modules.Billing.Contracts.v1.Plans;
@@ -22,6 +24,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
     private readonly IOptions<TenantBillingOptions> _options;
     private readonly IMediator mediator;
     private readonly IPublishEndpoint _bus;
+    private readonly MessagingDbContext _dbContext;
 
     private readonly TimeProvider _timeProvider;
 
@@ -31,7 +34,8 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         IMediator mediator,
         IPublishEndpoint bus,
         TimeProvider timeProvider,
-        IOptions<TenantBillingOptions> options)
+        IOptions<TenantBillingOptions> options,
+        MessagingDbContext dbContext)
     {
         _tenantService = tenantService;
         this.provisioningService = provisioningService;
@@ -40,6 +44,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
         this._bus = bus;
         this._timeProvider = timeProvider;
         _options = options;
+        _dbContext = dbContext;
     }
 
     public async ValueTask<CreateTenantCommandResponse> Handle(CreateTenantCommand command, CancellationToken cancellationToken)
@@ -84,6 +89,8 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, C
             PlanKey: term.Key,
             PeriodStartUtc: periodStart,
             PeriodEndUtc: periodEnd)).ConfigureAwait(false);
+
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return new CreateTenantCommandResponse(
             tenantId,

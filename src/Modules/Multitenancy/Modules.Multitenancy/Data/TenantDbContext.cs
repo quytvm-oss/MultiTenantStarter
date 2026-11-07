@@ -1,5 +1,7 @@
 using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 
+using MassTransit;
+
 using Microsoft.EntityFrameworkCore;
 
 using Modules.Multitenancy.Domain;

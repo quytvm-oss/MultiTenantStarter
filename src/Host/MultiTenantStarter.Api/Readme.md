@@ -3,3 +3,4 @@ dotnet ef migrations add Add-Identity --project ../MultiTenantStarter.Migrations
 dotnet ef migrations add Init-Auditing --project ../MultiTenantStarter.Migrations.PostgreSQL --startup-project . --context AuditDbContext -o Auditing
 dotnet ef migrations add Init-Webhooks --project ../MultiTenantStarter.Migrations.PostgreSQL --startup-project . --context WebhookDbContext -o Webhooks
 dotnet ef migrations add Add-TransactionOutBox --project ../MultiTenantStarter.Migrations.PostgreSQL --startup-project . --context IdentityDbContext -o Identity
+ dotnet ef migrations add Add-TransactionOutBox --project ../MultiTenantStarter.Migrations.PostgreSQL --startup-project . --context MessagingDbContext -o Messaging

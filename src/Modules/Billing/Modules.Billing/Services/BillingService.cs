@@ -10,6 +10,8 @@ using Finbuckle.MultiTenant.Abstractions;
 
 using MassTransit;
 
+using Messaging.Persistence;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -34,6 +36,8 @@ public sealed class BillingService : IBillingService
 
     private readonly IPublishEndpoint _bus;
 
+    private readonly MessagingDbContext _messagingDb;
+
     private readonly TimeProvider _timeProvider;
 
     private readonly ILogger<BillingService> _logger;
@@ -45,7 +49,8 @@ public sealed class BillingService : IBillingService
         IPublishEndpoint bus,
         TimeProvider timeProvider,
         ILogger<BillingService> logger,
-        IMultiTenantContextAccessor<AppTenantInfo> tenantAccessor)
+        IMultiTenantContextAccessor<AppTenantInfo> tenantAccessor,
+        MessagingDbContext messagingDb)
     {
         _dbContext = dbContext;
         _usageReporter = usageReporter;
@@ -54,6 +59,7 @@ public sealed class BillingService : IBillingService
         _timeProvider = timeProvider;
         _logger = logger;
         _tenantAccessor = tenantAccessor;
+        _messagingDb = messagingDb;
     }
 
     public async Task<Invoice?> CreateSubscriptionInvoiceAsync(string tenantId, Guid planId, DateTime periodStartUtc, DateTime periodEndUtc, CancellationToken cancellationToken = default)
@@ -120,6 +126,7 @@ public sealed class BillingService : IBillingService
             DueAtUtc: invoice.DueAtUtc,
             PeriodYear: invoice.PeriodYear,
             PeriodMonth: invoice.PeriodMonth));
+        await _messagingDb.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return invoice;
     }
@@ -170,6 +177,7 @@ public sealed class BillingService : IBillingService
             PeriodYear: invoice.PeriodYear,
             PeriodMonth: invoice.PeriodMonth
             )).ConfigureAwait(false);
+        await _messagingDb.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return invoice;
     }

@@ -3,10 +3,13 @@
 using MassTransit;
 
 using Messaging.Abstractions;
+using Messaging.Persistence;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+
+using Persistence;
 
 namespace Messaging.Configurations;
 
@@ -21,6 +24,9 @@ public static class MassTransitExtensions
         services.AddOptions<RabbitMqOptions>().Bind(configuration.GetSection(RabbitMqOptions.SectionName))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
+
+        services.AddCustomDbContext<MessagingDbContext>();
+        services.AddScoped<IDbInitializer, MessagingDbInitializer>();
 
         // Scan modules
         var modules = assemblies
@@ -40,10 +46,14 @@ public static class MassTransitExtensions
             foreach (var module in modules)
             {
                 module.RegisterConsumers(x);
-                module.RegisterOutbox(x);
             }
+            x.AddEntityFrameworkOutbox<MessagingDbContext>(o =>
+            {
+                o.UsePostgres(false);
+                o.UseBusOutbox();
+                o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
+            });
             x.AddDelayedMessageScheduler();
-
 
             x.UsingRabbitMq((context, cfg) =>
             {

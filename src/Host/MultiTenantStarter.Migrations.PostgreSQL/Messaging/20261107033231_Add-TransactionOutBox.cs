@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MultiTenantStarter.Migrations.PostgreSQL.Identity
+namespace MultiTenantStarter.Migrations.PostgreSQL.Messaging
 {
     /// <inheritdoc />
     public partial class AddTransactionOutBox : Migration
@@ -12,9 +12,12 @@ namespace MultiTenantStarter.Migrations.PostgreSQL.Identity
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "messaging");
+
             migrationBuilder.CreateTable(
                 name: "InboxState",
-                schema: "identity",
+                schema: "messaging",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -38,7 +41,7 @@ namespace MultiTenantStarter.Migrations.PostgreSQL.Identity
 
             migrationBuilder.CreateTable(
                 name: "OutboxState",
-                schema: "identity",
+                schema: "messaging",
                 columns: table => new
                 {
                     OutboxId = table.Column<Guid>(type: "uuid", nullable: false),
@@ -55,7 +58,7 @@ namespace MultiTenantStarter.Migrations.PostgreSQL.Identity
 
             migrationBuilder.CreateTable(
                 name: "OutboxMessage",
-                schema: "identity",
+                schema: "messaging",
                 columns: table => new
                 {
                     SequenceNumber = table.Column<long>(type: "bigint", nullable: false)
@@ -87,52 +90,52 @@ namespace MultiTenantStarter.Migrations.PostgreSQL.Identity
                     table.ForeignKey(
                         name: "FK_OutboxMessage_InboxState_InboxMessageId_InboxConsumerId",
                         columns: x => new { x.InboxMessageId, x.InboxConsumerId },
-                        principalSchema: "identity",
+                        principalSchema: "messaging",
                         principalTable: "InboxState",
                         principalColumns: new[] { "MessageId", "ConsumerId" });
                     table.ForeignKey(
                         name: "FK_OutboxMessage_OutboxState_OutboxId",
                         column: x => x.OutboxId,
-                        principalSchema: "identity",
+                        principalSchema: "messaging",
                         principalTable: "OutboxState",
                         principalColumn: "OutboxId");
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_InboxState_Delivered",
-                schema: "identity",
+                schema: "messaging",
                 table: "InboxState",
                 column: "Delivered");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessage_EnqueueTime",
-                schema: "identity",
+                schema: "messaging",
                 table: "OutboxMessage",
                 column: "EnqueueTime");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessage_ExpirationTime",
-                schema: "identity",
+                schema: "messaging",
                 table: "OutboxMessage",
                 column: "ExpirationTime");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessage_InboxMessageId_InboxConsumerId_SequenceNumber",
-                schema: "identity",
+                schema: "messaging",
                 table: "OutboxMessage",
                 columns: new[] { "InboxMessageId", "InboxConsumerId", "SequenceNumber" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessage_OutboxId_SequenceNumber",
-                schema: "identity",
+                schema: "messaging",
                 table: "OutboxMessage",
                 columns: new[] { "OutboxId", "SequenceNumber" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxState_Created",
-                schema: "identity",
+                schema: "messaging",
                 table: "OutboxState",
                 column: "Created");
         }
@@ -142,15 +145,15 @@ namespace MultiTenantStarter.Migrations.PostgreSQL.Identity
         {
             migrationBuilder.DropTable(
                 name: "OutboxMessage",
-                schema: "identity");
+                schema: "messaging");
 
             migrationBuilder.DropTable(
                 name: "InboxState",
-                schema: "identity");
+                schema: "messaging");
 
             migrationBuilder.DropTable(
                 name: "OutboxState",
-                schema: "identity");
+                schema: "messaging");
         }
     }
 }

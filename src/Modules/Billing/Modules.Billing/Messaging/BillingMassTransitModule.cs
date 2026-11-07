@@ -5,6 +5,7 @@ using System.Text;
 using MassTransit;
 
 using Messaging.Abstractions;
+using Messaging.Persistence;
 
 using Modules.Billing.Events;
 using Modules.Identity.Events;
@@ -23,7 +24,7 @@ public class BillingMassTransitModule : IMassTransitModule
 
                 e.UseMessageRetry(r =>
                     r.Interval(3, TimeSpan.FromSeconds(2)));
-
+                e.UseEntityFrameworkOutbox<MessagingDbContext>(context);
                 e.ConfigureConsumer<TenantRenewedIntegrationEventHandler>(context);
                 e.ConfigureConsumer<TenantSubscribedIntegrationEventHandler>(context);
             });

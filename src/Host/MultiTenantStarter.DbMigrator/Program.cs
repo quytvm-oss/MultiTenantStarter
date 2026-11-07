@@ -5,6 +5,8 @@ using Finbuckle.MultiTenant.Abstractions;
 
 using Jobs.Services;
 
+using Messaging.Persistence;
+
 using Microsoft.EntityFrameworkCore;
 
 using Modules.Auditing;
@@ -23,6 +25,8 @@ using MultiTenantStarter.DbMigrator;
 using MultiTenantStarter.DbMigrator.DemoSeed;
 
 using Npgsql;
+
+using Persistence;
 
 using Shared.Multitenancy;
 
@@ -118,6 +122,9 @@ builder.AddPlatform(o =>
 
 // chỉ add module hiện có
 builder.AddModules(false, moduleAssemblies);
+
+builder.Services.AddCustomDbContext<MessagingDbContext>();
+builder.Services.AddScoped<IDbInitializer, MessagingDbInitializer>();
 
 // TenantProvisioningService needs IJobService, but Hangfire's is gated behind EnableJobs (off here).
 // Provide a throwing no-op so the DI graph resolves; the migration code paths don't enqueue jobs.

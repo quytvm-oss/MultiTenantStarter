@@ -8,8 +8,11 @@ using Core.Context;
 using Finbuckle.MultiTenant.Abstractions;
 
 using MassTransit;
+using MassTransit.DependencyInjection;
 
 using Mediator;
+
+using Messaging.Persistence;
 
 using Microsoft.Extensions.Logging;
 
@@ -30,10 +33,10 @@ public class GenerateTokenCommandHandler(
     ITokenService tokenService,
     ISecurityAudit securityAudit,
     IRequestContext requestContext,
-    IdentityDbContext dbContext,
     IMultiTenantContextAccessor<AppTenantInfo> tenantContextAccessor,
     ISessionService sessionService,
     IPublishEndpoint publishEndpoint,
+    MessagingDbContext messagingDb,
     ILogger<GenerateTokenCommandHandler> logger)
     : ICommandHandler<GenerateTokenCommand, TokenResponse>
 {
@@ -131,14 +134,12 @@ public class GenerateTokenCommandHandler(
             FullName: typeof(TokenGeneratedIntegrationEvent).FullName!,
             Payload: JsonSerializer.Serialize(integrationEvent));
 
-        await publishEndpoint.Publish(webhookEvent, context =>
-        {
-            context.Delay = TimeSpan.FromMinutes(1);
-        }, cancellationToken);
-
-        //await publishEndpoint.Publish(webhookEvent, cancellationToken);
-        //await bus.Defer( TimeSpan.FromMinutes(1),webhookEvent);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        //await publishEndpoint.Publish(webhookEvent, context =>
+        //{
+        //    context.Delay = TimeSpan.FromMinutes(1);
+        //}, cancellationToken);
+        await publishEndpoint.Publish(webhookEvent, cancellationToken);
+        await messagingDb.SaveChangesAsync(cancellationToken);
         return token;
     }
 

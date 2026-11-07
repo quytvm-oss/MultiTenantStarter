@@ -5,6 +5,7 @@ using System.Text;
 using MassTransit;
 
 using Messaging.Abstractions;
+using Messaging.Persistence;
 
 using Modules.Webhooks.Services;
 
@@ -22,7 +23,7 @@ public class WebhooksMassTransitModule : IMassTransitModule
 
                 e.UseMessageRetry(r =>
                     r.Interval(3, TimeSpan.FromSeconds(2)));
-
+                e.UseEntityFrameworkOutbox<MessagingDbContext>(context);
                 e.ConfigureConsumer<WebhookFanoutHandler>(context);
             });
     }
