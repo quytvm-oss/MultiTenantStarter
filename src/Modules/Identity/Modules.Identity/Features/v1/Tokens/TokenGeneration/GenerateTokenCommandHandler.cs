@@ -133,7 +133,10 @@ public class GenerateTokenCommandHandler(
             Payload: JsonSerializer.Serialize(integrationEvent),
             UserId: subject);
 
-        await publishEndpoint.Publish(webhookEvent, cancellationToken);
+        await publishEndpoint.Publish(webhookEvent, context =>
+        {
+            context.Delay = TimeSpan.FromMinutes(2);
+        });
         await messagingDb.SaveChangesAsync(cancellationToken);
         return token;
     }

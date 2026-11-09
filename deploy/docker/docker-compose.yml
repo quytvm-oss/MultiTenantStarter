@@ -34,18 +34,30 @@ services:
       start_period: 30s
 
   rabbitmq:
-    image: masstransit/rabbitmq:latest
+    image: rabbitmq:3.12.2-management-alpine
     ports:
       - "15672:15672"
       - "5672:5672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        apk add --no-cache curl
+
+        curl -fSL \
+          "https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases/download/v3.12.0/rabbitmq_delayed_message_exchange-3.12.0.ez" \
+          -o /plugins/rabbitmq_delayed_message_exchange.ez
+
+        rabbitmq-plugins enable --offline rabbitmq_delayed_message_exchange
+
+        exec docker-entrypoint.sh rabbitmq-server
     healthcheck:
       test: ["CMD", "rabbitmqctl", "ping"]
-      interval: 1m30s
-      timeout: 30s
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
   minio:
     image: minio/minio:latest
