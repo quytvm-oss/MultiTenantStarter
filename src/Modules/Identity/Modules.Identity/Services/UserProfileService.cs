@@ -96,7 +96,7 @@ internal sealed class UserProfileService(
         if (image?.Data.Length > 0)
         {
             newImagePath = await storageService.UploadAsync<User>(image, FileType.Image, ct);
-            user.ImageUrl = new Uri(newImagePath, UriKind.Relative);
+            user.ImageUrl = new Uri(newImagePath, UriKind.RelativeOrAbsolute);
         }
         else if (deleteCurrentImage)
         {
