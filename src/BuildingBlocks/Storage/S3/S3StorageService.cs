@@ -305,31 +305,36 @@ internal sealed partial class S3StorageService : IStorageService
         }
     }
 
-    public string BuildPublicUrl(string key)
+    public string BuildPublicUrl(string storageKey)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
+        var key = NormalizeKey(storageKey);
         var safeKey = key.TrimStart('/');
-        
+
         if (!string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
+        {
             return $"{_options.PublicBaseUrl.TrimEnd('/')}/{safeKey}";
-        
+        }
+
+        // S3-compatible endpoint with path-style addressing (MinIO and friends).
+        if (!string.IsNullOrWhiteSpace(_options.ServiceUrl))
+        {
+            return $"{_options.ServiceUrl.TrimEnd('/')}/{_options.Bucket}/{safeKey}";
+        }
+
         if (!_options.PublicRead)
         {
-            var presignRequest = new GetPreSignedUrlRequest
-            {
-                BucketName = _options.Bucket,
-                Key        = safeKey,
-                Verb       = HttpVerb.GET,
-                Expires    = DateTime.UtcNow.Add(_options.PresignedUrlExpiry)
-            };
-            return _s3.GetPreSignedURL(presignRequest);
+            return key;
         }
-        
-        return string.IsNullOrWhiteSpace(_options.Region) ||
-               string.Equals(_options.Region, "us-east-1", StringComparison.OrdinalIgnoreCase)
-            ? $"https://{_options.Bucket}.s3.amazonaws.com/{safeKey}"
-            : $"https://{_options.Bucket}.s3.{_options.Region}.amazonaws.com/{safeKey}";
+
+        if (string.IsNullOrWhiteSpace(_options.Region) || string.Equals(_options.Region, "us-east-1", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"https://{_options.Bucket}.s3.amazonaws.com/{safeKey}";
+        }
+
+        return $"https://{_options.Bucket}.s3.{_options.Region}.amazonaws.com/{safeKey}";
     }
-    
+
     // MinIO and other S3-compatibles often serve plain HTTP, but the SDK defaults presigned URLs to
     // HTTPS regardless of ServiceURL scheme (un-PUTable there). Infer protocol from ServiceURL.
     private Protocol ResolvePresignProtocol()
