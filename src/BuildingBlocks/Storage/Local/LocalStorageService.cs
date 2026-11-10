@@ -13,38 +13,32 @@ using Storage.Dtos;
 
 namespace Storage.Local;
 
-internal class LocalStorageService : IStorageService
+public sealed partial class LocalStorageService : IStorageService
 {
-    private const string UploadBasePath = "uploads";
+    // UploadAsync hands back a durable public URL, so objects live under the public root (same as S3StorageService).
+    // Keys written before the root existed stay "uploads/…".
+    private const string UploadBasePath = StorageVisibilityRoot.Public + "uploads";
+
     private readonly string _rootPath;
+    private readonly string _rootPathWithSeparator;
     private readonly FileExtensionContentTypeProvider _contentTypeProvider = new();
-    
+
+    // Linux filesystems are case-sensitive, so the containment check must be too.
+    private static readonly StringComparison PathComparison =
+        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+    // Source-generated, compiled once — the inline Regex.Replace calls re-parsed the pattern on every upload.
+    [GeneratedRegex("[^a-z0-9]")]
+    private static partial Regex FolderSanitizer();
+
+    [GeneratedRegex(@"[^a-zA-Z0-9_\.-]")]
+    private static partial Regex FileNameSanitizer();
+
     // Dev-only presigning fallback when Storage:Provider != s3 (prod uses S3StorageService). Token
     // store is process-static so the dev middleware can consume the token without re-resolving DI.
     private static LocalPresignTokenStore? _staticTokenStore;
     public static LocalPresignTokenStore SharedTokenStore => LazyInitializer.EnsureInitialized(ref _staticTokenStore);
-    
 
-    // public LocalStorageService(IWebHostEnvironment environment, IOptions<LocalStorageOptions> options)
-    // {
-    //     ArgumentNullException.ThrowIfNull(environment);
-    //     ArgumentNullException.ThrowIfNull(options);
-    //
-    //     var configuredRoot = options.Value.StorageRoot?.Trim();
-    //
-    //     if (string.IsNullOrWhiteSpace(configuredRoot))
-    //     {
-    //         configuredRoot = "storage";
-    //     }
-    //
-    //     _rootPath = Path.GetFullPath(
-    //         Path.IsPathRooted(configuredRoot)
-    //             ? configuredRoot
-    //             : Path.Combine(environment.ContentRootPath, configuredRoot));
-    //
-    //     Directory.CreateDirectory(_rootPath);
-    // }
-    
     public LocalStorageService(IWebHostEnvironment environment, IOptions<LocalStorageOptions> options)
     {
         ArgumentNullException.ThrowIfNull(environment);
@@ -57,50 +51,52 @@ internal class LocalStorageService : IStorageService
             configuredRoot = "Storage";
         }
 
-        var hostRoot = Directory.GetParent(environment.ContentRootPath)!.FullName;
+        // Relative roots are resolved against the parent of the content root (the host folder),
+        // so storage lives next to the app rather than inside it.
+        var hostRoot = Directory.GetParent(environment.ContentRootPath)?.FullName ?? environment.ContentRootPath;
 
-        _rootPath = Path.GetFullPath(
+        _rootPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(
             Path.IsPathRooted(configuredRoot)
                 ? configuredRoot
-                : Path.Combine(hostRoot, configuredRoot));
+                : Path.Combine(hostRoot, configuredRoot)));
+
+        _rootPathWithSeparator = _rootPath + Path.DirectorySeparatorChar;
 
         Directory.CreateDirectory(_rootPath);
     }
-    
+
     public string RootPath => _rootPath;
 
-    public async Task<string> UploadAsync<T>(FileUploadRequest request, FileType fileType, 
-        CancellationToken cancellationToken = default) 
+    public async Task<string> UploadAsync<T>(FileUploadRequest request, FileType fileType, CancellationToken cancellationToken = default)
         where T : class
     {
         ArgumentNullException.ThrowIfNull(request);
-        using var stream = new MemoryStream(request.Data, writable: false);
+
+        using var stream = new MemoryStream([.. request.Data], writable: false);
         var streamRequest = new StreamUploadRequest
         {
-            FileName    = request.FileName,
+            FileName = request.FileName,
             ContentType = request.ContentType,
-            Stream      = stream
+            Stream = stream
         };
-        return await  UploadAsync<T>(streamRequest, fileType, cancellationToken);
+
+        return await UploadCoreAsync<T>(streamRequest, fileType, cancellationToken).ConfigureAwait(false);
     }
 
     public Task<FileDownloadResponse?> DownloadAsync(string path, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(path))
+        if (!TryResolvePath(path, out var fullPath) || !File.Exists(fullPath))
+        {
             return Task.FromResult<FileDownloadResponse?>(null);
-
-        string fullPath;
-        try { fullPath = ResolveAndValidatePath(path); }
-        catch (UnauthorizedAccessException) { return Task.FromResult<FileDownloadResponse?>(null); }
-
-        if (!File.Exists(fullPath))
-            return Task.FromResult<FileDownloadResponse?>(null);
+        }
 
         var fileInfo = new FileInfo(fullPath);
         var fileName = Path.GetFileName(fullPath);
 
         if (!_contentTypeProvider.TryGetContentType(fileName, out var contentType))
+        {
             contentType = "application/octet-stream";
+        }
 
         FileStream? stream = null;
         try
@@ -123,55 +119,55 @@ internal class LocalStorageService : IStorageService
 
     public Task<bool> ExistsAsync(string path, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(path))
-            return Task.FromResult(false);
-
-        try
-        {
-            var fullPath = ResolveAndValidatePath(path);
-            return Task.FromResult(File.Exists(fullPath));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Task.FromResult(false);
-        }
-    }
-
-    public Task RemoveAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-            return Task.CompletedTask;
-
-        try
-        {
-            var fullPath = ResolveAndValidatePath(path);
-            if (File.Exists(fullPath))
-                File.Delete(fullPath);
-        }
-        catch (UnauthorizedAccessException) { }
-
-        return Task.CompletedTask;
+        return Task.FromResult(TryResolvePath(path, out var fullPath) && File.Exists(fullPath));
     }
 
     public Task<long> GetSizeAsync(string path, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(path))
+        if (!TryResolvePath(path, out var fullPath) || !File.Exists(fullPath))
         {
-            return Task.FromResult<long>(0);
+            return Task.FromResult(0L);
         }
-        
-        var normalizedPath = path.Replace("/", Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal);
-        var fullPath = Path.Combine(_rootPath, normalizedPath);
 
-        if (!File.Exists(fullPath))
-        {
-            return Task.FromResult<long>(0);
-        }
-        
         return Task.FromResult(new FileInfo(fullPath).Length);
     }
 
-    public Task<PresignedUploadUrl> GenerateUploadUrlAsync(string storageKey, string contentType, long maxBytes, TimeSpan ttl,
+    public Task RemoveAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (TryResolvePath(path, out var fullPath) && File.Exists(fullPath))
+        {
+            File.Delete(fullPath);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task CopyAsync(string sourceKey, string destinationKey, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(destinationKey);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Both ends are validated: a key escaping the storage root throws UnauthorizedAccessException.
+        var sourcePath = ResolveAndValidatePath(sourceKey);
+        var destinationPath = ResolveAndValidatePath(destinationKey);
+
+        // Callers delete the source after a copy, so a failed copy must not look like a successful one.
+        if (!File.Exists(sourcePath))
+        {
+            throw new FileNotFoundException($"Cannot copy '{sourceKey}': the object does not exist.", sourceKey);
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+        File.Copy(sourcePath, destinationPath, overwrite: true);
+        return Task.CompletedTask;
+    }
+
+    public Task<PresignedUploadUrl> GenerateUploadUrlAsync(
+        string storageKey,
+        string contentType,
+        long maxBytes,
+        TimeSpan ttl,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
@@ -183,25 +179,21 @@ internal class LocalStorageService : IStorageService
         return Task.FromResult(new PresignedUploadUrl(url, headers, DateTimeOffset.UtcNow.Add(ttl)));
     }
 
-    public Task<Uri> GenerateDownloadUrlAsync(string storageKey, TimeSpan ttl, string? responseContentDisposition,
+    public Task<Uri> GenerateDownloadUrlAsync(
+        string storageKey,
+        TimeSpan ttl,
+        string? responseContentDisposition = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
-        // Local mode serves files from /wwwroot — no signing required.
+        // Local mode needs no signing: files are served as static files from RootPath.
         var normalized = storageKey.TrimStart('/').Replace("\\", "/", StringComparison.Ordinal);
         return Task.FromResult(new Uri($"/{normalized}", UriKind.Relative));
     }
 
     public Task<StoredObjectMetadata?> HeadObjectAsync(string storageKey, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(storageKey))
-        {
-            return Task.FromResult<StoredObjectMetadata?>(null);
-        }
-        
-        var normalizedPath = storageKey.Replace("/", Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal);
-        var fullPath = Path.Combine(_rootPath, normalizedPath);
-        if (!File.Exists(fullPath))
+        if (!TryResolvePath(storageKey, out var fullPath) || !File.Exists(fullPath))
         {
             return Task.FromResult<StoredObjectMetadata?>(null);
         }
@@ -219,7 +211,9 @@ internal class LocalStorageService : IStorageService
             ETag: null));
     }
 
+#pragma warning disable CA1055 // returns a server-relative path, not a well-formed Uri — see IStorageService.BuildPublicUrl
     public string BuildPublicUrl(string storageKey)
+#pragma warning restore CA1055
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(storageKey);
         var normalized = storageKey.TrimStart('/').Replace("\\", "/", StringComparison.Ordinal);
@@ -227,12 +221,12 @@ internal class LocalStorageService : IStorageService
         // avatars). The leading slash lets clients distinguish absolute from server-relative URLs.
         return $"/{normalized}";
     }
-    
-    private async Task<string> UploadAsync<T>(StreamUploadRequest request, FileType fileType,
-        CancellationToken cancellationToken = default)
+
+    private async Task<string> UploadCoreAsync<T>(StreamUploadRequest request, FileType fileType, CancellationToken cancellationToken)
         where T : class
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.Stream, nameof(request.Stream));
 
         var rules = FileTypeMetadata.GetRules(fileType);
         var extension = Path.GetExtension(request.FileName);
@@ -244,13 +238,17 @@ internal class LocalStorageService : IStorageService
                 $"File type '{extension}' is not allowed. Allowed: {string.Join(", ", rules.AllowedExtensions)}");
         }
 
-        if (request.Stream.CanSeek && request.Stream.Length > rules.MaxSizeInMb * 1024L * 1024L)
+        var maxBytes = rules.MaxSizeInMb * 1024L * 1024L;
+
+        // Seekable stream: reject before touching the disk.
+        if (request.Stream.CanSeek && request.Stream.Length > maxBytes)
         {
-            throw new InvalidOperationException($"File exceeds the maximum allowed size of {rules.MaxSizeInMb} MB.");
+            throw new InvalidOperationException($"File exceeds max size of {rules.MaxSizeInMb} MB.");
         }
 
-
-        var folder = Regex.Replace(typeof(T).Name.ToLowerInvariant(), @"[^a-z0-9]", "_");
+#pragma warning disable CA1308 // folder names are intentionally lower-case for URLs/paths
+        var folder = FolderSanitizer().Replace(typeof(T).Name.ToLowerInvariant(), "_");
+#pragma warning restore CA1308
         var safeFileName = $"{Guid.NewGuid():N}_{SanitizeFileName(request.FileName)}";
         var relativePath = Path.Combine(UploadBasePath, folder, safeFileName);
         var fullPath = ResolveAndValidatePath(relativePath);
@@ -260,19 +258,20 @@ internal class LocalStorageService : IStorageService
         var fileStream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous);
         try
         {
-            var maxBytes = rules.MaxSizeInMb * 1024L * 1024L;
             var totalRead = 0L;
             var buffer = ArrayPool<byte>.Shared.Rent(81920);
             try
             {
                 int read;
-                while ((read = await request.Stream.ReadAsync(buffer, cancellationToken)) > 0)
+                while ((read = await request.Stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
                 {
                     totalRead += read;
                     if (totalRead > maxBytes)
+                    {
                         throw new InvalidOperationException($"File exceeds max size of {rules.MaxSizeInMb} MB.");
+                    }
 
-                    await fileStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                    await fileStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
@@ -284,28 +283,56 @@ internal class LocalStorageService : IStorageService
         }
         finally
         {
-            await fileStream.DisposeAsync();
-            if (!success) File.Delete(fullPath);
+            await fileStream.DisposeAsync().ConfigureAwait(false);
+            if (!success)
+            {
+                File.Delete(fullPath);
+            }
         }
 
         return relativePath.Replace("\\", "/", StringComparison.Ordinal);
     }
 
+    // Non-throwing variant for read/delete paths: an invalid or escaping key behaves like "not found".
+    private bool TryResolvePath(string? path, out string fullPath)
+    {
+        fullPath = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        try
+        {
+            fullPath = ResolveAndValidatePath(path);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     private string ResolveAndValidatePath(string relativePath)
     {
-        var normalized = relativePath.Replace("/", Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal);
+        // TrimStart('/') so a leading slash (URL-style key) is treated as relative, not as a rooted path.
+        var normalized = relativePath
+            .TrimStart('/', '\\')
+            .Replace("/", Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal);
+
         var fullPath = Path.GetFullPath(Path.Combine(_rootPath, normalized));
 
-        var rootWithSeparator = _rootPath.EndsWith(Path.DirectorySeparatorChar)
-            ? _rootPath
-            : _rootPath + Path.DirectorySeparatorChar;
-
-        if (!fullPath.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase))
+        if (!fullPath.StartsWith(_rootPathWithSeparator, PathComparison))
+        {
             throw new UnauthorizedAccessException("Access outside storage root is not allowed.");
+        }
 
         return fullPath;
     }
 
     private static string SanitizeFileName(string fileName)
-        => Regex.Replace(fileName, @"[^a-zA-Z0-9_\.-]", "_");
+    {
+        return FileNameSanitizer().Replace(fileName, "_");
+    }
 }
