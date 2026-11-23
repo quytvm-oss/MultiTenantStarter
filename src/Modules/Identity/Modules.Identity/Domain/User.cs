@@ -18,9 +18,9 @@ public class User : IdentityUser, IHasDomainEvents
 
     public bool IsActive { get; set; }
 
-    public string? RefreshToken { get; set; }
+   // public string? RefreshToken { get; set; }
 
-    public DateTime RefreshTokenExpireTime { get; set; }
+    //public DateTime RefreshTokenExpireTime { get; set; }
 
     public string? ObjectId { get; set; }
 

@@ -10,7 +10,8 @@ public interface IIdentityService
     Task<(string Subject, IEnumerable<Claim> Claims)?>
         ValidateRefreshTokenAsync(string refreshToken, CancellationToken ct = default);
     
-    Task StoreRefreshTokenAsync(string subject, string refreshToken, DateTime expiresAtUtc, CancellationToken ct = default);
+    Task RotateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime newExpiresAt,
+        CancellationToken cancellationToken = default);
     
     Task<(string Subject, IEnumerable<Claim> Claims)?>
         BuildClaimsForUserAsync(string userId, string tenantId, CancellationToken ct = default);

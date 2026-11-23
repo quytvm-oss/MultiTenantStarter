@@ -9,6 +9,8 @@ public class UserSession : IHasDomainEvents
     public string UserId { get; set; } = default!;
 
     public string RefreshTokenHash { get; private set; } = default!;
+    
+    public string? PreviousRefreshTokenHash { get; private set; }
 
     public string IpAddress { get; private set; } = default!;
 
@@ -25,6 +27,8 @@ public class UserSession : IHasDomainEvents
     public string? OsVersion { get;private set; }
 
     public DateTime CreatedAt { get; private set; }
+    
+    public DateTime? RotatedAt { get; private set; }
 
     public DateTime LastActivityAt { get; private set; }
 

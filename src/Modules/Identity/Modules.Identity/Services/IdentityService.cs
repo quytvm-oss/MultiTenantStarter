@@ -11,12 +11,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
+using Modules.Identity.Helpers;
 
 using Shared.Identity;
 using Shared.Multitenancy;
+
+using UAParser;
 
 namespace Modules.Identity.Services;
 
@@ -53,20 +57,48 @@ public class IdentityService(
         return (user.Id, claims);
     }
 
+    public async Task RotateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime newExpiresAt,
+        CancellationToken ct = default)
+    {
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var oldRefreshTokenHash = TokenHasher.Sha256(oldRefreshToken);
+        var newRefreshTokenHash = TokenHasher.Sha256(newRefreshToken);
+        
+        var resultUpdated = await dbContext.UserSessions
+            .IgnoreQueryFilters()
+            .Where(u => u.RefreshTokenHash == oldRefreshTokenHash && !u.IsRevoked && u.ExpiresAt >= now)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.PreviousRefreshTokenHash, oldRefreshTokenHash)
+                .SetProperty(u => u.RefreshTokenHash, newRefreshTokenHash)
+                .SetProperty(u => u.RotatedAt, now)
+                .SetProperty(u => u.LastActivityAt, now)
+                .SetProperty(u => u.ExpiresAt, newExpiresAt), ct);
+        
+        if (resultUpdated == 0)
+        {
+            throw new UnauthorizedException("user not found");
+        }
+    }
+
     public async Task<(string Subject, IEnumerable<Claim> Claims)?> ValidateRefreshTokenAsync(string refreshToken, CancellationToken ct = default)
     {
         var tenant = GetValidatedTenant();
-        var user = await FindUserByRefreshTokenAsync(refreshToken, tenant.Id, ct);
+        var userSession = await FindUserByRefreshTokenAsync(refreshToken, tenant.Id, ct);
 
-        ValidateRefreshTokenExpiry(user);
-        ValidateUserStatus(user);
+        if (userSession.User is null)
+        {
+            throw new UnauthorizedException($"User not found with refresh token");
+        }
+        
+        ValidateRefreshTokenExpiry(userSession);
+        ValidateUserStatus(userSession.User);
         ValidateTenantStatus(tenant);
 
-        var claims = await BuildUserClaimsAsync(user, tenant.Id, ct);
-        return (user.Id, claims);
+        var claims = await BuildUserClaimsAsync(userSession.User, tenant.Id, ct);
+        claims = claims.WithSession(userSession.Id);
+        return (userSession.UserId, claims);
     }
 
-    public async Task StoreRefreshTokenAsync(string subject, string refreshToken, DateTime expiresAtUtc, CancellationToken ct = default)
+    /*public async Task StoreRefreshTokenAsync(string subject, string refreshToken, DateTime expiresAtUtc, CancellationToken ct = default)
     {
         var hashRefreshToken = HashToken(refreshToken);
 
@@ -87,7 +119,7 @@ public class IdentityService(
                 "Stored refresh token for user {UserId}. Token hash: {TokenHash}, Expires: {ExpiresAt}",
                 subject, hashRefreshToken[..Math.Min(8, hashRefreshToken.Length)], expiresAtUtc);
         }
-    }
+    }*/
 
     public async Task<(string Subject, IEnumerable<Claim> Claims)?> BuildClaimsForUserAsync(string userId, string tenantId, CancellationToken ct = default)
     {
@@ -96,6 +128,7 @@ public class IdentityService(
         
         var user = await userManager.Users
             .IgnoreQueryFilters()
+            // ReSharper disable once EntityFramework.ClientSideDbFunctionCall
             .Where(u => u.Id == userId && EF.Property<string>(u, "TenantId") == tenantId)
             .FirstOrDefaultAsync(ct);
         
@@ -268,7 +301,7 @@ public class IdentityService(
         claims.AddRange(allRoles.Select(r => new Claim(ClaimTypes.Role, r)));
     }
     
-    private async Task<User> FindUserByRefreshTokenAsync(string refreshToken, string tenantId, CancellationToken ct)
+    private async Task<UserSession> FindUserByRefreshTokenAsync(string refreshToken, string tenantId, CancellationToken ct)
     {
         var hashedToken = HashToken(refreshToken);
 
@@ -279,16 +312,17 @@ public class IdentityService(
                 tenantId, hashedToken[..Math.Min(8, hashedToken.Length)]);
         }
 
-        var user = await userManager.Users
-            .FirstOrDefaultAsync(u => u.RefreshToken == hashedToken, ct);
+        var userSession = await dbContext.UserSessions
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(u => u.RefreshTokenHash == hashedToken && !u.IsRevoked, ct);
 
-        if (user is null)
+        if (userSession is null || userSession?.User is null)
         {
             logger.LogWarning("No user found with matching refresh token hash for tenant {TenantId}", tenantId);
             throw new UnauthorizedException("refresh token is invalid or expired");
         }
 
-        return user;
+        return userSession;
     }
     
     private static string HashToken(string token)
@@ -298,14 +332,14 @@ public class IdentityService(
         return Convert.ToBase64String(hash);
     }
     
-    private void ValidateRefreshTokenExpiry(User user)
+    private void ValidateRefreshTokenExpiry(UserSession userSession)
     {
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        if (user.RefreshTokenExpireTime <= now)
+        if (userSession.ExpiresAt <= now)
         {
             logger.LogWarning(
                 "Refresh token expired for user {UserId}. Expired at: {ExpiryTime}, Current time: {CurrentTime}",
-                user.Id, user.RefreshTokenExpireTime, now);
+                userSession.UserId, userSession.ExpiresAt, now);
             throw new UnauthorizedException("refresh token is invalid or expired");
         }
     }

@@ -20,6 +20,7 @@ using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Events;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
+using Modules.Identity.Helpers;
 using Modules.Webhooks.Contracts.Events;
 
 using Shared.Multitenancy;
@@ -64,41 +65,33 @@ public class GenerateTokenCommandHandler(
 
         var (subject, claims) = identityResult.Value;
 
+        IEnumerable<Claim> enumerable = claims.ToList();
         await securityAudit.LoginSucceededAsync(
             userId: subject,
-            userName: claims!.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? command.Email,
+            userName: enumerable!.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? command.Email,
             clientId: clientId!,
             ip: ip,
             userAgent: ua,
             ct: cancellationToken);
-
-        // Issue token
-        var token = await tokenService.IssueAsync(subject, claims, null, cancellationToken);
-
-        await identityService.StoreRefreshTokenAsync(subject, token.RefreshToken, token.RefreshTokenExpiresAt, cancellationToken);
+        
+        //gen refresh token 
+        var refresh = await tokenService.IssueRefreshOnlyAsync(cancellationToken);
 
         // Create user session for session management (non-blocking, fail gracefully)
-        try
-        {
-            var refreshTokenHash = Sha256Short(token.RefreshToken);
-            await sessionService.CreateSessionAsync(
-                subject,
-                refreshTokenHash,
-                ip,
-                ua,
-                token.RefreshTokenExpiresAt,
-                cancellationToken);
-        }
-        catch (Exception e)
-        {
-            logger.LogWarning(e, "Failed to create user session for user {UserId}. Login will continue without session tracking.", subject);
-        }
+        var refreshTokenHash = TokenHasher.Sha256(refresh.RefreshToken);
+        var session = await sessionService.CreateSessionAsync(subject, refreshTokenHash, ip, ua, 
+            refresh.RefreshTokenExpiresAt, cancellationToken);
+        
+        enumerable = enumerable.WithSession(session.Id);
+
+        // Issue token
+        var token = await tokenService.IssueAccessOnlyAsync(subject, enumerable, null, cancellationToken);
 
         // 3) Audit token issuance with a fingerprint (never raw token)
-        var fingerprint = Sha256Short(token.AccessToken);
+        var fingerprint = TokenHasher.Fingerprint(token.AccessToken);
         await securityAudit.TokenIssuedAsync(
             userId: subject,
-            userName: claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? command.Email,
+            userName: enumerable.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? command.Email,
             clientId: clientId!,
             tokenFingerprint: fingerprint,
             expiresUtc: token.AccessTokenExpiresAt,
@@ -136,14 +129,13 @@ public class GenerateTokenCommandHandler(
         await publishEndpoint.Publish(webhookEvent, context =>
         {
             context.Delay = TimeSpan.FromMinutes(2);
-        });
+        }, cancellationToken: cancellationToken);
         await messagingDb.SaveChangesAsync(cancellationToken);
-        return token;
-    }
-
-    private static string Sha256Short(string value)
-    {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(value));
-        return Convert.ToHexString(hash.AsSpan(0, 8));
+        
+        return new TokenResponse(
+            token.AccessToken, 
+            refresh.RefreshToken, 
+            refresh.RefreshTokenExpiresAt, 
+            token.AccessTokenExpiresAt);
     }
 }

@@ -262,7 +262,7 @@ public class SessionService(
         return true;
     }
 
-    public async Task UpdateSessionActivityAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
+    /*public async Task UpdateSessionActivityAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
     {
         EnsureValidTenant();
 
@@ -274,9 +274,9 @@ public class SessionService(
             session.UpdateActivity();
             await db.SaveChangesAsync(cancellationToken);
         }
-    }
+    }*/
 
-    public async Task UpdateSessionRefreshTokenAsync(string oldRefreshTokenHash, string newRefreshTokenHash, DateTime newExpiresAt,
+    /*public async Task UpdateSessionRefreshTokenAsync(string oldRefreshTokenHash, string newRefreshTokenHash, DateTime newExpiresAt,
         CancellationToken cancellationToken = default)
     {
         EnsureValidTenant();
@@ -294,9 +294,9 @@ public class SessionService(
                 logger.LogInformation("Updated session {SessionId} with new refresh token", session.Id);
             }
         }
-    }
+    }*/
 
-    public async Task<bool> ValidateSessionAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
+    /*public async Task<bool> ValidateSessionAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
     {
         EnsureValidTenant();
 
@@ -310,7 +310,7 @@ public class SessionService(
         }
 
         return !session.IsRevoked && session.ExpiresAt > timeProvider.GetUtcNow().UtcDateTime;
-    }
+    }*/
 
     public async Task<Guid?> GetSessionIdByRefreshTokenAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
     {

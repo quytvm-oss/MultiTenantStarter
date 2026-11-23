@@ -34,8 +34,7 @@ public static class MassTransitExtensions
             .SelectMany(a => a.GetTypes())
             .Where(t =>
                 typeof(IMassTransitModule).IsAssignableFrom(t)
-                && t.IsClass
-                && !t.IsAbstract)
+                && t is { IsClass: true, IsAbstract: false })
             .Select(t => (IMassTransitModule)Activator.CreateInstance(t)!)
             .ToArray();
 

@@ -12,6 +12,7 @@ using Modules.Auditing.Contracts;
 using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Contracts.v1.Impersonation.EndImpersonation;
+using Modules.Identity.Helpers;
 
 using Shared.Identity;
 
@@ -24,6 +25,7 @@ public class EndImpersonationCommandHandler(
     ICurrentUser currentUser,
     IRequestContext requestContext,
     IImpersonationGrantService grantService,
+    ISessionService sessionService,
     ILogger<EndImpersonationCommandHandler> logger)
     : ICommandHandler<EndImpersonationCommand, TokenResponse>
 {
@@ -36,6 +38,9 @@ public class EndImpersonationCommandHandler(
         {
             throw new UnauthorizedException();
         }
+        
+        var ip = requestContext.IpAddress ?? "unknown";
+        var ua = requestContext.UserAgent ?? "unknown";
         
         var claims = currentUser.GetUserClaims()?.ToList()
             ?? throw new UnauthorizedException();
@@ -82,8 +87,9 @@ public class EndImpersonationCommandHandler(
         var (subject, actorClaims) = actorClaimsResult.Value;
         
         var token = await tokenService.IssueAsync(subject, actorClaims, actorTenantId, cancellationToken);
-        await identityService.StoreRefreshTokenAsync(subject, token.RefreshToken, token.RefreshTokenExpiresAt,
-            cancellationToken);
+        var refreshTokenHash = TokenHasher.Sha256(token.RefreshToken);
+        await sessionService.CreateSessionAsync(subject, refreshTokenHash, ip, ua, 
+            token.RefreshTokenExpiresAt, cancellationToken);
 
         await securityAudit.ImpersonationEndedAsync(actorUserId: actorUserId,
             actorTenantId: actorTenantId,

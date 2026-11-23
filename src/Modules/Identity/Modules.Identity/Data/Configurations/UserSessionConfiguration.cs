@@ -23,6 +23,9 @@ public class UserSessionConfiguration : IEntityTypeConfiguration<UserSession>
             .IsRequired()
             .HasMaxLength(256);
         
+        builder.Property(s => s.PreviousRefreshTokenHash)
+            .HasMaxLength(256);
+        
         builder.Property(s => s.IpAddress)
             .IsRequired()
             .HasMaxLength(45);

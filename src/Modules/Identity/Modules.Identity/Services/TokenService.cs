@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -34,7 +36,7 @@ public class TokenService : ITokenService
         var (accessToken, accessTokenExpiry) = BuildAccessToken(subject, claims, lifetime: null);
         
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var refreshToken = Convert.ToBase64String(Guid.CreateVersion7().ToByteArray());
+        var refreshToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
         var refreshTokenExpiry = now.AddDays(_options.RefreshTokenDays);
         
         var response = new TokenResponse(
@@ -47,7 +49,7 @@ public class TokenService : ITokenService
     }
     
 
-    public Task<(string AccessToken, DateTime ExpiresAtUtc)> IssueAccessOnlyAsync(
+    public Task<(string AccessToken, DateTime AccessTokenExpiresAt)> IssueAccessOnlyAsync(
         string subject, 
         IEnumerable<Claim> claims, 
         TimeSpan? lifetime = null,
@@ -56,7 +58,16 @@ public class TokenService : ITokenService
         var result = BuildAccessToken(subject, claims, lifetime);
         return Task.FromResult(result);
     }
-    
+
+    public Task<(string RefreshToken, DateTime RefreshTokenExpiresAt)> IssueRefreshOnlyAsync(CancellationToken ct = default)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var refreshToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        var refreshTokenExpiry = now.AddDays(_options.RefreshTokenDays);
+        var result = (refreshToken, refreshTokenExpiry);
+        return Task.FromResult(result);
+    }
+
     private (string accessToken, DateTime ExpiresAtUtc) BuildAccessToken(
         string subject, 
         IEnumerable<Claim> claims, 
