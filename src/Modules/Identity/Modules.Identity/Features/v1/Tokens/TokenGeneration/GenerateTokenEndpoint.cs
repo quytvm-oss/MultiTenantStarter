@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Routing;
 
 using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
+using Modules.Identity.Helpers;
 
 using Shared.Multitenancy;
 
@@ -39,6 +40,7 @@ public static class GenerateTokenEndpoint
             [DefaultValue("root")][FromHeader] string? tenant,
             [FromHeader(Name = AppHeader)] string? app,
             [FromServices] IMediator mediator,
+            HttpContext ctx,
             CancellationToken ct) =>
             {
                 if (IsRootViaDashboard(tenant, app))
@@ -50,6 +52,8 @@ public static class GenerateTokenEndpoint
                 }
 
                 var token = await mediator.Send(command, ct);
+                ctx.Response.SetAuthCookies(token.AccessToken,token.AccessTokenExpiresAt,
+                    token.RefreshToken,token.RefreshTokenExpiresAt);
                 return TypedResults.Ok(token);
             })
             .WithName("IssueJwtTokens")

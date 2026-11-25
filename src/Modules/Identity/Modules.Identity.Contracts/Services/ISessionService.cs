@@ -56,7 +56,7 @@ public interface ISessionService
         string? reason = null,
         CancellationToken cancellationToken = default);
 
-    Task UpdateSessionActivityAsync(
+    /*Task UpdateSessionActivityAsync(
         string refreshTokenHash,
         CancellationToken cancellationToken = default);
 
@@ -68,7 +68,7 @@ public interface ISessionService
 
     Task<bool> ValidateSessionAsync(
         string refreshTokenHash,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default);*/
 
     Task<Guid?> GetSessionIdByRefreshTokenAsync(
         string refreshTokenHash,
@@ -76,4 +76,9 @@ public interface ISessionService
 
     Task CleanupExpiredSessionsAsync(
         CancellationToken cancellationToken = default);
+    
+    Task RotateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime newExpiresAt,
+        CancellationToken cancellationToken = default);
+    
+    Task RevokeByRefreshTokenAsync(string userId, string refreshToken, CancellationToken ct = default);
 }

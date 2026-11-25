@@ -42,6 +42,7 @@ using Modules.Identity.Features.v1.Sessions.GetTenantSessions;
 using Modules.Identity.Features.v1.Sessions.GetUserSessions;
 using Modules.Identity.Features.v1.Sessions.RevokeAllSessions;
 using Modules.Identity.Features.v1.Sessions.RevokeSession;
+using Modules.Identity.Features.v1.Tokens.Logout;
 using Modules.Identity.Features.v1.Tokens.RefreshToken;
 using Modules.Identity.Features.v1.Tokens.TokenGeneration;
 using Modules.Identity.Features.v1.TwoFactor.Disable;
@@ -172,6 +173,7 @@ public class IdentityModule : IModule
         // tokens
         group.MapGenerateTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
         group.MapRefreshTokenEndpoint().AllowAnonymous().RequireRateLimiting("auth");
+        group.MapLogoutEndpoint().AllowAnonymous().RequireRateLimiting("auth");
 
         // permission catalog — every permission registered with the host,
         // filtered to the caller's tenant context (root vs admin set)

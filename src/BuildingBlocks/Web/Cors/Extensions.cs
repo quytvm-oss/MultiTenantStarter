@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Web.Cors;
@@ -9,6 +10,8 @@ namespace Web.Cors;
 public static class Extensions
 {
     private const string PolicyName = "CorsPolicy";
+    
+    private static readonly string[] RequiredHeaders = ["Content-Type", "tenant", "X-Requested-With"];
 
     public static IServiceCollection AddCorsPolicy(this IServiceCollection services, IConfiguration configuration)
     {
@@ -17,21 +20,30 @@ public static class Extensions
         
         services.AddOptions<CorsSettings>()
             .Bind(configuration.GetSection(nameof(CorsSettings)))
-            .Validate(settings => settings.AllowAll || settings.AllowedOrigins.Length > 0, "CorsOptions: AllowedOrigins are required when AllowAll is false.")
-            .Validate(settings => settings.AllowAll || settings.AllowedHeaders.Length > 0, "CorsOptions: AllowedHeaders are required when AllowAll is false.")
-            .Validate(settings => settings.AllowAll || settings.AllowedMethods.Length > 0, "CorsOptions: AllowedMethods are required when AllowAll is false.")
+            .Validate(s => s.AllowAll || s.AllowedOrigins.Length > 0,
+                "CorsSettings: AllowedOrigins are required when AllowAll is false.")
+            .Validate(s => s.AllowAll || s.AllowedMethods.Length > 0,
+                "CorsSettings: AllowedMethods are required when AllowAll is false.")
+            .Validate(s => s.AllowedOrigins.All(IsValidOrigin),
+                "CorsSettings: each origin must be scheme://host[:port], no trailing slash, no path, no wildcard.")
             .ValidateOnStart();
 
         services.AddCors();
         services.AddSingleton<IConfigureOptions<CorsOptions>>(sp =>
         {
-            var corsSettings = sp.GetRequiredService<IOptions<CorsSettings>>();
+            var settings = sp.GetRequiredService<IOptions<CorsSettings>>().Value;
+            var env = sp.GetRequiredService<IHostEnvironment>();
+            
+            if (settings.AllowAll && !env.IsDevelopment())
+            {
+                throw new InvalidOperationException(
+                    "CorsSettings.AllowAll is not permitted outside Development when cookie authentication is used.");
+            }
 
             return new ConfigureOptions<CorsOptions>(opt =>
             {
                 opt.AddPolicy(PolicyName, builder =>
                 {
-                    var settings = corsSettings.Value;
                     if (settings.AllowAll)
                     {
                         // Echo the request origin (not `*`): the CORS spec forbids `*` with credentialed requests,
@@ -44,11 +56,17 @@ public static class Extensions
                     }
                     else
                     {
+                        var headers = settings.AllowedHeaders
+                            .Concat(RequiredHeaders)
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToArray();
+                        
                         builder
                             .WithOrigins(settings.AllowedOrigins)
-                            .WithHeaders(settings.AllowedHeaders)
+                            .WithHeaders(headers)
                             .WithMethods(settings.AllowedMethods)
-                            .AllowCredentials();
+                            .AllowCredentials()
+                            .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
                     }
                 });
             });
@@ -62,4 +80,11 @@ public static class Extensions
         ArgumentNullException.ThrowIfNull(app);
         app.UseCors(PolicyName);
     }
+    
+    private static bool IsValidOrigin(string origin) =>
+        Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+        && uri.AbsolutePath == "/"
+        && !origin.EndsWith('/')
+        && !origin.Contains('*');
 }

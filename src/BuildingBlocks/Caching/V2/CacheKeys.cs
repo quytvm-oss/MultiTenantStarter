@@ -38,4 +38,6 @@ public static class CacheKeys
     /// Read on every authenticated request that carries an act_sub claim.
     /// </summary>
     public static string ImpersonationGrantStatus(string jti) => $"impgrant:{jti}";
+    
+    public static string SessionRevoked(string sessionId) => $"session:{sessionId}:revoked";
 }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 using Modules.Identity.Contracts.v1.Tokens.RefreshToken;
+using Modules.Identity.Helpers;
 
 namespace Modules.Identity.Features.v1.Tokens.RefreshToken;
 
@@ -19,12 +20,21 @@ public static class RefreshTokenEndpoint
 
         return endpoint.MapPost("/token/refresh",
                 [AllowAnonymous] async Task<Results<Ok<RefreshTokenCommandResponse>, UnauthorizedHttpResult, ProblemHttpResult>>
-                ([FromBody] RefreshTokenCommand command,
+                (
                     [FromHeader(Name = "tenant")] string tenant,
                     [FromServices] IMediator mediator,
+                    HttpContext ctx,
                     CancellationToken ct) =>
                 {
-                    var response = await mediator.Send(command, ct);
+                    if (!ctx.Request.Cookies.TryGetValue("access_token", out var accessToken) ||
+                        !ctx.Request.Cookies.TryGetValue("refresh_token", out var refreshToken) ||
+                        string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+                    var response = await mediator.Send(new RefreshTokenCommand(accessToken, refreshToken), ct);
+                    ctx.Response.SetAuthCookies(response.AccessToken,response.AccessTokenExpiresAt,
+                        response.RefreshToken,response.RefreshTokenExpiresAt);
                     return TypedResults.Ok(response);
                 })
             .WithName("RefreshJwtTokens")
