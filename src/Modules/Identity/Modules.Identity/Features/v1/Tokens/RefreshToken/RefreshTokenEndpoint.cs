@@ -46,7 +46,7 @@ public static class RefreshTokenEndpoint
                         Secure = true,
                         SameSite = SameSiteMode.Lax,
                         Expires = response.RefreshTokenExpiresAt,
-                        Path = "/token/refresh"
+                        Path = "/api/v1/identity/token/refresh"
                     });
                     return TypedResults.Ok(response);
                 })

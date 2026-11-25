@@ -65,7 +65,7 @@ public static class GenerateTokenEndpoint
                     Secure = true,
                     SameSite = SameSiteMode.Lax,
                     Expires = token.RefreshTokenExpiresAt,
-                    Path = "/token/refresh"
+                    Path = "/api/v1/identity/token/refresh"
                 });
                 return TypedResults.Ok(token);
             })
