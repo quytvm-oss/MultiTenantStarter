@@ -33,22 +33,6 @@ public static class RefreshTokenEndpoint
                         return TypedResults.Unauthorized();
                     }
                     var response = await mediator.Send(new RefreshTokenCommand(accessToken, refreshToken), ct);
-                    /*ctx.Response.Cookies.Append("access_token", response.AccessToken, new CookieOptions
-                    {
-                        HttpOnly = true,
-                        Secure = true,
-                        SameSite = SameSiteMode.Lax,
-                        Expires = response.AccessTokenExpiresAt,
-                        Path = "/"
-                    });
-                    ctx.Response.Cookies.Append("refresh_token", response.RefreshToken, new CookieOptions
-                    {
-                        HttpOnly = true,
-                        Secure = true,
-                        SameSite = SameSiteMode.Lax,
-                        Expires = response.RefreshTokenExpiresAt,
-                        Path = "/api/v1/identity/token/refresh"
-                    });*/
                     ctx.Response.SetAuthCookies(response.AccessToken,response.AccessTokenExpiresAt,
                         response.RefreshToken,response.RefreshTokenExpiresAt);
                     return TypedResults.Ok(response);
