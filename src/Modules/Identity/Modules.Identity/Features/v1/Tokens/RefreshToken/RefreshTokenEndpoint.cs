@@ -19,12 +19,35 @@ public static class RefreshTokenEndpoint
 
         return endpoint.MapPost("/token/refresh",
                 [AllowAnonymous] async Task<Results<Ok<RefreshTokenCommandResponse>, UnauthorizedHttpResult, ProblemHttpResult>>
-                ([FromBody] RefreshTokenCommand command,
+                (
                     [FromHeader(Name = "tenant")] string tenant,
                     [FromServices] IMediator mediator,
+                    HttpContext ctx,
                     CancellationToken ct) =>
                 {
-                    var response = await mediator.Send(command, ct);
+                    if (!ctx.Request.Cookies.TryGetValue("access_token", out var accessToken) ||
+                        !ctx.Request.Cookies.TryGetValue("refresh_token", out var refreshToken) ||
+                        string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+                    var response = await mediator.Send(new RefreshTokenCommand(accessToken, refreshToken), ct);
+                    ctx.Response.Cookies.Append("access_token", response.AccessToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Lax,
+                        Expires = response.AccessTokenExpiresAt,
+                        Path = "/"
+                    });
+                    ctx.Response.Cookies.Append("refresh_token", response.RefreshToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Lax,
+                        Expires = response.RefreshTokenExpiresAt,
+                        Path = "/token/refresh"
+                    });
                     return TypedResults.Ok(response);
                 })
             .WithName("RefreshJwtTokens")

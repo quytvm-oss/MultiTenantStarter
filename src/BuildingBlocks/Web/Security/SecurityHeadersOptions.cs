@@ -26,4 +26,6 @@ public sealed class SecurityHeadersOptions
     /// Additional style sources to append to CSP.
     /// </summary>
     public string[] StyleSources { get; set; } = [];
+    
+    public string[] ConnectSources { get; set; } = [];
 }

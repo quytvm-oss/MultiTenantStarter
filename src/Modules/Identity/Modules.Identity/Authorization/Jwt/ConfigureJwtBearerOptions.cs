@@ -95,7 +95,8 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
 
                     // Was an Authorization header even sent? Helps distinguish "JWT rejected"
                     // from "no token at all" — both produce 401 but for very different reasons.
-                    bool hadAuthHeader = !string.IsNullOrEmpty(context.HttpContext.Request.Headers.Authorization);
+                    bool hadAuthHeader = !string.IsNullOrEmpty(context.HttpContext.Request.Headers.Authorization)
+                                         || context.HttpContext.Request.Cookies.ContainsKey("access_token");
 
                     // RFC 9457 ProblemDetails — matches the contract the rest of the API uses
                     // for error responses (via the global exception handler).
@@ -188,20 +189,39 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
             OnForbidden = _ => throw new ForbiddenException(),
             OnMessageReceived = context =>
             {
-                var accessToken = context.Request.Query["access_token"];
-                if (string.IsNullOrEmpty(accessToken))
+                
+                // 1. Có header Bearer thì để JwtBearer xử lý mặc định
+                var authHeader = context.Request.Headers.Authorization.ToString();
+                if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 {
                     return Task.CompletedTask;
                 }
-
-                var path = context.HttpContext.Request.Path;
-                // Browser EventSource/SignalR can't send an Authorization header, so they use
-                // ?access_token=. The narrow path allow-list keeps query-string tokens from leaking elsewhere.
-                if (path.StartsWithSegments("/notifications", StringComparison.OrdinalIgnoreCase)
-                    || path.StartsWithSegments("/api/v1/realtime/hub", StringComparison.OrdinalIgnoreCase))
+                
+                
+                /*var accessToken = context.Request.Query["access_token"];
+                if (string.IsNullOrEmpty(accessToken))
                 {
-                    context.Token = accessToken;
+                    return Task.CompletedTask;
+                }*/
+
+                // 2. Query string: chỉ cho SignalR/EventSource
+                var path = context.HttpContext.Request.Path;
+                var queryToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(queryToken)
+                    && (path.StartsWithSegments("/notifications", StringComparison.OrdinalIgnoreCase)
+                        || path.StartsWithSegments("/api/v1/realtime/hub", StringComparison.OrdinalIgnoreCase)))
+                {
+                    context.Token = queryToken;
+                    return Task.CompletedTask;
                 }
+                
+                // 3. Cookie
+                if (context.Request.Cookies.TryGetValue("access_token", out var cookieToken)
+                    && !string.IsNullOrEmpty(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+
                 return Task.CompletedTask;
             }
         };

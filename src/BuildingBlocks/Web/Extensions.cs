@@ -1,4 +1,6 @@
-﻿using Caching.V2;
+﻿using System.Net;
+
+using Caching.V2;
 
 using Jobs;
 
@@ -7,6 +9,7 @@ using Mailling;
 using Mediator;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -136,6 +139,16 @@ public static class Extensions
         {
             builder.Services.AddHeroQuotas(builder.Configuration);
         }
+        
+        builder.Services.Configure<ForwardedHeadersOptions>(o =>
+        {
+            o.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+                                 | ForwardedHeaders.XForwardedProto
+                                 | ForwardedHeaders.XForwardedHost;
+            foreach (var ip in builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+                o.KnownProxies.Add(IPAddress.Parse(ip));
+            // K8s/Docker IP đổi thì dùng KnownNetworks (CIDR)
+        });
 
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
@@ -192,7 +205,7 @@ public static class Extensions
         {
             app.UseAppOpenApi();
         }
-
+        app.UseMiddleware<CsrfGuardMiddleware>(); 
         app.UseAuthentication();
 
         // Let each module register its own middleware (e.g. Auditing registers AuditHttpMiddleware)
@@ -230,8 +243,8 @@ public static class Extensions
     
     private static bool IsCorsEnabled(IConfiguration configuration)
     {
-        var allowAll = configuration.GetValue("CorsOptions:AllowAll", false);
-        var origins = configuration.GetSection("CorsOptions:AllowedOrigins").Get<string[]>() ?? [];
+        var allowAll = configuration.GetValue("CorsSettings:AllowAll", false);
+        var origins = configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? [];
         return allowAll || origins.Length > 0;
     }
 

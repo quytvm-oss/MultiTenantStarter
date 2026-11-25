@@ -39,6 +39,7 @@ public static class GenerateTokenEndpoint
             [DefaultValue("root")][FromHeader] string? tenant,
             [FromHeader(Name = AppHeader)] string? app,
             [FromServices] IMediator mediator,
+            HttpContext ctx,
             CancellationToken ct) =>
             {
                 if (IsRootViaDashboard(tenant, app))
@@ -50,6 +51,22 @@ public static class GenerateTokenEndpoint
                 }
 
                 var token = await mediator.Send(command, ct);
+                ctx.Response.Cookies.Append("access_token", token.AccessToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = token.AccessTokenExpiresAt,
+                    Path = "/"
+                });
+                ctx.Response.Cookies.Append("refresh_token", token.RefreshToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = token.RefreshTokenExpiresAt,
+                    Path = "/token/refresh"
+                });
                 return TypedResults.Ok(token);
             })
             .WithName("IssueJwtTokens")

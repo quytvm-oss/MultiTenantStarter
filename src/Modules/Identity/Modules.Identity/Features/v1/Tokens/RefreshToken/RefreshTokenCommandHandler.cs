@@ -62,6 +62,7 @@ public class RefreshTokenCommandHandler(
         return new RefreshTokenCommandResponse(
             AccessToken: newToken.AccessToken,
             RefreshToken: newToken.RefreshToken,
+            AccessTokenExpiresAt: newToken.AccessTokenExpiresAt,
             RefreshTokenExpiresAt: newToken.RefreshTokenExpiresAt);
     }
 }
