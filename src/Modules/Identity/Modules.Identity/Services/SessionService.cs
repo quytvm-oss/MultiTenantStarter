@@ -1,9 +1,13 @@
+using Caching.V2;
+
 using Core.Context;
 using Core.Exceptions;
 
 using Finbuckle.MultiTenant.Abstractions;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using Modules.Identity.Contracts.DTOs;
@@ -23,6 +27,8 @@ public class SessionService(
     ICurrentUser currentUser,
     IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor,
     ILogger<SessionService> logger,
+    IDistributedCache cache,
+    IConfiguration cfg,
     TimeProvider timeProvider)
     : ISessionService
 {
@@ -337,6 +343,61 @@ public class SessionService(
         }
     }
 
+    public async Task RotateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime newExpiresAt,
+        CancellationToken ct = default)
+    {
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var oldRefreshTokenHash = TokenHasher.Sha256(oldRefreshToken);
+        var newRefreshTokenHash = TokenHasher.Sha256(newRefreshToken);
+        
+        var resultUpdated = await db.UserSessions
+            .IgnoreQueryFilters()
+            .Where(u => u.RefreshTokenHash == oldRefreshTokenHash && !u.IsRevoked && u.ExpiresAt >= now)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.PreviousRefreshTokenHash, oldRefreshTokenHash)
+                .SetProperty(u => u.RefreshTokenHash, newRefreshTokenHash)
+                .SetProperty(u => u.RotatedAt, now)
+                .SetProperty(u => u.LastActivityAt, now)
+                .SetProperty(u => u.ExpiresAt, newExpiresAt), ct);
+        
+        if (resultUpdated == 0)
+        {
+            throw new UnauthorizedException("user not found");
+        }
+    }
+    
+    public async Task RevokeByRefreshTokenAsync(string userId,string refreshToken, CancellationToken ct = default)
+    {
+         var now = timeProvider.GetUtcNow().UtcDateTime;
+         var refreshTokenHash =  TokenHasher.Sha256(refreshToken);
+         var session = await db.UserSessions
+             .FirstOrDefaultAsync(x => x.UserId == userId && 
+                 x.RefreshTokenHash == refreshTokenHash && !x.IsRevoked && x.ExpiresAt >= now,ct);
+
+         if (session is null)
+             return;
+
+         var currentUserId = currentUser.GetUserId().ToString();
+
+         if (session.UserId != currentUserId)
+             return;
+         var tenantId = multiTenantContextAccessor?.MultiTenantContext?.TenantInfo?.Id;
+         session.Revoke(userId,"User Logout",tenantId);
+
+         await db.SaveChangesAsync(ct);
+
+         var ttl = TimeSpan.FromMinutes(
+             cfg.GetValue<int>("Authentication:Jwt:ExpireInMinutes")) + TimeSpan.FromMinutes(5);
+
+         await cache.SetStringAsync(
+            CacheKeys.SessionRevoked(session.Id.ToString()),     // key
+             refreshToken,                                // value
+             new DistributedCacheEntryOptions
+             {
+                 AbsoluteExpirationRelativeToNow = ttl,
+             },
+             ct);
+    }
+
     #region internals
 
     private void EnsureValidTenant()
@@ -364,7 +425,7 @@ public class SessionService(
             CreatedAt = session.CreatedAt,
             LastActivityAt = session.LastActivityAt,
             ExpiresAt = session.ExpiresAt,
-            IsActive = !session.IsRevoked && session.ExpiresAt > timeProvider.GetUtcNow().UtcDateTime,
+            IsActive = !session.IsRevoked || session.ExpiresAt > timeProvider.GetUtcNow().UtcDateTime,
             IsCurrentSession = isCurrentSession
         };
     }

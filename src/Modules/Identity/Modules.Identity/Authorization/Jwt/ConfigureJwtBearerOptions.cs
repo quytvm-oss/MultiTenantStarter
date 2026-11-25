@@ -2,11 +2,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
+using Caching.V2;
+
 using Core.Exceptions;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -154,14 +157,32 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
             // grant is revoked/ended — otherwise revocation wouldn't stop tokens already in flight.
             OnTokenValidated = async context =>
             {
-                var actSub = context.Principal?.FindFirstValue(ClaimConstants.ActorSubject);
+                var principal = context.Principal;
+                
+                // 1. Session revoke:
+                var sid = principal?.FindFirstValue("sid");
+                if (!string.IsNullOrEmpty(sid)) 
+                {
+                    var cache = context.HttpContext.RequestServices.GetRequiredService<IDistributedCache>();
+                    var revokedSession = await cache.GetStringAsync(
+                        CacheKeys.SessionRevoked(sid), context.HttpContext.RequestAborted);
+
+                    if (revokedSession is not null)
+                    {
+                        context.HttpContext.Items[FailureKey] = "Session revoked";
+                        context.Fail("session revoked");
+                        return;
+                    }
+                }
+                
+                var actSub = principal?.FindFirstValue(ClaimConstants.ActorSubject);
                 if (string.IsNullOrEmpty(actSub))
                 {
                     // Not an impersonation token — zero cost for normal sessions.
                     return;
                 }
 
-                var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                var jti = principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
                 if (string.IsNullOrEmpty(jti))
                 {
                     // jti is always minted by Start; reject defensively so a malformed/stripped token

@@ -76,4 +76,9 @@ public interface ISessionService
 
     Task CleanupExpiredSessionsAsync(
         CancellationToken cancellationToken = default);
+    
+    Task RotateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime newExpiresAt,
+        CancellationToken cancellationToken = default);
+    
+    Task RevokeByRefreshTokenAsync(string userId, string refreshToken, CancellationToken ct = default);
 }

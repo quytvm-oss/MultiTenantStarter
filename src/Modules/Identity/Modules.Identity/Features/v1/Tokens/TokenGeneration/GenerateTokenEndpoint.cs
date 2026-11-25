@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Routing;
 
 using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.v1.Tokens.TokenGeneration;
+using Modules.Identity.Helpers;
 
 using Shared.Multitenancy;
 
@@ -51,22 +52,8 @@ public static class GenerateTokenEndpoint
                 }
 
                 var token = await mediator.Send(command, ct);
-                ctx.Response.Cookies.Append("access_token", token.AccessToken, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Lax,
-                    Expires = token.AccessTokenExpiresAt,
-                    Path = "/"
-                });
-                ctx.Response.Cookies.Append("refresh_token", token.RefreshToken, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Lax,
-                    Expires = token.RefreshTokenExpiresAt,
-                    Path = "/api/v1/identity/token/refresh"
-                });
+                ctx.Response.SetAuthCookies(token.AccessToken,token.AccessTokenExpiresAt,
+                    token.RefreshToken,token.RefreshTokenExpiresAt);
                 return TypedResults.Ok(token);
             })
             .WithName("IssueJwtTokens")

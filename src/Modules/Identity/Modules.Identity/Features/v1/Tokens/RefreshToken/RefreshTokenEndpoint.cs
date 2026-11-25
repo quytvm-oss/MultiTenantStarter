@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 using Modules.Identity.Contracts.v1.Tokens.RefreshToken;
+using Modules.Identity.Helpers;
 
 namespace Modules.Identity.Features.v1.Tokens.RefreshToken;
 
@@ -32,7 +33,7 @@ public static class RefreshTokenEndpoint
                         return TypedResults.Unauthorized();
                     }
                     var response = await mediator.Send(new RefreshTokenCommand(accessToken, refreshToken), ct);
-                    ctx.Response.Cookies.Append("access_token", response.AccessToken, new CookieOptions
+                    /*ctx.Response.Cookies.Append("access_token", response.AccessToken, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
@@ -47,7 +48,9 @@ public static class RefreshTokenEndpoint
                         SameSite = SameSiteMode.Lax,
                         Expires = response.RefreshTokenExpiresAt,
                         Path = "/api/v1/identity/token/refresh"
-                    });
+                    });*/
+                    ctx.Response.SetAuthCookies(response.AccessToken,response.AccessTokenExpiresAt,
+                        response.RefreshToken,response.RefreshTokenExpiresAt);
                     return TypedResults.Ok(response);
                 })
             .WithName("RefreshJwtTokens")

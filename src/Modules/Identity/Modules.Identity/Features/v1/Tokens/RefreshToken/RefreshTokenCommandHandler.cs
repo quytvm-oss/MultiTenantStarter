@@ -17,6 +17,7 @@ namespace Modules.Identity.Features.v1.Tokens.RefreshToken;
 public class RefreshTokenCommandHandler(
     ITokenService tokenService,
     IIdentityService identityService,
+    ISessionService sessionService,
     ISecurityAudit securityAudit,
     IRequestContext requestContext,
     ILogger<RefreshTokenCommandHandler> logger)
@@ -47,7 +48,7 @@ public class RefreshTokenCommandHandler(
         var newToken = await tokenService.IssueAsync(subject, enumerable, null, cancellationToken);
         
         // Persist rotated refresh token for this user session
-        await identityService.RotateRefreshTokenAsync(command.RefreshToken, newToken.RefreshToken, newToken.RefreshTokenExpiresAt, cancellationToken);
+        await sessionService.RotateRefreshTokenAsync(command.RefreshToken, newToken.RefreshToken, newToken.RefreshTokenExpiresAt, cancellationToken);
 
         // Audit the newly issued token with a fingerprint
         var fingerprint = TokenHasher.Fingerprint(newToken.AccessToken);

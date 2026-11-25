@@ -11,7 +11,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Modules.Identity.Contracts.DTOs;
 using Modules.Identity.Contracts.Services;
 using Modules.Identity.Data;
 using Modules.Identity.Domain;
@@ -19,8 +18,6 @@ using Modules.Identity.Helpers;
 
 using Shared.Identity;
 using Shared.Multitenancy;
-
-using UAParser;
 
 namespace Modules.Identity.Services;
 
@@ -55,28 +52,6 @@ public class IdentityService(
 
         var claims = await BuildUserClaimsAsync(user, tenant.Id, ct);
         return (user.Id, claims);
-    }
-
-    public async Task RotateRefreshTokenAsync(string oldRefreshToken, string newRefreshToken, DateTime newExpiresAt,
-        CancellationToken ct = default)
-    {
-        var now = timeProvider.GetUtcNow().UtcDateTime;
-        var oldRefreshTokenHash = TokenHasher.Sha256(oldRefreshToken);
-        var newRefreshTokenHash = TokenHasher.Sha256(newRefreshToken);
-        
-        var resultUpdated = await dbContext.UserSessions
-            .IgnoreQueryFilters()
-            .Where(u => u.RefreshTokenHash == oldRefreshTokenHash && !u.IsRevoked && u.ExpiresAt >= now)
-            .ExecuteUpdateAsync(s => s.SetProperty(u => u.PreviousRefreshTokenHash, oldRefreshTokenHash)
-                .SetProperty(u => u.RefreshTokenHash, newRefreshTokenHash)
-                .SetProperty(u => u.RotatedAt, now)
-                .SetProperty(u => u.LastActivityAt, now)
-                .SetProperty(u => u.ExpiresAt, newExpiresAt), ct);
-        
-        if (resultUpdated == 0)
-        {
-            throw new UnauthorizedException("user not found");
-        }
     }
 
     public async Task<(string Subject, IEnumerable<Claim> Claims)?> ValidateRefreshTokenAsync(string refreshToken, CancellationToken ct = default)

@@ -21,16 +21,25 @@ public sealed class CsrfGuardMiddleware(RequestDelegate next, IOptions<CorsSetti
         if (isUnsafe && hasAuthCookie)
         {
             var origin = ctx.Request.Headers.Origin.ToString();
-            var originOk = string.IsNullOrEmpty(origin) || _allowAll || _origins.Contains(origin);
+            var selfOrigin = $"{ctx.Request.Scheme}://{ctx.Request.Host}";
+
+            var originOk = string.IsNullOrEmpty(origin)
+                           || _allowAll
+                           || string.Equals(origin, selfOrigin, StringComparison.OrdinalIgnoreCase)
+                           || _origins.Contains(origin);
+
             var headerOk = ctx.Request.Headers.ContainsKey("X-Requested-With");
 
             if (!originOk || !headerOk)
             {
                 ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                ctx.Response.ContentType = "application/json; charset=utf-8";
+                await ctx.Response.WriteAsync(
+                    $$"""{"errorType":"CSRF_BLOCKED","errorMessage":"{{(!originOk ? "Origin not allowed" : "Missing X-Requested-With")}}"}""");
                 return;
             }
         }
-        
+
         await next(ctx);
     }
 }
